@@ -1,0 +1,14 @@
+[package]
+name = "jackal"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+panic = 'abort'
+strip = true
+lto = true
+codegen-units = 1
+
+[dependencies]
+spear = { git = 'https://github.com/TomaszJaworski777/Spear.git' }
+colored = "*"
