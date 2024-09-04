@@ -22,9 +22,9 @@
 </div>
 
 ## Overview
-Jackal is my latest chess engine project, built as a follow-up to Javelin. It's a hyper-aggressive engine that leans heavily into Monte Carlo Tree Search (MCTS), much like Javelin, but with a more refined focus on pushing sharp, tactical positions. The idea was to create an engine that plays a very high-risk, high-reward style of chess.
+ackal is the chess engine I'm currently developing as a follow-up to Javelin. It's designed to be a hyper-aggressive engine, still using Monte Carlo Tree Search (MCTS) but with a more focused push toward sharp, tactical play. The idea is to create something that consistently seeks out high-risk, high-reward positions.
 
-I built Jackal based on the experience I gained from Javelin, especially when it comes to training the value and policy neural networks through self-play. Like Javelin, it learns entirely through self-play, but I’ve tweaked the process to really push it into forcing aggressive play. The self-play setup gives it room to develop its own approach to attack, but it still uses MCTS to evaluate positions. It works smoothly with any UCI-compatible GUI and has been fun to experiment with, especially when watching it launch unexpected, dynamic attacks.
+I'm building Jackal with everything I learned from developing Javelin, especially around training value and policy neural networks through self-play. Like Javelin, it's learning entirely through self-play, but I’ve been adjusting the training process to encourage more aggressive behavior. It also uses my legal move generator, [Spear](https://github.com/TomaszJaworski777/Spear).
 
 ## Compiling
 
