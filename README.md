@@ -22,7 +22,7 @@
 </div>
 
 ## Overview
-ackal is the chess engine I'm currently developing as a follow-up to Javelin. It's designed to be a hyper-aggressive engine, still using Monte Carlo Tree Search (MCTS) but with a more focused push toward sharp, tactical play. The idea is to create something that consistently seeks out high-risk, high-reward positions.
+ackal is the chess engine I'm currently developing as a follow-up to [Javelin](https://github.com/TomaszJaworski777/Javelin). It's designed to be a hyper-aggressive engine, still using Monte Carlo Tree Search (MCTS) but with a more focused push toward sharp, tactical play. The idea is to create something that consistently seeks out high-risk, high-reward positions.
 
 I'm building Jackal with everything I learned from developing Javelin, especially around training value and policy neural networks through self-play. Like Javelin, it's learning entirely through self-play, but I’ve been adjusting the training process to encourage more aggressive behavior. It also uses my legal move generator, [Spear](https://github.com/TomaszJaworski777/Spear).
 
