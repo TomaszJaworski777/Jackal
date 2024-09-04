@@ -17,8 +17,7 @@
 <br>
 
 | Version | CCRL 40/15 | CCRL Blitz | Estimated | EAS Score | Release Date |
-| :-: | :-: | :-: | :-: | :-: |
-|  |  |  |  |  |
+| :-: | :-: | :-: | :-: | :-: | :-: |
 
 </div>
 
