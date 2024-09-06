@@ -1,11 +1,22 @@
-use std::{env, io::stdin};
+use std::{env, io::stdin, sync::atomic::AtomicBool};
+use options::EngineOptions;
 use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};
+use search::{SearchEngine, SearchTree};
+use spear::{ChessPosition, FEN};
 
 mod processors;
 mod utils;
 mod search;
+mod options;
 
 fn main() {
+
+    //Init search engine
+    let start_position = ChessPosition::from_fen(&FEN::start_position());
+    let interruption_token = AtomicBool::new(false);
+    let mut tree = SearchTree::new();
+    let mut options = EngineOptions::new();
+    let mut search_engine = SearchEngine::new(start_position, &interruption_token, &mut tree, &mut options);
 
     //Process arguments passed when starting the engine
     if ParamsProcessor::execute(env::args().collect()) {
@@ -33,11 +44,11 @@ fn main() {
         //Split command string into command and it's arguments, and progress misc commands
         let command = parts[0];
         let args = &parts[1..].iter().map(|arg_str| arg_str.to_string()).collect::<Vec<String>>();
-        if MiscCommandsProcessor::execute(command, args) {
-            break;
+        if MiscCommandsProcessor::execute(command, args, &search_engine) {
+            continue;
         }
 
         //Process UCI protocol commands
-        UciProcessor::execute(command, args);
+        UciProcessor::execute(command, args, &mut search_engine);
     }
 }
