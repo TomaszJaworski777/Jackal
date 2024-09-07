@@ -1,7 +1,7 @@
-mod search_tree;
-mod node;
 mod edge;
+mod node;
+mod search_tree;
 
-pub use search_tree::SearchTree;
-pub use node::Node;
 pub use edge::Edge;
+pub use node::Node;
+pub use search_tree::SearchTree;

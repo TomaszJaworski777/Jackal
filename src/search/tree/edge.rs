@@ -6,7 +6,7 @@ pub struct Edge {
     mv: Move,
     policy: i16,
     visits: u32,
-    score: f32
+    score: f32,
 }
 
 impl Edge {
@@ -16,10 +16,10 @@ impl Edge {
             mv,
             policy: (policy * f32::from(i16::MAX)) as i16,
             visits: 0,
-            score: 0.0
+            score: 0.0,
         }
     }
-    
+
     pub fn index(&self) -> i32 {
         self.node_index
     }

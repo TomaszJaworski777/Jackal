@@ -9,6 +9,10 @@ pub fn clear_terminal_screen() {
             .wait()
             .expect("failed to wait");
     } else {
-        Command::new("clear").spawn().expect("clear command failed to start").wait().expect("failed to wait");
+        Command::new("clear")
+            .spawn()
+            .expect("clear command failed to start")
+            .wait()
+            .expect("failed to wait");
     };
 }

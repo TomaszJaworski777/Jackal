@@ -10,16 +10,21 @@ pub struct SearchEngine<'a> {
     position: ChessPosition,
     interruption_token: &'a AtomicBool,
     tree: &'a mut SearchTree,
-    options: &'a mut EngineOptions
+    options: &'a mut EngineOptions,
 }
 
 impl<'a> SearchEngine<'a> {
-    pub fn new( position: ChessPosition, interruption_token: &'a AtomicBool, tree: &'a mut SearchTree, options: &'a mut EngineOptions ) -> Self {
+    pub fn new(
+        position: ChessPosition,
+        interruption_token: &'a AtomicBool,
+        tree: &'a mut SearchTree,
+        options: &'a mut EngineOptions,
+    ) -> Self {
         Self {
             position,
             interruption_token,
             tree,
-            options
+            options,
         }
     }
 
@@ -48,7 +53,8 @@ impl<'a> SearchEngine<'a> {
         self.interruption_token.store(true, Ordering::Relaxed)
     }
 
-    pub fn search(&mut self, print_raports: bool) { //pass limits as argument
+    pub fn search(&mut self, print_raports: bool) {
+        //pass limits as argument
         self.interruption_token.store(false, Ordering::Relaxed);
         std::thread::scope(|s| {
             s.spawn(|| {

@@ -12,15 +12,15 @@ pub enum GameState {
 pub struct Node {
     actions: Vec<Edge>,
     state: GameState,
-    edge: (i32, u8)
+    edge: (i32, u8),
 }
 
 impl Node {
-    pub fn new( state: GameState, edge_index: i32, action_index: u8 ) -> Self {
+    pub fn new(state: GameState, edge_index: i32, action_index: u8) -> Self {
         Self {
             actions: Vec::new(),
             state,
-            edge: (edge_index, action_index)
+            edge: (edge_index, action_index),
         }
     }
 

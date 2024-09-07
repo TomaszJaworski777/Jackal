@@ -6,14 +6,14 @@ use super::{Edge, Node};
 
 pub struct SearchTree {
     values: Vec<Node>,
-    root_edge: Edge
+    root_edge: Edge,
 }
 
 impl SearchTree {
     pub fn new() -> Self {
         Self {
             values: Vec::new(),
-            root_edge: Edge::new(0, Move::NULL, 0.0)
+            root_edge: Edge::new(0, Move::NULL, 0.0),
         }
     }
 

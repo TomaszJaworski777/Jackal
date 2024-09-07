@@ -43,7 +43,6 @@ create_option_structs!(
     move_overhead: SpinOptionInt => SpinOptionInt::new(10, 0, 500, 1.0, 0.0), "MoveOverhead",
 );
 
-
 #[allow(unused)]
 pub trait OptionTrait {
     type ValueType;
@@ -64,7 +63,14 @@ pub struct SpinOptionInt {
 
 impl SpinOptionInt {
     fn new(value: i32, min: i32, max: i32, step: f32, r: f32) -> Self {
-        Self { value, default: value, min, max, step, r }
+        Self {
+            value,
+            default: value,
+            min,
+            max,
+            step,
+            r,
+        }
     }
 
     fn set_value(&mut self, new_value: i32) {
@@ -118,7 +124,14 @@ pub struct SpinOptionFloat {
 #[allow(unused)]
 impl SpinOptionFloat {
     fn new(value: f32, min: f32, max: f32, step: f32, r: f32) -> Self {
-        Self { value, default: value, min, max, step, r }
+        Self {
+            value,
+            default: value,
+            min,
+            max,
+            step,
+            r,
+        }
     }
 
     fn set_value(&mut self, new_value: i32) {
@@ -155,7 +168,10 @@ impl OptionTrait for SpinOptionFloat {
     fn print(&self, name: &str) {
         println!(
             "option name {} type spin default {:?} min {:?} max {:?}",
-            name, (self.default * 100.0) as i32, (self.min * 100.0) as i32, (self.max * 100.0) as i32
+            name,
+            (self.default * 100.0) as i32,
+            (self.min * 100.0) as i32,
+            (self.max * 100.0) as i32
         );
     }
 }
