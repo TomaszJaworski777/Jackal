@@ -1,4 +1,7 @@
-use std::{ops::{Index, IndexMut}, sync::atomic::{AtomicI32, Ordering}};
+use std::{
+    ops::{Index, IndexMut},
+    sync::atomic::{AtomicI32, Ordering},
+};
 
 use spear::Move;
 
@@ -7,16 +10,21 @@ use super::{node::GameState, Edge, Node};
 pub struct SearchTree {
     values: Vec<Node>,
     root_edge: Edge,
-    last_index: AtomicI32
+    last_index: AtomicI32,
 }
 
 impl SearchTree {
     pub fn new() -> Self {
-        let tree = Self {
+        let mut tree = Self {
             values: Vec::new(),
             root_edge: Edge::new(0, Move::NULL, 0.0),
-            last_index: AtomicI32::new(0)
+            last_index: AtomicI32::new(0),
         };
+
+        for _ in 0..100_000_000 {
+            tree.values.push(Node::new(GameState::Unresolved))
+        }
+
         tree.init_root();
         tree
     }
@@ -41,6 +49,24 @@ impl SearchTree {
         self[new_node_index].replace(state);
         self.last_index.fetch_add(1, Ordering::Relaxed);
         new_node_index as i32
+    }
+
+    pub fn get_best_move(&self, node_index: i32) -> (Move, f64) {
+        let mut best_move = Move::NULL;
+        let mut best_score = 0.0;
+        for action in self[node_index].actions().iter() {
+            if action.visits() == 0 {
+                continue;
+            }
+
+            let score = action.score();
+            if score > best_score {
+                best_move = action.mv();
+                best_score = score;
+            }
+        }
+
+        (best_move, best_score)
     }
 }
 

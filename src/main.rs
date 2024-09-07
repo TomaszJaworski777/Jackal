@@ -15,8 +15,9 @@ fn main() {
     let interruption_token = AtomicBool::new(false);
     let mut tree = SearchTree::new();
     let mut options = EngineOptions::new();
+    let mut command_queue: Vec<String> = Vec::new();
     let mut search_engine =
-        SearchEngine::new(start_position, &interruption_token, &mut tree, &mut options);
+        SearchEngine::new(start_position, &interruption_token, &mut tree, &mut options, &mut command_queue);
 
     //Process arguments passed when starting the engine
     if ParamsProcessor::execute(env::args().collect()) {
@@ -27,11 +28,18 @@ fn main() {
 
     loop {
         //Reading the input to obtain command
-        let mut input_command = String::new();
-        if stdin().read_line(&mut input_command).is_err() {
-            println!("Error reading input, please try again.");
-            continue;
-        }
+        let queue = search_engine.command_queue();
+        let input_command = if queue.len() > 0 {
+            queue.remove(0)
+        } else {
+            let mut input_command = String::new();
+            if stdin().read_line(&mut input_command).is_err() {
+                println!("Error reading input, please try again.");
+                continue;
+            }
+
+            input_command
+        };
 
         //Parsing command string and skipping if command is empty
         let input_command = input_command.trim();

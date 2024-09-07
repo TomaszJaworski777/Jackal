@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicBool;
+
 use spear::{ChessPosition, Move, Side, FEN};
 
 use crate::{
@@ -16,7 +18,6 @@ impl UciProcessor {
             "position" => Self::position(args, search_engine),
             "ucinewgame" => search_engine.reset(),
             "go" => Self::go(args, search_engine),
-            "stop" => search_engine.stop(),
             _ => return,
         }
     }

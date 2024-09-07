@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::{io::stdin, sync::atomic::{AtomicBool, Ordering}};
 
 use spear::{ChessPosition, FEN};
 
@@ -11,6 +11,7 @@ pub struct SearchEngine<'a> {
     interruption_token: &'a AtomicBool,
     tree: &'a mut SearchTree,
     options: &'a mut EngineOptions,
+    command_queue: &'a mut Vec<String>,
     uci_initialized: bool,
 }
 
@@ -20,18 +21,24 @@ impl<'a> SearchEngine<'a> {
         interruption_token: &'a AtomicBool,
         tree: &'a mut SearchTree,
         options: &'a mut EngineOptions,
+        command_queue: &'a mut Vec<String>,
     ) -> Self {
         Self {
             position,
             interruption_token,
             tree,
             options,
+            command_queue,
             uci_initialized: false,
         }
     }
 
     pub fn init_uci(&mut self) {
         self.uci_initialized = true;
+    }
+
+    pub fn command_queue(&mut self) -> &mut Vec<String> {
+        &mut self.command_queue
     }
 
     pub fn engine_options(&self) -> &EngineOptions {
@@ -83,6 +90,27 @@ impl<'a> SearchEngine<'a> {
                     mcts.search::<NoPrint>()
                 };
             });
+
+            Self::portable_command_handler(&mut self.command_queue, &self.interruption_token)
         });
+    }
+
+    fn portable_command_handler(command_queue: &mut Vec<String>, interruption_token: &AtomicBool) {
+        loop {
+            let mut input_command = String::new();
+            if stdin().read_line(&mut input_command).is_err() {
+                println!("Error reading input, please try again.");
+                continue;
+            }
+
+            let input_command = input_command.trim();
+
+            match input_command {
+                "isready" => println!("readyok"),
+                "quit" | "q" | "exit" => std::process::exit(0),
+                "stop" => interruption_token.store(true, Ordering::Relaxed),
+                _ => command_queue.push(input_command.to_string())
+            }
+        }
     }
 }

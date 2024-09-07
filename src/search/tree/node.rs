@@ -1,4 +1,7 @@
-use std::sync::{atomic::{AtomicI32, AtomicU16, AtomicU8, Ordering}, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{
+    atomic::{AtomicI32, AtomicU16, AtomicU8, Ordering},
+    RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 use super::Edge;
 
@@ -38,7 +41,7 @@ impl From<u16> for GameState {
 
 pub struct Node {
     actions: RwLock<Vec<Edge>>,
-    state: AtomicU16
+    state: AtomicU16,
 }
 
 impl Node {
@@ -56,7 +59,8 @@ impl Node {
 
     pub fn clear(&self) {
         *self.actions_mut() = Vec::new();
-        self.state.store(u16::from(GameState::Unresolved), Ordering::Relaxed)
+        self.state
+            .store(u16::from(GameState::Unresolved), Ordering::Relaxed)
     }
 
     pub fn state(&self) -> GameState {
@@ -79,7 +83,5 @@ impl Node {
         self.state() != GameState::Unresolved || self.actions().len() > 0
     }
 
-    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
-
-    }
+    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {}
 }

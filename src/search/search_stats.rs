@@ -1,4 +1,7 @@
-use std::{sync::atomic::{AtomicU32, Ordering}, time::Instant};
+use std::{
+    sync::atomic::{AtomicU32, Ordering},
+    time::Instant,
+};
 
 pub struct SearchStats {
     timer: Instant,
@@ -39,6 +42,7 @@ impl SearchStats {
     pub fn add_iteration(&self, depth: u32) {
         self.iters.fetch_add(1, Ordering::Relaxed);
         self.total_depth.fetch_add(depth, Ordering::Relaxed);
-        self.max_depth.store(self.max_depth().max(depth), Ordering::Relaxed);
+        self.max_depth
+            .store(self.max_depth().max(depth), Ordering::Relaxed);
     }
 }

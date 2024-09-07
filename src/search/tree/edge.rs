@@ -49,10 +49,12 @@ impl Edge {
         let score = f64::from(score);
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
         let new_score = (self.score() * previous_visits + score) / (previous_visits + 1.0);
-        self.score.store((new_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed)
+        self.score
+            .store((new_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed)
     }
 
     pub fn update_policy(&self, new_policy: f32) {
-        self.policy.store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
+        self.policy
+            .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
     }
 }

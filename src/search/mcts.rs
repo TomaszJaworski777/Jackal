@@ -34,7 +34,7 @@ impl<'a> Mcts<'a> {
         }
     }
 
-    pub fn search<PRINTER: SearchPrinter>(&self) -> (Move, f32) {
+    pub fn search<PRINTER: SearchPrinter>(&self) -> (Move, f64) {
         PRINTER::print_search_start(&self.stats, &self.options, &self.limits);
 
         //Check if root node is expanded, and if not then expand it
@@ -48,7 +48,11 @@ impl<'a> Mcts<'a> {
             }
         }
 
-        (Move::NULL, 0.0)
+        //Start mcts search loop
+        loop {
+        }
+
+        self.tree.get_best_move(root_index)
     }
 
     fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool>(
