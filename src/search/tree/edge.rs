@@ -1,31 +1,32 @@
+use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
+
 use spear::Move;
 
-#[derive(Clone, Copy, PartialEq)]
 pub struct Edge {
-    node_index: i32,
+    node_index: AtomicI32,
     mv: Move,
-    policy: i16,
-    visits: u32,
-    score: f32,
+    policy: AtomicI16,
+    visits: AtomicU32,
+    score: AtomicU32,
 }
 
 impl Edge {
     pub fn new(node_index: i32, mv: Move, policy: f32) -> Self {
         Self {
-            node_index,
+            node_index: AtomicI32::new(node_index),
             mv,
-            policy: (policy * f32::from(i16::MAX)) as i16,
-            visits: 0,
-            score: 0.0,
+            policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
+            visits: AtomicU32::new(0),
+            score: AtomicU32::new(0),
         }
     }
 
     pub fn index(&self) -> i32 {
-        self.node_index
+        self.node_index.load(Ordering::Relaxed)
     }
 
-    pub fn set_index(&mut self, index: i32) {
-        self.node_index = index
+    pub fn set_index(&self, index: i32) {
+        self.node_index.store(index, Ordering::Relaxed)
     }
 
     pub fn mv(&self) -> Move {
@@ -33,31 +34,25 @@ impl Edge {
     }
 
     pub fn policy(&self) -> f32 {
-        f32::from(self.policy) / f32::from(i16::MAX)
+        f32::from(self.policy.load(Ordering::Relaxed)) / f32::from(i16::MAX)
     }
 
     pub fn visits(&self) -> u32 {
-        self.visits
+        self.visits.load(Ordering::Relaxed)
     }
 
-    pub fn score(&self) -> f32 {
-        self.score
+    pub fn score(&self) -> f64 {
+        f64::from(self.score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
     }
 
-    pub fn avg_score(&self) -> f32 {
-        if self.visits == 0 {
-            0.5
-        } else {
-            self.score / self.visits as f32
-        }
+    pub fn add_score(&self, score: f32) {
+        let score = f64::from(score);
+        let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
+        let new_score = (self.score() * previous_visits + score) / (previous_visits + 1.0);
+        self.score.store((new_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed)
     }
 
-    pub fn add_score(&mut self, score: f32) {
-        self.visits += 1;
-        self.score += score;
-    }
-
-    pub fn update_policy(&mut self, new_policy: f32) {
-        self.policy = (new_policy * f32::from(i16::MAX)) as i16
+    pub fn update_policy(&self, new_policy: f32) {
+        self.policy.store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
     }
 }

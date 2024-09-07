@@ -1,6 +1,9 @@
 use spear::{ChessPosition, Move, Side, FEN};
 
-use crate::{options::EngineOptions, search::SearchEngine};
+use crate::{
+    options::EngineOptions,
+    search::{SearchEngine, SearchLimits},
+};
 
 pub struct UciProcessor;
 impl UciProcessor {
@@ -18,11 +21,13 @@ impl UciProcessor {
         }
     }
 
-    fn uci_message(search_engine: &SearchEngine) {
+    fn uci_message(search_engine: &mut SearchEngine) {
         println!("id name Jackal v{}", env!("CARGO_PKG_VERSION"));
         println!("id author Tomasz Jaworski");
         search_engine.engine_options().print();
         println!("uciok");
+
+        search_engine.init_uci()
     }
 
     fn set_option(args: &[String], options: &mut EngineOptions) {
@@ -97,7 +102,68 @@ impl UciProcessor {
     }
 
     fn go(args: &[String], search_engine: &mut SearchEngine) {
-        search_engine.search(true);
-        println!("{}", search_engine.engine_options().move_overhead());
+        let mut search_limits = SearchLimits::new();
+
+        let parse_u128 = |str: &str| -> u128 { str.parse::<u128>().unwrap_or(0).max(0) };
+
+        let parse_u32 = |str: &str| -> u32 { str.parse::<u32>().unwrap_or(0).max(0) };
+
+        //Convert args into search parameters
+        if args.len() == 0 {
+            search_limits.go_infinite()
+        } else {
+            let mut search_param = "";
+            let param_list = [
+                "wtime",
+                "btime",
+                "winc",
+                "binc",
+                "movestogo",
+                "depth",
+                "nodes",
+                "infinite",
+                "movetime",
+            ];
+            let side_to_move = search_engine.current_position().board().side_to_move();
+            for arg in args {
+                if param_list.contains(&arg.as_str()) {
+                    search_param = arg;
+                    if search_param == "infinite" {
+                        search_limits.go_infinite()
+                    }
+                    continue;
+                }
+
+                match search_param {
+                    "wtime" => {
+                        if side_to_move == Side::WHITE {
+                            search_limits.add_time_remaining(parse_u128(search_param))
+                        }
+                    }
+                    "btime" => {
+                        if side_to_move == Side::BLACK {
+                            search_limits.add_time_remaining(parse_u128(search_param))
+                        }
+                    }
+                    "winc" => {
+                        if side_to_move == Side::WHITE {
+                            search_limits.add_increment(parse_u128(search_param))
+                        }
+                    }
+                    "binc" => {
+                        if side_to_move == Side::BLACK {
+                            search_limits.add_increment(parse_u128(search_param))
+                        }
+                    }
+                    "movestogo" => search_limits.add_moves_to_go(parse_u32(search_param)),
+                    "movetime" => search_limits.add_move_time(parse_u128(search_param)),
+                    "depth" => search_limits.add_depth(parse_u32(search_param)),
+                    "nodes" => search_limits.add_iters(parse_u32(search_param)),
+                    _ => continue,
+                }
+            }
+        }
+
+        search_engine.search(&search_limits, true);
     }
 }
