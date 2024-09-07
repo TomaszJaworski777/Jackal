@@ -67,9 +67,12 @@ impl<'a> SearchEngine<'a> {
     }
 
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
-        //pass limits as argument
+
+        //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
         let search_stats = SearchStats::new();
+
+        //Start the search thread
         std::thread::scope(|s| {
             s.spawn(|| {
                 let mut mcts = Mcts::new(
@@ -91,6 +94,7 @@ impl<'a> SearchEngine<'a> {
                 };
             });
 
+            //Create portable loop to handle command queue during search
             Self::portable_command_handler(&mut self.command_queue, &self.interruption_token)
         });
     }
@@ -110,6 +114,10 @@ impl<'a> SearchEngine<'a> {
                 "quit" | "q" | "exit" => std::process::exit(0),
                 "stop" => interruption_token.store(true, Ordering::Relaxed),
                 _ => command_queue.push(input_command.to_string())
+            }
+
+            if interruption_token.load(Ordering::Relaxed) {
+                break;
             }
         }
     }

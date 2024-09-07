@@ -1,4 +1,4 @@
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use spear::{ChessPosition, Move, Side};
 
@@ -50,6 +50,10 @@ impl<'a> Mcts<'a> {
 
         //Start mcts search loop
         loop {
+            println!("{}", self.interruption_token.load(Ordering::Relaxed));
+            if self.interruption_token.load(Ordering::Relaxed) {
+                break;
+            }
         }
 
         self.tree.get_best_move(root_index)
