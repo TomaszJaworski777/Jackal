@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use spear::{ChessPosition, ZobristKey, FEN};
+use spear::{ChessPosition, FEN};
 
 use crate::options::EngineOptions;
 
@@ -21,6 +21,10 @@ impl<'a> SearchEngine<'a> {
             tree,
             options
         }
+    }
+
+    pub fn engine_options(&self) -> &EngineOptions {
+        &self.options
     }
 
     pub fn engine_options_mut(&mut self) -> &mut EngineOptions {
