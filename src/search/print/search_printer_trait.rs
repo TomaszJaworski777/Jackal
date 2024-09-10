@@ -1,3 +1,5 @@
+use spear::Move;
+
 use crate::{
     options::EngineOptions,
     search::{search_limits::SearchLimits, SearchStats},
@@ -15,12 +17,8 @@ pub trait SearchPrinter {
         search_stats: &SearchStats,
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
+        score: f64,
     ) {
     }
-    fn print_search_result(
-        search_stats: &SearchStats,
-        engine_options: &EngineOptions,
-        search_limits: &SearchLimits,
-    ) {
-    }
+    fn print_search_result(mv: Move, score: f64) {}
 }

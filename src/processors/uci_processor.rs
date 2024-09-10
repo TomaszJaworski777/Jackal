@@ -1,5 +1,3 @@
-use std::sync::atomic::AtomicBool;
-
 use spear::{ChessPosition, Move, Side, FEN};
 
 use crate::{
@@ -105,7 +103,7 @@ impl UciProcessor {
     fn go(args: &[String], search_engine: &mut SearchEngine) {
         let mut search_limits = SearchLimits::new();
 
-        let parse_u128 = |str: &str| -> u128 { str.parse::<u128>().unwrap_or(0).max(0) };
+        let parse_u64 = |str: &str| -> u64 { str.parse::<u64>().unwrap_or(0).max(0) };
 
         let parse_u32 = |str: &str| -> u32 { str.parse::<u32>().unwrap_or(0).max(0) };
 
@@ -138,26 +136,26 @@ impl UciProcessor {
                 match search_param {
                     "wtime" => {
                         if side_to_move == Side::WHITE {
-                            search_limits.add_time_remaining(parse_u128(search_param))
+                            search_limits.add_time_remaining(parse_u64(search_param))
                         }
                     }
                     "btime" => {
                         if side_to_move == Side::BLACK {
-                            search_limits.add_time_remaining(parse_u128(search_param))
+                            search_limits.add_time_remaining(parse_u64(search_param))
                         }
                     }
                     "winc" => {
                         if side_to_move == Side::WHITE {
-                            search_limits.add_increment(parse_u128(search_param))
+                            search_limits.add_increment(parse_u64(search_param))
                         }
                     }
                     "binc" => {
                         if side_to_move == Side::BLACK {
-                            search_limits.add_increment(parse_u128(search_param))
+                            search_limits.add_increment(parse_u64(search_param))
                         }
                     }
                     "movestogo" => search_limits.add_moves_to_go(parse_u32(search_param)),
-                    "movetime" => search_limits.add_move_time(parse_u128(search_param)),
+                    "movetime" => search_limits.add_move_time(parse_u64(search_param)),
                     "depth" => search_limits.add_depth(parse_u32(search_param)),
                     "nodes" => search_limits.add_iters(parse_u32(search_param)),
                     _ => continue,

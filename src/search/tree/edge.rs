@@ -10,6 +10,18 @@ pub struct Edge {
     score: AtomicU32,
 }
 
+impl Clone for Edge {
+    fn clone(&self) -> Self {
+        Self {
+            node_index: AtomicI32::new(self.index()),
+            mv: self.mv(),
+            policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
+            visits: AtomicU32::new(self.visits()),
+            score: AtomicU32::new(self.score.load(Ordering::Relaxed)),
+        }
+    }
+}
+
 impl Edge {
     pub fn new(node_index: i32, mv: Move, policy: f32) -> Self {
         Self {

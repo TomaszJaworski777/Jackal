@@ -1,5 +1,5 @@
 use std::{
-    sync::atomic::{AtomicU32, Ordering},
+    sync::atomic::{AtomicU32, AtomicU64, Ordering},
     time::Instant,
 };
 
@@ -8,6 +8,7 @@ pub struct SearchStats {
     total_depth: AtomicU32,
     max_depth: AtomicU32,
     iters: AtomicU32,
+    time_passed: AtomicU64,
 }
 impl SearchStats {
     pub fn new() -> Self {
@@ -16,15 +17,12 @@ impl SearchStats {
             total_depth: AtomicU32::new(0),
             max_depth: AtomicU32::new(0),
             iters: AtomicU32::new(0),
+            time_passed: AtomicU64::new(0),
         }
     }
 
-    pub fn time_elapsed_milis(&self) -> u128 {
-        self.timer.elapsed().as_millis()
-    }
-
-    pub fn time_elapsed_secs(&self) -> f64 {
-        self.timer.elapsed().as_secs_f64()
+    pub fn time_passed(&self) -> u64 {
+        self.time_passed.load(Ordering::Relaxed)
     }
 
     pub fn avg_depth(&self) -> u32 {
@@ -44,5 +42,10 @@ impl SearchStats {
         self.total_depth.fetch_add(depth, Ordering::Relaxed);
         self.max_depth
             .store(self.max_depth().max(depth), Ordering::Relaxed);
+    }
+
+    pub fn update_time_passed(&self) {
+        self.time_passed
+            .store(self.timer.elapsed().as_millis() as u64, Ordering::Relaxed)
     }
 }

@@ -1,10 +1,12 @@
+use crate::options::EngineOptions;
+
 use super::SearchStats;
 
 pub struct SearchLimits {
-    time_remaining: Option<u128>,
-    increment: Option<u128>,
+    time_remaining: Option<u64>,
+    increment: Option<u64>,
     moves_to_go: Option<u32>,
-    move_time: Option<u128>,
+    move_time: Option<u64>,
     max_depth: Option<u32>,
     max_iters: Option<u32>,
     infinite: bool,
@@ -22,11 +24,11 @@ impl SearchLimits {
         }
     }
 
-    pub fn add_time_remaining(&mut self, time_remaining: u128) {
+    pub fn add_time_remaining(&mut self, time_remaining: u64) {
         self.time_remaining = Some(time_remaining);
     }
 
-    pub fn add_increment(&mut self, increment: u128) {
+    pub fn add_increment(&mut self, increment: u64) {
         self.increment = Some(increment);
     }
 
@@ -34,7 +36,7 @@ impl SearchLimits {
         self.moves_to_go = Some(moves_to_go);
     }
 
-    pub fn add_move_time(&mut self, move_time: u128) {
+    pub fn add_move_time(&mut self, move_time: u64) {
         self.move_time = Some(move_time);
     }
 
@@ -50,7 +52,7 @@ impl SearchLimits {
         self.infinite = true;
     }
 
-    pub fn is_limit_reached(&self, search_stats: &SearchStats) -> bool {
+    pub fn is_limit_reached(&self, search_stats: &SearchStats, options: &EngineOptions) -> bool {
         if self.infinite {
             return false;
         }
@@ -68,7 +70,7 @@ impl SearchLimits {
         }
 
         if let Some(time) = self.time_remaining {
-            if search_stats.time_elapsed_milis()
+            if search_stats.time_passed()
                 >= Self::search_time(time, self.increment, self.moves_to_go)
             {
                 return true;
@@ -76,7 +78,7 @@ impl SearchLimits {
         }
 
         if let Some(time) = self.move_time {
-            if search_stats.time_elapsed_milis() >= time {
+            if search_stats.time_passed() + options.move_overhead() as u64 >= time {
                 return true;
             }
         }
@@ -84,11 +86,11 @@ impl SearchLimits {
         return false;
     }
 
-    fn search_time(time: u128, increment: Option<u128>, moves_to_go: Option<u32>) -> u128 {
+    fn search_time(time: u64, increment: Option<u64>, moves_to_go: Option<u32>) -> u64 {
         let inc = if let Some(inc) = increment { inc } else { 0 };
 
         if let Some(mtg) = moves_to_go {
-            return (time + inc) / mtg as u128;
+            return (time + inc) / mtg as u64;
         }
 
         return time / 20 + inc / 2;

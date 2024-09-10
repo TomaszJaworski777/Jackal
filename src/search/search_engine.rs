@@ -1,10 +1,13 @@
-use std::{io::stdin, sync::atomic::{AtomicBool, Ordering}};
+use std::{
+    io::stdin,
+    sync::atomic::{AtomicBool, Ordering},
+};
 
 use spear::{ChessPosition, FEN};
 
 use crate::options::EngineOptions;
 
-use super::{print::NoPrint, search_limits::SearchLimits, tree::SearchTree, Mcts, SearchStats};
+use super::{print::{NoPrint, UciPrint}, search_limits::SearchLimits, tree::SearchTree, Mcts, SearchStats};
 
 pub struct SearchEngine<'a> {
     position: ChessPosition,
@@ -67,10 +70,10 @@ impl<'a> SearchEngine<'a> {
     }
 
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
-
         //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
         let search_stats = SearchStats::new();
+        self.tree.clear();
 
         //Start the search thread
         std::thread::scope(|s| {
@@ -85,9 +88,9 @@ impl<'a> SearchEngine<'a> {
                 );
                 let (best_move, best_score) = if print_reports {
                     if self.uci_initialized {
-                        mcts.search::<NoPrint>()
+                        mcts.search::<UciPrint>()
                     } else {
-                        mcts.search::<NoPrint>()
+                        mcts.search::<UciPrint>()
                     }
                 } else {
                     mcts.search::<NoPrint>()
@@ -113,7 +116,7 @@ impl<'a> SearchEngine<'a> {
                 "isready" => println!("readyok"),
                 "quit" | "q" | "exit" => std::process::exit(0),
                 "stop" => interruption_token.store(true, Ordering::Relaxed),
-                _ => command_queue.push(input_command.to_string())
+                _ => command_queue.push(input_command.to_string()),
             }
 
             if interruption_token.load(Ordering::Relaxed) {

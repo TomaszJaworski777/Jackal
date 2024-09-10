@@ -1,6 +1,9 @@
-use std::sync::{
-    atomic::{AtomicI32, AtomicU16, AtomicU8, Ordering},
-    RwLock, RwLockReadGuard, RwLockWriteGuard,
+use std::{
+    sync::{
+        atomic::{AtomicU16, Ordering},
+        RwLock, RwLockReadGuard, RwLockWriteGuard,
+    },
+    usize,
 };
 
 use super::Edge;
@@ -80,8 +83,10 @@ impl Node {
     }
 
     pub fn is_expanded(&self) -> bool {
-        self.state() != GameState::Unresolved || self.actions().len() > 0
+        self.is_termial() || self.actions().len() > 0
     }
 
-    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {}
+    pub fn is_termial(&self) -> bool {
+        self.state() != GameState::Unresolved
+    }
 }

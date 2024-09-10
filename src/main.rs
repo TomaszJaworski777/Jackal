@@ -16,8 +16,13 @@ fn main() {
     let mut tree = SearchTree::new();
     let mut options = EngineOptions::new();
     let mut command_queue: Vec<String> = Vec::new();
-    let mut search_engine =
-        SearchEngine::new(start_position, &interruption_token, &mut tree, &mut options, &mut command_queue);
+    let mut search_engine = SearchEngine::new(
+        start_position,
+        &interruption_token,
+        &mut tree,
+        &mut options,
+        &mut command_queue,
+    );
 
     //Process arguments passed when starting the engine
     if ParamsProcessor::execute(env::args().collect()) {
