@@ -138,6 +138,31 @@ impl SearchTree {
 
         best_action_index
     }
+
+    pub fn get_pv(&self) -> Vec<Move> {
+        let mut result = Vec::new();
+        self.get_pv_internal(self.root_index(), &mut result);
+        result
+    }
+
+    fn get_pv_internal(&self, node_index: i32, result: &mut Vec<Move>) {
+
+        if !self[node_index].is_expanded() || self[node_index].is_termial() {
+            return;
+        }
+
+        //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
+        let best_action = self.get_best_action(node_index, | x | {
+            x.score() as f32
+        });
+        result.push(self[node_index].actions()[best_action].mv());
+        let new_node_index = self[node_index].actions()[best_action].index();
+        if new_node_index == -1 {
+            return;
+        } else {
+            self.get_pv_internal(new_node_index, result)
+        }
+    }
 }
 
 impl Index<i32> for SearchTree {

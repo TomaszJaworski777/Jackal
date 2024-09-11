@@ -15,15 +15,22 @@ impl SearchPrinter for UciPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         score: f64,
+        pv: &Vec<Move>
     ) {
+        let mut pv_string = String::new();
+        for mv in pv {
+            pv_string.push_str(format!("{} ", mv).as_str())
+        }
+
         println!(
-            "info depth {} seldepth {} score {} time {} nodes {} nps {}",
+            "info depth {} seldepth {} score {} time {} nodes {} nps {} pv {}",
             search_stats.avg_depth(),
             search_stats.max_depth(),
             SearchHelpers::score_into_cp(score as f32),
             search_stats.time_passed() as u128,
             search_stats.iters() as u128,
-            search_stats.iters() as u128 * 1000 / search_stats.time_passed().max(1) as u128
+            search_stats.iters() as u128 * 1000 / search_stats.time_passed().max(1) as u128,
+            pv_string
         )
     }
     fn print_search_result(mv: Move, score: f64) {

@@ -18,6 +18,7 @@ pub trait SearchPrinter {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         score: f64,
+        pv: &Vec<Move>
     ) {
     }
     fn print_search_result(mv: Move, score: f64) {}
