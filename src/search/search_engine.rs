@@ -65,10 +65,6 @@ impl<'a> SearchEngine<'a> {
         self.tree.clear();
     }
 
-    pub fn stop(&self) {
-        self.interruption_token.store(true, Ordering::Relaxed)
-    }
-
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
         //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
@@ -78,7 +74,7 @@ impl<'a> SearchEngine<'a> {
         //Start the search thread
         std::thread::scope(|s| {
             s.spawn(|| {
-                let mut mcts = Mcts::new(
+                let mcts = Mcts::new(
                     self.position.clone(),
                     self.tree,
                     self.interruption_token,
