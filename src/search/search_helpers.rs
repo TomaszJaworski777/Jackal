@@ -1,4 +1,3 @@
-use rand::Rng;
 use spear::ChessPosition;
 
 use super::tree::GameState;
@@ -13,7 +12,7 @@ impl SearchHelpers {
             GameState::Drew => 0.5,
             GameState::Lost(_) => 0.0,
             GameState::Won(_) => 1.0,
-            GameState::Unresolved => rand::thread_rng().gen(),
+            GameState::Unresolved => 0.5,
         }
     }
 

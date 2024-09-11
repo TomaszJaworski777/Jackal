@@ -12,4 +12,3 @@ codegen-units = 1
 [dependencies]
 spear = { git = 'https://github.com/TomaszJaworski777/Spear.git' }
 colored = "*"
-rand = "0.8.5"

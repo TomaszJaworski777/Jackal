@@ -44,7 +44,7 @@ impl<'a> Mcts<'a> {
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
-        if !self.tree[root_index].is_expanded() {
+        if !self.tree[root_index].has_children() {
             let side_to_move = self.root_position.board().side_to_move();
             if side_to_move == Side::WHITE {
                 self.expand::<true, false, true>(root_index, &self.root_position)
@@ -143,12 +143,15 @@ impl<'a> Mcts<'a> {
 
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
-            if !self.tree[current_node_index].is_expanded() {
+            if !self.tree[current_node_index].has_children() {
                 assert_eq!(ROOT, false);
                 self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, &current_position)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
+            if !self.tree[current_node_index].has_children() {
+                current_position.board().draw_board()
+            }
             let best_action_index = self.select_action::<ROOT>(current_node_index);
             let new_edge_cpy = self.tree.get_edge_clone(current_node_index, best_action_index);
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
@@ -159,7 +162,7 @@ impl<'a> Mcts<'a> {
                 new_edge_cpy.index()
             } else {
                 self.tree
-                    .spawn_node(SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(
+                    .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
                         &current_position,
                     ))
             };

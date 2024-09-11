@@ -82,8 +82,8 @@ impl Node {
         self.actions.write().unwrap()
     }
 
-    pub fn is_expanded(&self) -> bool {
-        self.is_termial() || self.actions().len() > 0
+    pub fn has_children(&self) -> bool {
+        self.actions().len() > 0
     }
 
     pub fn is_termial(&self) -> bool {
