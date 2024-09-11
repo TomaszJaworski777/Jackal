@@ -70,7 +70,7 @@ impl SearchLimits {
         }
 
         if let Some(time) = self.time_remaining {
-            if search_stats.time_passed()
+            if search_stats.time_passed() + options.move_overhead() as u64
                 >= Self::search_time(time, self.increment, self.moves_to_go)
             {
                 return true;
@@ -78,7 +78,7 @@ impl SearchLimits {
         }
 
         if let Some(time) = self.move_time {
-            if search_stats.time_passed() + options.move_overhead() as u64 >= time {
+            if search_stats.time_passed() >= time {
                 return true;
             }
         }

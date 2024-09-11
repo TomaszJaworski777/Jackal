@@ -116,6 +116,8 @@ impl<'a> Mcts<'a> {
                 let (_, best_score) = self.tree.get_best_move(root_index);
                 PRINTER::print_search_raport(&self.stats, &self.options, &self.limits, best_score)
             }
+
+            println!("==========================================")
         }
     }
 
@@ -128,7 +130,9 @@ impl<'a> Mcts<'a> {
         current_position: &mut ChessPosition,
         depth: &mut u32,
     ) -> f32 {
-        *depth += 1;
+
+        println!("starting new desent");
+        current_position.board().draw_board();
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
@@ -136,34 +140,44 @@ impl<'a> Mcts<'a> {
         let score = if !ROOT
             && (self.tree[current_node_index].is_termial() || action_cpy.visits() == 0)
         {
+            println!("get value of node {}", current_node_index);
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
                 self.tree[current_node_index].state(),
             )
         } else {
+
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].is_expanded() {
+                println!("expanding node {}", current_node_index);
                 assert_eq!(ROOT, false);
                 self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, &current_position)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index = self.select_action::<ROOT>(current_node_index);
-            let new_edge_cpy = self.tree.get_action_clone(current_node_index, best_action_index);
+            let new_edge_cpy = self.tree.get_edge_clone(current_node_index, best_action_index);
+            println!("selecting best action {}, {} mv {}. Current score: {}", current_node_index, best_action_index, new_edge_cpy.mv(), new_edge_cpy.score());
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
+            
 
             //Update the node on the tree
             let new_node_index = if new_edge_cpy.index() != -1 {
+                println!("exsisting node");
                 new_edge_cpy.index()
             } else {
+                println!("new node");
                 self.tree
                     .spawn_node(SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(
                         &current_position,
                     ))
             };
+            self.tree.change_edge_node_index(current_node_index, best_action_index, new_node_index);
+            println!("new node index {}", new_node_index);
 
             //Desent deeper into the tree
+            *depth += 1;
             let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                 new_node_index,
                 current_node_index,
@@ -186,7 +200,7 @@ impl<'a> Mcts<'a> {
         //backpropagate it up the tree
         let score = 1.0 - score;
         self.tree
-            .add_action_score::<ROOT>(edge_node_index, action_index, score);
+            .add_edge_score::<ROOT>(edge_node_index, action_index, score);
 
         //Backpropagate the terminal score up the tree
         self.tree
@@ -219,9 +233,14 @@ impl<'a> Mcts<'a> {
 
     pub fn select_action<const ROOT: bool>(&self, node_index: i32) -> usize {
         assert_ne!(self.tree[node_index].actions().len(), 0);
-
         self.tree.get_best_action(node_index, |action| {
-            action.score() as f32 + (action.policy() / (action.visits() as f32 + 1.0))
+            let score = if action.visits() == 0 {
+                0.5
+            } else {
+                action.score()
+            };
+
+            score as f32 + (action.policy() / (action.visits() as f32 + 1.0))
         })
     }
 }

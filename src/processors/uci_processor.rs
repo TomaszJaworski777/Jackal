@@ -104,7 +104,6 @@ impl UciProcessor {
         let mut search_limits = SearchLimits::new();
 
         let parse_u64 = |str: &str| -> u64 { str.parse::<u64>().unwrap_or(0).max(0) };
-
         let parse_u32 = |str: &str| -> u32 { str.parse::<u32>().unwrap_or(0).max(0) };
 
         //Convert args into search parameters
@@ -136,28 +135,28 @@ impl UciProcessor {
                 match search_param {
                     "wtime" => {
                         if side_to_move == Side::WHITE {
-                            search_limits.add_time_remaining(parse_u64(search_param))
+                            search_limits.add_time_remaining(parse_u64(arg))
                         }
                     }
                     "btime" => {
                         if side_to_move == Side::BLACK {
-                            search_limits.add_time_remaining(parse_u64(search_param))
+                            search_limits.add_time_remaining(parse_u64(arg))
                         }
                     }
                     "winc" => {
                         if side_to_move == Side::WHITE {
-                            search_limits.add_increment(parse_u64(search_param))
+                            search_limits.add_increment(parse_u64(arg))
                         }
                     }
                     "binc" => {
                         if side_to_move == Side::BLACK {
-                            search_limits.add_increment(parse_u64(search_param))
+                            search_limits.add_increment(parse_u64(arg))
                         }
                     }
-                    "movestogo" => search_limits.add_moves_to_go(parse_u32(search_param)),
-                    "movetime" => search_limits.add_move_time(parse_u64(search_param)),
-                    "depth" => search_limits.add_depth(parse_u32(search_param)),
-                    "nodes" => search_limits.add_iters(parse_u32(search_param)),
+                    "movestogo" => search_limits.add_moves_to_go(parse_u32(arg)),
+                    "movetime" => search_limits.add_move_time(parse_u64(arg)),
+                    "depth" => search_limits.add_depth(parse_u32(arg)),
+                    "nodes" => search_limits.add_iters(parse_u32(arg)),
                     _ => continue,
                 }
             }

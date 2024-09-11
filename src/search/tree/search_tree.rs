@@ -49,11 +49,15 @@ impl SearchTree {
         self.root_edge.clone()
     }
 
-    pub fn get_action_clone(&self, node_index: i32, action_index: usize) -> Edge {
+    pub fn get_edge_clone(&self, node_index: i32, action_index: usize) -> Edge {
         self[node_index].actions()[action_index].clone()
     }
 
-    pub fn add_action_score<const ROOT: bool>(
+    pub fn change_edge_node_index(&self, edge_node_index: i32, action_index: usize, new_node_index: i32) {
+        self[edge_node_index].actions()[action_index].set_index(new_node_index)
+    }
+
+    pub fn add_edge_score<const ROOT: bool>(
         &self,
         node_index: i32,
         action_index: usize,
@@ -116,7 +120,7 @@ impl SearchTree {
             return (Move::NULL, self.root_edge.score());
         }
 
-        let edge_clone = self.get_action_clone(node_index, action_index);
+        let edge_clone = self.get_edge_clone(node_index, action_index);
         (edge_clone.mv(), edge_clone.score())
     }
 
