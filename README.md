@@ -43,5 +43,6 @@ Jackal supports all necessary commands to initialize UCI protocol, full descript
 * `perft <depth>` - Runs perft test on current position.
 * `bulk <depth>` - Runs perft test on current position in bulk mode.
 * `bench <depth>` - Runs benchmark to test engine speed.
+* `moves` - Prints all legal moves together with thier policy.
 
 ## Feature List

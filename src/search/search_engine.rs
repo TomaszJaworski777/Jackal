@@ -82,7 +82,7 @@ impl<'a> SearchEngine<'a> {
                     &search_stats,
                     search_limits,
                 );
-                let (best_move, best_score) = if print_reports {
+                let (_, _) = if print_reports {
                     if self.uci_initialized {
                         mcts.search::<UciPrint>()
                     } else {

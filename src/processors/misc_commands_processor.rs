@@ -1,6 +1,6 @@
-use spear::{Perft, FEN};
+use spear::{Move, Perft, Side, FEN};
 
-use crate::{search::SearchEngine, utils::clear_terminal_screen};
+use crate::{search::SearchEngine, utils::{clear_terminal_screen, heat_color}};
 
 pub struct MiscCommandsProcessor;
 impl MiscCommandsProcessor {
@@ -16,6 +16,7 @@ impl MiscCommandsProcessor {
                 Self::perft::<true>(args, &search_engine.current_position().board().get_fen())
             }
             "draw" | "d" => search_engine.current_position().board().draw_board(),
+            "moves" => Self::moves(search_engine),
             _ => return false,
         }
 
@@ -36,5 +37,29 @@ impl MiscCommandsProcessor {
         };
 
         Perft::perft::<BULK, true, true>(current_fen, depth);
+    }
+
+    //Prints all legal moves together with thier policy
+    fn moves(search_engine: &SearchEngine) {
+        println!("All legal moves:");
+        let mut moves: Vec<(Move, f32)> = Vec::new();
+        if search_engine.current_position().board().side_to_move() == Side::WHITE {
+            search_engine.current_position().board().map_moves::<_, true, false>(|mv| {
+                moves.push((mv, 1.0))
+            })
+        } else {
+            search_engine.current_position().board().map_moves::<_, false, true>(|mv| {
+                moves.push((mv, 1.0))
+            })
+        }
+
+        let moves_length = moves.len() as f32;
+        for (_, policy) in &mut moves {
+            *policy /= moves_length
+        }
+
+        for (index, &(mv, policy)) in moves.iter().enumerate() {
+            println!("  {:<4} {} - {}", format!("{}.", index + 1), mv, heat_color(format!("{:.2}%", policy * 100.0).as_str(), policy, 0.0, 1.0))
+        }
     }
 }

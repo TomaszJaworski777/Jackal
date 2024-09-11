@@ -1,10 +1,7 @@
-use std::{
-    sync::{
+use std::sync::{
         atomic::{AtomicU16, Ordering},
         RwLock, RwLockReadGuard, RwLockWriteGuard,
-    },
-    usize,
-};
+    };
 
 use super::Edge;
 
@@ -58,12 +55,6 @@ impl Node {
     pub fn replace(&self, state: GameState) {
         *self.actions_mut() = Vec::new();
         self.state.store(u16::from(state), Ordering::Relaxed)
-    }
-
-    pub fn clear(&self) {
-        *self.actions_mut() = Vec::new();
-        self.state
-            .store(u16::from(GameState::Unresolved), Ordering::Relaxed)
     }
 
     pub fn state(&self) -> GameState {

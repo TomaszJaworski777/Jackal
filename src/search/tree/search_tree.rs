@@ -72,7 +72,6 @@ impl SearchTree {
 
     pub fn spawn_node(&self, state: GameState) -> i32 {
         let new_node_index = self.last_index.load(Ordering::Relaxed);
-        self[new_node_index].actions_mut().clear();
         self[new_node_index].replace(state);
         self.last_index.fetch_add(1, Ordering::Relaxed);
         new_node_index as i32
