@@ -3,7 +3,7 @@
 <img
   width="200"
   alt="Jackal Logo"
-  src=".readme/logos/logo.png">
+  src=".readme/logos/logo_rounded_corners.png">
  
 <h3>Jackal</h3>
 <b>Most aggressive MCTS chess engine.</b>
