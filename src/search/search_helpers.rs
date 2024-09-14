@@ -4,6 +4,7 @@ use super::tree::GameState;
 
 pub struct SearchHelpers;
 impl SearchHelpers {
+    #[inline]
     pub fn get_node_score<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         current_position: &mut ChessPosition,
         state: GameState,
@@ -42,6 +43,7 @@ impl SearchHelpers {
         GameState::Unresolved
     }
 
+    #[inline]
     pub fn score_into_cp(score: f32) -> i32 {
         (-400.0 * (1.0 / score.clamp(0.0, 1.0) - 1.0).ln()) as i32
     }

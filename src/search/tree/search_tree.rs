@@ -30,33 +30,40 @@ impl SearchTree {
         tree
     }
 
+    #[inline]
     pub fn clear(&mut self) {
         self.last_index.store(0, Ordering::Relaxed);
         self.root_edge = Edge::new(0, Move::NULL, 0.0);
         self.init_root();
     }
 
+    #[inline]
     fn init_root(&self) {
         let root_index = self.spawn_node(GameState::Unresolved);
         self.root_edge.set_index(root_index);
     }
 
+    #[inline]
     pub fn root_index(&self) -> i32 {
         self.root_edge.index()
     }
 
+    #[inline]
     pub fn root_edge(&self) -> Edge {
         self.root_edge.clone()
     }
 
+    #[inline]
     pub fn get_edge_clone(&self, node_index: i32, action_index: usize) -> Edge {
         self[node_index].actions()[action_index].clone()
     }
 
+    #[inline]
     pub fn change_edge_node_index(&self, edge_node_index: i32, action_index: usize, new_node_index: i32) {
         self[edge_node_index].actions()[action_index].set_index(new_node_index)
     }
 
+    #[inline]
     pub fn add_edge_score<const ROOT: bool>(
         &self,
         node_index: i32,
@@ -70,6 +77,7 @@ impl SearchTree {
         }
     }
 
+    #[inline]
     pub fn spawn_node(&self, state: GameState) -> i32 {
         let new_node_index = self.last_index.load(Ordering::Relaxed);
         self[new_node_index].replace(state);
@@ -130,7 +138,7 @@ impl SearchTree {
 
         for (index, action) in self[node_index].actions().iter().enumerate() {
             let score = method(action);
-            if score > best_score {
+            if score >= best_score {
                 best_action_index = index;
                 best_score = score;
             }
@@ -139,6 +147,7 @@ impl SearchTree {
         best_action_index
     }
 
+    #[inline]
     pub fn get_pv(&self) -> Vec<Move> {
         let mut result = Vec::new();
         self.get_pv_internal(self.root_index(), &mut result);
@@ -168,12 +177,14 @@ impl SearchTree {
 impl Index<i32> for SearchTree {
     type Output = Node;
 
+    #[inline]
     fn index(&self, index: i32) -> &Self::Output {
         &self.values[index as usize]
     }
 }
 
 impl IndexMut<i32> for SearchTree {
+    #[inline]
     fn index_mut(&mut self, index: i32) -> &mut Self::Output {
         &mut self.values[index as usize]
     }

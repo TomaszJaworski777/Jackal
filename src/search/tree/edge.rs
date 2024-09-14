@@ -33,30 +33,37 @@ impl Edge {
         }
     }
 
+    #[inline]
     pub fn index(&self) -> i32 {
         self.node_index.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn set_index(&self, index: i32) {
         self.node_index.store(index, Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn mv(&self) -> Move {
         self.mv
     }
 
+    #[inline]
     pub fn policy(&self) -> f32 {
         f32::from(self.policy.load(Ordering::Relaxed)) / f32::from(i16::MAX)
     }
 
+    #[inline]
     pub fn visits(&self) -> u32 {
         self.visits.load(Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn score(&self) -> f64 {
         f64::from(self.score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
     }
 
+    #[inline]
     pub fn add_score(&self, score: f32) {
         let score = f64::from(score);
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
@@ -65,6 +72,7 @@ impl Edge {
             .store((new_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed)
     }
 
+    #[inline]
     pub fn update_policy(&self, new_policy: f32) {
         self.policy
             .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)

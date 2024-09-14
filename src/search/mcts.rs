@@ -207,7 +207,6 @@ impl<'a> Mcts<'a> {
         position: &ChessPosition,
     ) {
         let mut actions = self.tree[node_index].actions_mut();
-        assert_eq!(actions.len(), 0);
 
         //Map moves into actions and set initial policy to 1
         position
@@ -223,16 +222,17 @@ impl<'a> Mcts<'a> {
         }
     }
 
+    #[inline]
     pub fn select_action<const ROOT: bool>(&self, node_index: i32) -> usize {
-        assert_ne!(self.tree[node_index].actions().len(), 0);
         self.tree.get_best_action(node_index, |action| {
-            let score = if action.visits() == 0 {
+            let visits = action.visits();
+            let score = if visits == 0 {
                 0.5
             } else {
-                action.score()
+                action.score() as f32
             };
 
-            score as f32 + (action.policy() / (action.visits() as f32 + 1.0))
+            score + (action.policy() / (visits as f32 + 1.0))
         })
     }
 }

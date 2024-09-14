@@ -6,8 +6,9 @@ edition = "2021"
 [profile.release]
 panic = 'abort'
 strip = true
-lto = true
+lto = 'fat'
 codegen-units = 1
+opt-level = 3
 
 [dependencies]
 spear = { git = 'https://github.com/TomaszJaworski777/Spear.git' }

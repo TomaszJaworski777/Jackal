@@ -41,7 +41,7 @@ impl MiscCommandsProcessor {
 
     //Prints all legal moves together with thier policy
     fn moves(search_engine: &SearchEngine) {
-        println!("All legal moves:");
+        println!("All legal moves");
         let mut moves: Vec<(Move, f32)> = Vec::new();
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             search_engine.current_position().board().map_moves::<_, true, false>(|mv| {
@@ -59,7 +59,12 @@ impl MiscCommandsProcessor {
         }
 
         for (index, &(mv, policy)) in moves.iter().enumerate() {
-            println!("  {:<4} {} - {}", format!("{}.", index + 1), mv, heat_color(format!("{:.2}%", policy * 100.0).as_str(), policy, 0.0, 1.0))
+            let arrow = if index == moves.len() - 1 {
+                "└─>"
+            } else {
+                "├─>"
+            };
+            println!("{} {:<4} {} - {}", arrow, format!("{}.", index + 1), mv, heat_color(format!("{:.2}%", policy * 100.0).as_str(), policy, 0.0, 1.0))
         }
     }
 }
