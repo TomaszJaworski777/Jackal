@@ -1,3 +1,4 @@
+use crate::search::tree::GameState;
 use crate::spear::Move;
 
 use crate::{
@@ -15,7 +16,8 @@ impl SearchPrinter for UciPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         score: f64,
-        pv: &Vec<Move>
+        state: GameState,
+        pv: &Vec<Move>,
     ) {
         let mut pv_string = String::new();
         for mv in pv {

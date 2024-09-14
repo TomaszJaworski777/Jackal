@@ -13,7 +13,9 @@ impl SearchHelpers {
             GameState::Drawn => 0.5,
             GameState::Lost(_) => 0.0,
             GameState::Won(_) => 1.0,
-            GameState::Unresolved => 0.5//(current_position.board().get_key().get_raw() % 256) as f32 / 255.0,
+            GameState::Unresolved => {
+                (current_position.board().get_key().get_raw() % 256) as f32 / 255.0
+            }
         }
     }
 

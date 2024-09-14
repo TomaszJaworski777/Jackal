@@ -1,7 +1,7 @@
 use std::sync::{
-        atomic::{AtomicU16, Ordering},
-        RwLock, RwLockReadGuard, RwLockWriteGuard,
-    };
+    atomic::{AtomicU16, Ordering},
+    RwLock, RwLockReadGuard, RwLockWriteGuard,
+};
 
 use super::Edge;
 

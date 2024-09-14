@@ -39,7 +39,6 @@ Jackal is developed by Tomasz Jaworski. Special thanks to:
 Jackal supports all necessary commands to initialize UCI protocol, full description of the protocol can be found [here](https://gist.github.com/DOBRO/2592c6dad754ba67e6dcaec8c90165bf). Here are additional commands:
 * `draw` - Draws the board in the terminal.
 * `tree <depth>` - Draws tree of most recent search.
-* `tree <depth> <node>` - Draws tree of most recent search from provided node index.
 * `perft <depth>` - Runs perft test on current position.
 * `bulk <depth>` - Runs perft test on current position in bulk mode.
 * `bench <depth>` - Runs benchmark to test engine speed.

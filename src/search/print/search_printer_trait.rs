@@ -1,3 +1,4 @@
+use crate::search::tree::GameState;
 use crate::spear::Move;
 
 use crate::{
@@ -18,7 +19,8 @@ pub trait SearchPrinter {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         score: f64,
-        pv: &Vec<Move>
+        state: GameState,
+        pv: &Vec<Move>,
     ) {
     }
     fn print_search_result(mv: Move, score: f64) {}

@@ -6,7 +6,10 @@ use std::{
 
 use crate::spear::Move;
 
-use super::{node::GameState, Edge, Node};
+use super::{
+    node::GameState,
+    Edge, Node,
+};
 
 pub struct SearchTree {
     values: Vec<Node>,
@@ -59,7 +62,12 @@ impl SearchTree {
     }
 
     #[inline]
-    pub fn change_edge_node_index(&self, edge_node_index: i32, action_index: usize, new_node_index: i32) {
+    pub fn change_edge_node_index(
+        &self,
+        edge_node_index: i32,
+        action_index: usize,
+        new_node_index: i32,
+    ) {
         self[edge_node_index].actions()[action_index].set_index(new_node_index)
     }
 
@@ -113,7 +121,7 @@ impl SearchTree {
         }
     }
 
-    pub fn get_best_move(&self, node_index: i32) -> (Move, f64) {
+    pub fn get_best_move(&self, node_index: i32) -> (Move, f64, GameState) {
         //Extracts the best move from all possible root moves
         let action_index = self.get_best_action(node_index, |action| {
             if action.visits() == 0 {
@@ -125,11 +133,17 @@ impl SearchTree {
 
         //If no action was selected then return null move
         if action_index == usize::MAX {
-            return (Move::NULL, self.root_edge.score());
+            return (Move::NULL, self.root_edge.score(), GameState::Unresolved);
         }
 
         let edge_clone = self.get_edge_clone(node_index, action_index);
-        (edge_clone.mv(), edge_clone.score())
+        let node_index = edge_clone.index();
+        let state = if node_index == -1 {
+            GameState::Unresolved
+        } else {
+            self[node_index].state()
+        };
+        (edge_clone.mv(), edge_clone.score(), state)
     }
 
     pub fn get_best_action<F: FnMut(&Edge) -> f32>(&self, node_index: i32, mut method: F) -> usize {
@@ -155,21 +169,65 @@ impl SearchTree {
     }
 
     fn get_pv_internal(&self, node_index: i32, result: &mut Vec<Move>) {
-
         if !self[node_index].has_children() || self[node_index].is_termial() {
             return;
         }
 
         //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self.get_best_action(node_index, | x | {
-            x.score() as f32
-        });
+        let best_action = self.get_best_action(node_index, |x| x.score() as f32);
         result.push(self[node_index].actions()[best_action].mv());
         let new_node_index = self[node_index].actions()[best_action].index();
         if new_node_index == -1 {
             return;
         } else {
             self.get_pv_internal(new_node_index, result)
+        }
+    }
+
+    pub fn draw_tree_from_root(&self, depth: u32) {
+        self.root_edge()
+            .print::<true>(0.5, 0.5, self[self.root_index()].is_termial());
+        self.draw_tree(self.root_index(), depth)
+    }
+
+    pub fn draw_tree(&self, node_index: i32, depth: u32) {
+        self.draw_tree_internal(node_index, depth - 1, &String::new())
+    }
+
+    fn draw_tree_internal(&self, node_index: i32, depth: u32, prefix: &String) {
+        let max_policy = self[node_index]
+            .actions()
+            .iter()
+            .max_by(|&a, &b| {
+                a.policy()
+                    .partial_cmp(&b.policy())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .unwrap()
+            .policy();
+        let min_policy = self[node_index]
+            .actions()
+            .iter()
+            .min_by(|&a, &b| {
+                a.policy()
+                    .partial_cmp(&b.policy())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .unwrap()
+            .policy();
+        let actions_len = self[node_index].actions().len();
+        for (index, action) in self[node_index].actions().iter().enumerate() {
+            let is_last = index == actions_len - 1;
+            print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
+            action.print::<false>(
+                min_policy,
+                max_policy,
+                action.index() != -1 && self[action.index()].is_termial(),
+            );
+            if action.index() != -1 && self[action.index()].has_children() && depth > 0 {
+                let prefix_add = if is_last { "    " } else { "│   " };
+                self.draw_tree_internal(action.index(), depth - 1, &format!("{}{}", prefix, prefix_add))
+            }
         }
     }
 }

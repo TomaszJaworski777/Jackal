@@ -7,8 +7,8 @@ use std::{env, io::stdin, sync::atomic::AtomicBool};
 mod options;
 mod processors;
 mod search;
-mod utils;
 mod spear;
+mod utils;
 
 fn main() {
     //Process arguments passed when starting the engine

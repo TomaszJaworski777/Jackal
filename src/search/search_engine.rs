@@ -7,7 +7,12 @@ use crate::spear::{ChessPosition, FEN};
 
 use crate::options::EngineOptions;
 
-use super::{print::{NoPrint, UciPrint}, search_limits::SearchLimits, tree::SearchTree, Mcts, SearchStats};
+use super::{
+    print::{NoPrint, UciPrint},
+    search_limits::SearchLimits,
+    tree::SearchTree,
+    Mcts, SearchStats,
+};
 
 pub struct SearchEngine<'a> {
     position: ChessPosition,
@@ -58,6 +63,10 @@ impl<'a> SearchEngine<'a> {
 
     pub fn current_position(&self) -> ChessPosition {
         self.position
+    }
+
+    pub fn tree(&self) -> &SearchTree {
+        &self.tree
     }
 
     pub fn reset(&mut self) {

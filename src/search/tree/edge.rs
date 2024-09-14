@@ -1,6 +1,9 @@
 use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
 
-use crate::spear::Move;
+use colored::Colorize;
+use console::pad_str;
+
+use crate::{spear::Move, utils::heat_color};
 
 pub struct Edge {
     node_index: AtomicI32,
@@ -76,5 +79,83 @@ impl Edge {
     pub fn update_policy(&self, new_policy: f32) {
         self.policy
             .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
+    }
+
+    pub fn print<const ROOT: bool>(
+        &self,
+        lowest_policy: f32,
+        highest_policy: f32,
+        is_terminal: bool,
+    ) {
+        let terminal_string = if is_terminal {
+            "   terminal".white().bold().to_string()
+        } else {
+            "".to_string()
+        };
+
+        let index_text = if ROOT {
+            "root".bright_cyan().to_string()
+        } else {
+            format!(
+                "{}. {}",
+                pad_str(
+                    self.index().to_string().bright_cyan().to_string().as_str(),
+                    6,
+                    console::Alignment::Right,
+                    None
+                ),
+                pad_str(
+                    self.mv().to_string().bright_cyan().to_string().as_str(),
+                    5,
+                    console::Alignment::Right,
+                    None
+                )
+            )
+        };
+
+        println!(
+            "{}",
+            format!(
+                "{}   {} score   {} visits   {} policy{}",
+                index_text,
+                pad_str(
+                    heat_color(
+                        format!("{:.2}", self.score()).as_str(),
+                        self.score() as f32,
+                        0.0,
+                        1.0
+                    )
+                    .as_str(),
+                    4,
+                    console::Alignment::Right,
+                    None
+                ),
+                pad_str(
+                    self.visits()
+                        .to_string()
+                        .bold()
+                        .white()
+                        .to_string()
+                        .as_str(),
+                    7,
+                    console::Alignment::Right,
+                    None
+                ),
+                pad_str(
+                    heat_color(
+                        format!("{:.2}%", self.policy() * 100.0).as_str(),
+                        self.policy(),
+                        lowest_policy,
+                        highest_policy
+                    )
+                    .as_str(),
+                    4,
+                    console::Alignment::Right,
+                    None
+                ),
+                terminal_string
+            )
+            .bright_black()
+        )
     }
 }

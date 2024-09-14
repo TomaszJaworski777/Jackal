@@ -13,3 +13,4 @@ opt-level = 3
 [dependencies]
 colored = "*"
 once_cell = "1.10.0"
+console = "0.15"

@@ -1,6 +1,9 @@
 use crate::spear::{Move, Perft, Side, FEN};
 
-use crate::{search::SearchEngine, utils::{clear_terminal_screen, heat_color}};
+use crate::{
+    search::SearchEngine,
+    utils::{clear_terminal_screen, heat_color},
+};
 
 pub struct MiscCommandsProcessor;
 impl MiscCommandsProcessor {
@@ -17,6 +20,7 @@ impl MiscCommandsProcessor {
             }
             "draw" | "d" => search_engine.current_position().board().draw_board(),
             "moves" => Self::moves(search_engine),
+            "tree" => Self::draw_tree(args, search_engine),
             _ => return false,
         }
 
@@ -44,13 +48,15 @@ impl MiscCommandsProcessor {
         println!("All legal moves");
         let mut moves: Vec<(Move, f32)> = Vec::new();
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
-            search_engine.current_position().board().map_moves::<_, true, false>(|mv| {
-                moves.push((mv, 1.0))
-            })
+            search_engine
+                .current_position()
+                .board()
+                .map_moves::<_, true, false>(|mv| moves.push((mv, 1.0)))
         } else {
-            search_engine.current_position().board().map_moves::<_, false, true>(|mv| {
-                moves.push((mv, 1.0))
-            })
+            search_engine
+                .current_position()
+                .board()
+                .map_moves::<_, false, true>(|mv| moves.push((mv, 1.0)))
         }
 
         let moves_length = moves.len() as f32;
@@ -58,13 +64,48 @@ impl MiscCommandsProcessor {
             *policy /= moves_length
         }
 
+        let max_policy = moves
+            .iter()
+            .max_by(|&a, &b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap()
+            .1;
+        let min_policy = moves
+            .iter()
+            .min_by(|&a, &b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
+            .unwrap()
+            .1;
         for (index, &(mv, policy)) in moves.iter().enumerate() {
             let arrow = if index == moves.len() - 1 {
                 "└─>"
             } else {
                 "├─>"
             };
-            println!("{} {:<4} {} - {}", arrow, format!("{}.", index + 1), mv, heat_color(format!("{:.2}%", policy * 100.0).as_str(), policy, 0.0, 1.0))
+            println!(
+                "{} {:<4} {} - {}",
+                arrow,
+                format!("{}.", index + 1),
+                mv,
+                heat_color(
+                    format!("{:.2}%", policy * 100.0).as_str(),
+                    policy,
+                    min_policy,
+                    max_policy
+                )
+            )
         }
+    }
+
+    fn draw_tree(args: &[String], search_engine: &SearchEngine) {
+        if args.len() > 1 {
+            return;
+        }
+
+        let depth = if args.len() == 1 {
+            args[0].parse::<u32>().unwrap_or(1).max(1)
+        } else {
+            1
+        };
+        
+        search_engine.tree().draw_tree_from_root(depth)
     }
 }

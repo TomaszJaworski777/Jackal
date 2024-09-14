@@ -1,7 +1,5 @@
 use crate::spear::Bitboard;
 
-
-
 pub struct KingAttacks;
 impl KingAttacks {
     pub const ATTACK_TABLE: [Bitboard; 64] = {
