@@ -8,6 +8,7 @@ mod options;
 mod processors;
 mod search;
 mod utils;
+mod spear;
 
 fn main() {
     //Process arguments passed when starting the engine

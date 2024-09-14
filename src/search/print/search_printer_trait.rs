@@ -1,4 +1,4 @@
-use spear::Move;
+use crate::spear::Move;
 
 use crate::{
     options::EngineOptions,

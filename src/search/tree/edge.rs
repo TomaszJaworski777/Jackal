@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
 
-use spear::Move;
+use crate::spear::Move;
 
 pub struct Edge {
     node_index: AtomicI32,

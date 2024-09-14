@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicI32, Ordering},
 };
 
-use spear::Move;
+use crate::spear::Move;
 
 use super::{node::GameState, Edge, Node};
 
@@ -22,7 +22,7 @@ impl SearchTree {
             last_index: AtomicI32::new(0),
         };
 
-        for _ in 0..100_000_000 {
+        for _ in 0..20_000_000 {
             tree.values.push(Node::new(GameState::Unresolved))
         }
 
