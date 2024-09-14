@@ -105,7 +105,7 @@ impl MiscCommandsProcessor {
         } else {
             1
         };
-        
+
         search_engine.tree().draw_tree_from_root(depth)
     }
 }

@@ -6,10 +6,7 @@ use std::{
 
 use crate::spear::Move;
 
-use super::{
-    node::GameState,
-    Edge, Node,
-};
+use super::{node::GameState, Edge, Node};
 
 pub struct SearchTree {
     values: Vec<Node>,
@@ -186,7 +183,7 @@ impl SearchTree {
 
     pub fn draw_tree_from_root(&self, depth: u32) {
         self.root_edge()
-            .print::<true>(0.5, 0.5, self[self.root_index()].is_termial());
+            .print::<true>(0.5, 0.5, self[self.root_index()].state());
         self.draw_tree(self.root_index(), depth)
     }
 
@@ -218,15 +215,20 @@ impl SearchTree {
         let actions_len = self[node_index].actions().len();
         for (index, action) in self[node_index].actions().iter().enumerate() {
             let is_last = index == actions_len - 1;
+            let state = if action.index() == -1 {
+                GameState::Unresolved
+            } else {
+                self[action.index()].state()
+            };
             print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
-            action.print::<false>(
-                min_policy,
-                max_policy,
-                action.index() != -1 && self[action.index()].is_termial(),
-            );
+            action.print::<false>(min_policy, max_policy, state);
             if action.index() != -1 && self[action.index()].has_children() && depth > 0 {
                 let prefix_add = if is_last { "    " } else { "│   " };
-                self.draw_tree_internal(action.index(), depth - 1, &format!("{}{}", prefix, prefix_add))
+                self.draw_tree_internal(
+                    action.index(),
+                    depth - 1,
+                    &format!("{}{}", prefix, prefix_add),
+                )
             }
         }
     }

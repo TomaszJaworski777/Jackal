@@ -5,6 +5,8 @@ use console::pad_str;
 
 use crate::{spear::Move, utils::heat_color};
 
+use super::GameState;
+
 pub struct Edge {
     node_index: AtomicI32,
     mv: Move,
@@ -85,12 +87,19 @@ impl Edge {
         &self,
         lowest_policy: f32,
         highest_policy: f32,
-        is_terminal: bool,
+        state: GameState,
     ) {
-        let terminal_string = if is_terminal {
-            "   terminal".white().bold().to_string()
-        } else {
-            "".to_string()
+        let terminal_string = match state {
+            GameState::Drawn => "   terminal draw".white().bold().to_string(),
+            GameState::Lost(x) => format!("   terminal lose in {}", x)
+                .white()
+                .bold()
+                .to_string(),
+            GameState::Won(x) => format!("   terminal win in {}", x)
+                .white()
+                .bold()
+                .to_string(),
+            _ => "".to_string(),
         };
 
         let index_text = if ROOT {
@@ -137,7 +146,7 @@ impl Edge {
                         .white()
                         .to_string()
                         .as_str(),
-                    7,
+                    8,
                     console::Alignment::Right,
                     None
                 ),
