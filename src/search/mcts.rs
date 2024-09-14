@@ -164,7 +164,7 @@ impl<'a> Mcts<'a> {
             if !self.tree[current_node_index].has_children() {
                 current_position.board().draw_board()
             }
-            let best_action_index = self.select_action::<ROOT>(current_node_index);
+            let best_action_index = self.select_action::<ROOT>(current_node_index, action_cpy.visits(), self.options.cpuct_value());
             let new_edge_cpy = self
                 .tree
                 .get_edge_clone(current_node_index, best_action_index);
@@ -234,8 +234,10 @@ impl<'a> Mcts<'a> {
         }
     }
 
+    //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    pub fn select_action<const ROOT: bool>(&self, node_index: i32) -> usize {
+    pub fn select_action<const ROOT: bool>(&self, node_index: i32, visits_to_parent: u32, cpuct: f32) -> usize {
+        let explore_value = cpuct * (visits_to_parent.max(1) as f32).sqrt();
         self.tree.get_best_action(node_index, |action| {
             let visits = action.visits();
             let score = if visits == 0 {
@@ -244,7 +246,7 @@ impl<'a> Mcts<'a> {
                 action.score() as f32
             };
 
-            score + (action.policy() / (visits as f32 + 1.0))
+            score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }
 }
