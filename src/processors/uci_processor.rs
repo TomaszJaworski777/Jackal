@@ -90,7 +90,7 @@ impl UciProcessor {
             return;
         }
 
-                //Prepare chess position based on parsed fen and map the moves into it
+        //Prepare chess position based on parsed fen and map the moves into it
         let mut chess_position = ChessPosition::from_fen(&FEN::from_string(fen));
         for mv in moves {
             if chess_position.board().side_to_move() == Side::WHITE {

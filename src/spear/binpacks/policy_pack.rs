@@ -1,5 +1,8 @@
+use bytemuck::{Pod, Zeroable};
+
 use crate::spear::{Bitboard, ChessBoard, Move, Side};
 
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PolicyPacked {
     board: [Bitboard; 4],
@@ -9,7 +12,8 @@ pub struct PolicyPacked {
 }
 
 #[allow(unused)]
-#[derive(Clone, Copy, Default)]
+#[repr(C)]
+#[derive(Clone, Copy, PartialEq, Default)]
 pub struct PolicyMoveData {
     pub mv: Move,
     pub visits: u16,
@@ -88,3 +92,9 @@ fn board_to_compressed(board: &ChessBoard) -> [Bitboard; 4] {
 
     result
 }
+
+unsafe impl Zeroable for PolicyPacked {}
+unsafe impl Pod for PolicyPacked {}
+
+unsafe impl Zeroable for PolicyMoveData {}
+unsafe impl Pod for PolicyMoveData {}

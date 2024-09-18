@@ -4,6 +4,7 @@ use search::{SearchEngine, SearchTree};
 use spear::{ChessPosition, FEN};
 use std::{env, io::stdin, sync::atomic::AtomicBool};
 
+mod datagen;
 mod options;
 mod processors;
 mod search;
@@ -12,9 +13,7 @@ mod utils;
 
 fn main() {
     //Process arguments passed when starting the engine
-    if ParamsProcessor::execute(env::args().collect()) {
-        return;
-    }
+    ParamsProcessor::execute(env::args().collect());
 
     //Init search engine
     let start_position = ChessPosition::from_fen(&FEN::start_position());

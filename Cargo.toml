@@ -14,3 +14,6 @@ opt-level = 3
 colored = "*"
 once_cell = "1.10.0"
 console = "0.15"
+bytemuck = "1.18.0"
+rand = "0.8.5"
+crossbeam-queue = "0.3.11"
