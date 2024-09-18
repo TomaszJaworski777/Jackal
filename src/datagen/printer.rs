@@ -41,11 +41,11 @@ impl Printer {
         let time = self.full_timer.elapsed().as_secs();
         let hours = time / 3600;
         let mins = (time - (hours * 3600)) / 60;
-        let secs = time - (hours * 3600) - (mins & 60);
+        let secs = time - (hours * 3600) - (mins * 60);
 
         let positions_per_second = positions_since_last_raport as f32 * 1000.0 / time_since_last_raport_in_ms as f32;
 
-        let e_time = ((self.target - positions) as f32 / positions_per_second) as u64;
+        let e_time = ((self.target - positions.max(self.target)) as f32 / positions_per_second) as u64;
         let e_hours = e_time / 3600;
         let e_mins = (e_time - (e_hours * 3600)) / 60;
         let e_secs = e_time - (e_hours * 3600) - (e_mins * 60);
