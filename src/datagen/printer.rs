@@ -17,7 +17,7 @@ impl Printer {
     pub fn new(position_count: u64, target: u64, threads: u8) -> Self {
         Self {
             positions: AtomicU64::new(position_count),
-            positions_since_last_raport: AtomicU64::new(position_count),
+            positions_since_last_raport: AtomicU64::new(0),
             full_timer: Instant::now(),
             target,
             threads
@@ -45,7 +45,7 @@ impl Printer {
 
         let positions_per_second = positions_since_last_raport as f32 * 1000.0 / time_since_last_raport_in_ms as f32;
 
-        let e_time = ((self.target - positions.max(self.target)) as f32 / positions_per_second) as u64;
+        let e_time = ((self.target - positions.min(self.target)) as f32 / positions_per_second.max(1.0)) as u64;
         let e_hours = e_time / 3600;
         let e_mins = (e_time - (e_hours * 3600)) / 60;
         let e_secs = e_time - (e_hours * 3600) - (e_mins * 60);

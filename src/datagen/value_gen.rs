@@ -12,14 +12,13 @@ use super::{printer::Printer, utils::DataGenUtils};
 
 pub struct ValueGen;
 impl ValueGen {
-    pub fn start_game_loop(save_queue: &SegQueue<Vec<u8>>, iter_count: u32, printer: &Printer) {
+    pub fn start_game_loop(save_queue: &SegQueue<Vec<u8>>, iter_count: u32, printer: &Printer, interruption_token: &AtomicBool) {
         let mut tree = SearchTree::new();
         let options = EngineOptions::new();
-        let interruption_token = AtomicBool::new(false);
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);
 
-        loop {
+        while !interruption_token.load(std::sync::atomic::Ordering::Relaxed) {
             let mut position = DataGenUtils::get_random_position();
             tree.clear();
 
@@ -30,11 +29,12 @@ impl ValueGen {
                 tree.clear();
 
                 let search_stats = SearchStats::new();
+                let search_interruption_token = AtomicBool::new(false);
 
                 let mcts = Mcts::new(
                     position,
                     &tree,
-                    &interruption_token,
+                    &search_interruption_token,
                     &options,
                     &search_stats,
                     &limits,

@@ -93,7 +93,7 @@ fn handle_pawn_pushes<F: FnMut(Move), const STM_WHITE: bool>(
         }
     });
 
-    (pushable_pawns & promotion_rank).map(|pawn_square| {
+    (not_pinned_pawns & promotion_rank).map(|pawn_square| {
         let to_square = if STM_WHITE {
             pawn_square.shift_left(8)
         } else {

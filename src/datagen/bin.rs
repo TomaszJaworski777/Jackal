@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions}, io::Write, time::Instant
+    fs::{File, OpenOptions}, io::Write, sync::atomic::AtomicBool, time::Instant
 };
 
 use crossbeam_queue::SegQueue;
@@ -34,23 +34,24 @@ impl DataGen {
         let printer = Printer::new(saved_positions, target, threads);
 
         let save_queue: SegQueue<Vec<u8>> = SegQueue::new();
+        let interruption_token = AtomicBool::new(false);
 
         std::thread::scope(|s| {
             for _ in 0..threads {
                 s.spawn(|| {
                     if mode == DataGenMode::Value {
-                        ValueGen::start_game_loop(&save_queue, iter_count, &printer)
+                        ValueGen::start_game_loop(&save_queue, iter_count, &printer, &interruption_token)
                     } else {
                         //policy data gen loop
                     }
                 });
             }
 
-            Self::update_loop(&mut file, &save_queue, &printer, target)
+            Self::update_loop(&mut file, &save_queue, &printer, target, &interruption_token)
         });
     }
 
-    fn update_loop(file: &mut File, save_queue: &SegQueue<Vec<u8>>, printer: &Printer, target: u64) {
+    fn update_loop(file: &mut File, save_queue: &SegQueue<Vec<u8>>, printer: &Printer, target: u64, interruption_token: &AtomicBool) {
         let mut timer = Instant::now();
         loop {
             let time = timer.elapsed().as_millis();
@@ -63,11 +64,13 @@ impl DataGen {
                 let buffer = save_queue.pop().expect("Cannot obtain save buffer");
                 file.write_all(&buffer)
                     .expect("Error while writing to file")
+            } else if interruption_token.load(std::sync::atomic::Ordering::Relaxed) {
+                std::process::exit(0)
             }
 
             if printer.positions() >= target {
                 printer.print_report(time);
-                std::process::exit(0)
+                interruption_token.store(true, std::sync::atomic::Ordering::Relaxed);
             }
         }
     }
