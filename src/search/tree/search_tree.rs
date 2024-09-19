@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicI32, Ordering},
 };
 
-use crate::spear::Move;
+use spear::Move;
 
 use super::{node::GameState, Edge, Node};
 

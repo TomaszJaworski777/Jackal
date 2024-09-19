@@ -5,7 +5,7 @@ use super::{
     SearchHelpers, SearchStats, SearchTree,
 };
 use crate::options::EngineOptions;
-use crate::spear::{ChessPosition, Move, Side};
+use spear::{ChessPosition, Move, Side};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
     time::Instant,

@@ -1,0 +1,12 @@
+[package]
+name = "datagen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+console = "0.15"
+bytemuck = "1.18.0"
+rand = "0.8.5"
+crossbeam-queue = "0.3.11"
+jackal = { path = "../" }
+spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }

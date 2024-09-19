@@ -1,4 +1,4 @@
-use crate::spear::{ChessPosition, Move, Side, FEN};
+use spear::{ChessPosition, Move, Side, FEN};
 
 use crate::{
     options::EngineOptions,

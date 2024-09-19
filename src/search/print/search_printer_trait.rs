@@ -1,5 +1,5 @@
 use crate::search::tree::GameState;
-use crate::spear::Move;
+use spear::Move;
 
 use crate::{
     options::EngineOptions,

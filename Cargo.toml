@@ -15,5 +15,8 @@ colored = "*"
 once_cell = "1.10.0"
 console = "0.15"
 bytemuck = "1.18.0"
-rand = "0.8.5"
-crossbeam-queue = "0.3.11"
+spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
+
+[workspace]
+members = ["datagen"]
+resolver = "2"

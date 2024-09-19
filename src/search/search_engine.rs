@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use crate::spear::{ChessPosition, FEN};
+use spear::{ChessPosition, FEN};
 
 use crate::options::EngineOptions;
 

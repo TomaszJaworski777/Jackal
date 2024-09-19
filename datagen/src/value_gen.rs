@@ -1,13 +1,7 @@
 use std::sync::atomic::AtomicBool;
-
 use crossbeam_queue::SegQueue;
-
-use crate::{
-    options::EngineOptions,
-    search::{GameState, Mcts, NoPrint, SearchLimits, SearchStats, SearchTree},
-    spear::{ChessBoardPacked, ChessPosition, Move, Side},
-};
-
+use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, SearchTree};
+use spear::{ChessBoardPacked, ChessPosition, Move, Side};
 use super::{printer::Printer, utils::DataGenUtils};
 
 pub struct ValueGen;

@@ -3,7 +3,8 @@ use std::{
     time::Instant,
 };
 
-use crate::{spear::StringUtils, utils::clear_terminal_screen};
+use jackal::clear_terminal_screen;
+use spear::StringUtils;
 
 pub struct Printer {
     positions: AtomicU64,

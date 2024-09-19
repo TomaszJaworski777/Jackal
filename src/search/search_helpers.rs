@@ -1,4 +1,4 @@
-use crate::spear::ChessPosition;
+use spear::ChessPosition;
 
 use super::tree::GameState;
 

@@ -1,15 +1,7 @@
-use options::EngineOptions;
-use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};
-use search::{SearchEngine, SearchTree};
-use spear::{ChessPosition, FEN};
 use std::{env, io::stdin, sync::atomic::AtomicBool};
 
-mod datagen;
-mod options;
-mod processors;
-mod search;
-mod spear;
-mod utils;
+use jackal::{EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, SearchTree, UciProcessor};
+use spear::{ChessPosition, FEN};
 
 fn main() {
     //Process arguments passed when starting the engine

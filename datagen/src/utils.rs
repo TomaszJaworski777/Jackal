@@ -1,4 +1,4 @@
-use crate::spear::{ChessPosition, Move, FEN};
+use spear::{ChessPosition, Move, FEN};
 use rand::Rng;
 
 pub struct DataGenUtils;

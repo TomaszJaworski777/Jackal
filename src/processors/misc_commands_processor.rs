@@ -1,4 +1,4 @@
-use crate::spear::{Move, Perft, Side, FEN};
+use spear::{Move, Perft, Side, FEN};
 
 use crate::{
     search::SearchEngine,

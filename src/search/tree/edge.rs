@@ -3,7 +3,8 @@ use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
 use colored::Colorize;
 use console::pad_str;
 
-use crate::{spear::Move, utils::heat_color};
+use crate::utils::heat_color;
+use spear::Move;
 
 use super::GameState;
 
