@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[allow(unused)]
-pub trait SearchPrinter {
+pub trait SearchDisplay {
     fn print_search_start(
         search_stats: &SearchStats,
         engine_options: &EngineOptions,

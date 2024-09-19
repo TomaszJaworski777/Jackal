@@ -6,11 +6,11 @@ use crate::{
     search::{SearchHelpers, SearchLimits, SearchStats},
 };
 
-use super::SearchPrinter;
+use super::SearchDisplay;
 
 pub struct UciPrint;
 #[allow(unused)]
-impl SearchPrinter for UciPrint {
+impl SearchDisplay for UciPrint {
     fn print_search_raport(
         search_stats: &SearchStats,
         engine_options: &EngineOptions,

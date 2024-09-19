@@ -3,11 +3,11 @@ use std::{
 };
 
 use crossbeam_queue::SegQueue;
-use printer::Printer;
+use display::Printer;
 use spear::{ChessBoardPacked, PolicyPacked};
 use value_gen::ValueGen;
 
-mod printer;
+mod display;
 mod utils;
 mod value_gen;
 

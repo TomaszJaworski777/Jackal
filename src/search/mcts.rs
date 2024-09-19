@@ -1,5 +1,5 @@
 use super::{
-    print::SearchPrinter,
+    print::SearchDisplay,
     search_limits::SearchLimits,
     tree::{Edge, GameState},
     SearchHelpers, SearchStats, SearchTree,
@@ -39,7 +39,7 @@ impl<'a> Mcts<'a> {
         }
     }
 
-    pub fn search<PRINTER: SearchPrinter>(&self) -> (Move, f64) {
+    pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, f64) {
         PRINTER::print_search_start(&self.stats, &self.options, &self.limits);
 
         //Check if root node is expanded, and if not then expand it
@@ -74,7 +74,7 @@ impl<'a> Mcts<'a> {
         (best_move, best_score)
     }
 
-    fn main_loop<PRINTER: SearchPrinter, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
+    fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {

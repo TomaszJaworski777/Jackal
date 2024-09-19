@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicBool;
 use crossbeam_queue::SegQueue;
 use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, SearchTree};
 use spear::{ChessBoardPacked, ChessPosition, Move, Side};
-use super::{printer::Printer, utils::DataGenUtils};
+use super::{display::Printer, utils::DataGenUtils};
 
 pub struct ValueGen;
 impl ValueGen {

@@ -1,4 +1,4 @@
-use super::SearchPrinter;
+use super::SearchDisplay;
 
 pub struct NoPrint;
-impl SearchPrinter for NoPrint {}
+impl SearchDisplay for NoPrint {}
