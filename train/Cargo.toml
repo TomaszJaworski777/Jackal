@@ -8,3 +8,4 @@ bytemuck = "1.18.0"
 jackal = { path = "../" }
 spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
 bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features = ["hip"] }
+rand = "0.8.5"

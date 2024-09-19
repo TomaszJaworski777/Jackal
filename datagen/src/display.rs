@@ -64,9 +64,9 @@ impl Printer {
         self.positions_since_last_raport.store(0, Ordering::Relaxed);
     }
 
-    fn get_loading_bar(points: u64, total: u64, length: usize) -> String {
+    fn get_loading_bar(current: u64, total: u64, length: usize) -> String {
         let mut result = String::new();
-        let filled_spots = ((points as f64 / total as f64) * length as f64) as usize;
+        let filled_spots = ((current as f64 / total as f64) * length as f64) as usize;
         result.push_str("[");
 
         for i in 0..length {
@@ -80,7 +80,7 @@ impl Printer {
         }
 
         result.push_str("] ");
-        result.push_str(format!("{}%", ((points as f64 / total as f64) * 100.0) as usize).as_str());
+        result.push_str(format!("{}%", ((current as f64 / total as f64) * 100.0) as usize).as_str());
         result
     }
 }
