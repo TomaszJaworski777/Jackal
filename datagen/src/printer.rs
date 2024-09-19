@@ -11,17 +11,19 @@ pub struct Printer {
     positions_since_last_raport: AtomicU64,
     full_timer: Instant,
     target: u64,
-    threads: u8
+    threads: u8,
+    nodes: u32
 }
 
 impl Printer {
-    pub fn new(position_count: u64, target: u64, threads: u8) -> Self {
+    pub fn new(position_count: u64, target: u64, threads: u8, nodes: u32) -> Self {
         Self {
             positions: AtomicU64::new(position_count),
             positions_since_last_raport: AtomicU64::new(0),
             full_timer: Instant::now(),
             target,
-            threads
+            threads,
+            nodes
         }
     }
 
@@ -54,6 +56,7 @@ impl Printer {
         println!("Generating data in progress...");
         println!("{}", Self::get_loading_bar(positions, self.target, 50));
         println!("Positions:                {}/{} ({:.1} per second)", StringUtils::large_number_to_string(positions as u128), StringUtils::large_number_to_string(self.target as u128), positions_per_second);
+        println!("Nodes per move:           {}", self.nodes);
         println!("Threads:                  {} + 1", self.threads);
         println!("Time passed:              {}h{}m{}s", hours, mins, secs);
         println!("Estimated time remaining: {}h{}m{}s", e_hours, e_mins, e_secs);
