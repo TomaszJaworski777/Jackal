@@ -16,7 +16,7 @@ impl UciProcessor {
             "position" => Self::position(args, search_engine),
             "ucinewgame" => search_engine.reset(),
             "go" => Self::go(args, search_engine),
-            _ => return,
+            _ => (),
         }
     }
 
@@ -80,7 +80,6 @@ impl UciProcessor {
                 .map_moves::<_, STM_WHITE, NSTM_WHITE>(|legal_mv| {
                     if *mv == legal_mv.to_string() {
                         _mv = legal_mv;
-                        return;
                     }
                 });
             chess_position.make_move::<STM_WHITE, NSTM_WHITE>(_mv);
@@ -111,7 +110,7 @@ impl UciProcessor {
         let parse_u32 = |str: &str| -> u32 { str.parse::<u32>().unwrap_or(0).max(0) };
 
         //Convert args into search parameters
-        if args.len() == 0 {
+        if args.is_empty() {
             search_limits.go_infinite()
         } else {
             let mut search_param = "";

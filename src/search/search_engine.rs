@@ -46,15 +46,15 @@ impl<'a> SearchEngine<'a> {
     }
 
     pub fn command_queue(&mut self) -> &mut Vec<String> {
-        &mut self.command_queue
+        self.command_queue
     }
 
     pub fn engine_options(&self) -> &EngineOptions {
-        &self.options
+        self.options
     }
 
     pub fn engine_options_mut(&mut self) -> &mut EngineOptions {
-        &mut self.options
+        self.options
     }
 
     pub fn replace_position(&mut self, position: ChessPosition) {
@@ -66,7 +66,7 @@ impl<'a> SearchEngine<'a> {
     }
 
     pub fn tree(&self) -> &SearchTree {
-        &self.tree
+        self.tree
     }
 
     pub fn reset(&mut self) {
@@ -84,7 +84,7 @@ impl<'a> SearchEngine<'a> {
         std::thread::scope(|s| {
             s.spawn(|| {
                 let mcts = Mcts::new(
-                    self.position.clone(),
+                    self.position,
                     self.tree,
                     self.interruption_token,
                     self.options,
@@ -103,7 +103,7 @@ impl<'a> SearchEngine<'a> {
             });
 
             //Create portable loop to handle command queue during search
-            Self::portable_command_handler(&mut self.command_queue, &self.interruption_token)
+            Self::portable_command_handler(self.command_queue, self.interruption_token)
         });
     }
 

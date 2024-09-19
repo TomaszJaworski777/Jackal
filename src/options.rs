@@ -4,6 +4,12 @@ macro_rules! create_option_structs {
             $($name: $type,)*
         }
 
+        impl Default for EngineOptions {
+            fn default() -> Self {
+                Self::new()
+            }
+        } 
+
         #[allow(unused)]
         impl EngineOptions {
             pub fn new() -> Self {

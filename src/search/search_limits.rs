@@ -2,6 +2,7 @@ use crate::options::EngineOptions;
 
 use super::SearchStats;
 
+#[derive(Default)]
 pub struct SearchLimits {
     time_remaining: Option<u64>,
     increment: Option<u64>,
@@ -83,16 +84,16 @@ impl SearchLimits {
             }
         }
 
-        return false;
+        false
     }
 
     fn search_time(time: u64, increment: Option<u64>, moves_to_go: Option<u32>) -> u64 {
-        let inc = if let Some(inc) = increment { inc } else { 0 };
+        let inc = increment.unwrap_or_default();
 
         if let Some(mtg) = moves_to_go {
             return (time + inc) / mtg as u64;
         }
 
-        return time / 20 + inc / 2;
+        time / 20 + inc / 2
     }
 }

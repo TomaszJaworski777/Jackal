@@ -10,6 +10,13 @@ pub struct SearchStats {
     iters: AtomicU32,
     time_passed: AtomicU64,
 }
+
+impl Default for SearchStats {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SearchStats {
     pub fn new() -> Self {
         Self {

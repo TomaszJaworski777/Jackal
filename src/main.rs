@@ -26,7 +26,7 @@ fn main() {
     loop {
         //Reading the input to obtain command
         let queue = search_engine.command_queue();
-        let input_command = if queue.len() > 0 {
+        let input_command = if !queue.is_empty() {
             queue.remove(0)
         } else {
             let mut input_command = String::new();

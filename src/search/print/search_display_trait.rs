@@ -20,7 +20,7 @@ pub trait SearchDisplay {
         search_limits: &SearchLimits,
         score: f64,
         state: GameState,
-        pv: &Vec<Move>,
+        pv: &[Move],
     ) {
     }
     fn print_search_result(mv: Move, score: f64) {}

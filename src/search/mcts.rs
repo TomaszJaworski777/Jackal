@@ -40,7 +40,7 @@ impl<'a> Mcts<'a> {
     }
 
     pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, f64) {
-        PRINTER::print_search_start(&self.stats, &self.options, &self.limits);
+        PRINTER::print_search_start(self.stats, self.options, self.limits);
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
@@ -63,9 +63,9 @@ impl<'a> Mcts<'a> {
         let (best_move, best_score, state) = self.tree.get_best_move(root_index);
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
-            &self.stats,
-            &self.options,
-            &self.limits,
+            self.stats,
+            self.options,
+            self.limits,
             best_score,
             state,
             &self.tree.get_pv(),
@@ -105,7 +105,7 @@ impl<'a> Mcts<'a> {
             }
 
             //Check for end of the search
-            if self.limits.is_limit_reached(&self.stats, &self.options) {
+            if self.limits.is_limit_reached(self.stats, self.options) {
                 self.interruption_token.store(true, Ordering::Relaxed)
             }
 
@@ -122,9 +122,9 @@ impl<'a> Mcts<'a> {
                 last_raport_time = Instant::now();
                 let (_, best_score, state) = self.tree.get_best_move(root_index);
                 PRINTER::print_search_raport(
-                    &self.stats,
-                    &self.options,
-                    &self.limits,
+                    self.stats,
+                    self.options,
+                    self.limits,
                     best_score,
                     state,
                     &self.tree.get_pv(),
@@ -156,8 +156,7 @@ impl<'a> Mcts<'a> {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                assert_eq!(ROOT, false);
-                self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, &current_position)
+                self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, current_position)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
@@ -180,7 +179,7 @@ impl<'a> Mcts<'a> {
             } else {
                 self.tree
                     .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
-                        &current_position,
+                        current_position,
                     ))
             };
             self.tree

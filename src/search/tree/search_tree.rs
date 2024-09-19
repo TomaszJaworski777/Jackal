@@ -14,6 +14,12 @@ pub struct SearchTree {
     last_index: AtomicI32,
 }
 
+impl Default for SearchTree {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SearchTree {
     pub fn new() -> Self {
         let mut tree = Self {
@@ -87,7 +93,7 @@ impl SearchTree {
         let new_node_index = self.last_index.load(Ordering::Relaxed);
         self[new_node_index].replace(state);
         self.last_index.fetch_add(1, Ordering::Relaxed);
-        new_node_index as i32
+        new_node_index
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: i32, child_state: GameState) {
@@ -114,7 +120,7 @@ impl SearchTree {
                     self[parent_node_index].set_state(GameState::Lost(longest_win_length + 1));
                 }
             }
-            _ => return,
+            _ => (),
         }
     }
 

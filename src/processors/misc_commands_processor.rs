@@ -30,7 +30,7 @@ impl MiscCommandsProcessor {
     //Performs move generator performance test
     fn perft<const BULK: bool>(args: &[String], current_fen: &FEN) {
         //Obtain test depth from command arguments
-        let depth = if args.len() == 0 {
+        let depth = if args.is_empty() {
             5
         } else {
             let parse = args[0].parse::<u8>();

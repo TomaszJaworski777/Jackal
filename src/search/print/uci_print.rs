@@ -17,7 +17,7 @@ impl SearchDisplay for UciPrint {
         search_limits: &SearchLimits,
         score: f64,
         state: GameState,
-        pv: &Vec<Move>,
+        pv: &[Move],
     ) {
         let mut pv_string = String::new();
         for mv in pv {
