@@ -117,8 +117,4 @@ impl BulletConverter {
             unfiltered += 1;
         }
     }
-
-    pub fn shuffle(path: &str, max_memory_usage: u64) {
-        let bytes = max_memory_usage * 1024 * 1024;
-    }
 }
