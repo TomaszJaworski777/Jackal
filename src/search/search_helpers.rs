@@ -1,6 +1,10 @@
 use spear::ChessPosition;
 
-use super::tree::GameState;
+use super::{networks::ValueNetwork, tree::GameState};
+
+#[allow(non_upper_case_globals)]
+pub const ValueNetwork: ValueNetwork =
+    unsafe { std::mem::transmute(*include_bytes!("../../value_001.network")) };
 
 pub struct SearchHelpers;
 impl SearchHelpers {
@@ -13,9 +17,7 @@ impl SearchHelpers {
             GameState::Drawn => 0.5,
             GameState::Lost(_) => 0.0,
             GameState::Won(_) => 1.0,
-            GameState::Unresolved => {
-                (current_position.board().get_key().get_raw() % 256) as f32 / 255.0
-            }
+            GameState::Unresolved => ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board())
         }
     }
 

@@ -12,3 +12,4 @@ Cargo.lock
 cutechess_commands.txt
 output.txt
 error.txt
+/resources
