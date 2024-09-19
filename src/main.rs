@@ -1,6 +1,8 @@
 use std::{env, io::stdin, sync::atomic::AtomicBool};
 
-use jackal::{EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, SearchTree, UciProcessor};
+use jackal::{
+    EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, SearchTree, UciProcessor,
+};
 use spear::{ChessPosition, FEN};
 
 fn main() {

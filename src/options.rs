@@ -8,7 +8,7 @@ macro_rules! create_option_structs {
             fn default() -> Self {
                 Self::new()
             }
-        } 
+        }
 
         #[allow(unused)]
         impl EngineOptions {

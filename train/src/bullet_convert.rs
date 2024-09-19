@@ -1,4 +1,8 @@
-use std::{fs::{File, OpenOptions}, io::{BufReader, Read, Write}, time::Instant};
+use std::{
+    fs::{File, OpenOptions},
+    io::{BufReader, Read, Write},
+    time::Instant,
+};
 
 use bullet::format::ChessBoard;
 use spear::{ChessBoardPacked, Piece};
@@ -8,7 +12,7 @@ use crate::bullet_convert_display::BulletConvertDisplay;
 #[derive(PartialEq)]
 pub enum DataConvertionMode {
     Full,
-    NoDraws
+    NoDraws,
 }
 
 pub struct BulletConverter;
@@ -40,9 +44,17 @@ impl BulletConverter {
         let mut white_loses = 0;
 
         while reader.read_exact(&mut buffer).is_ok() {
-
             if timer.elapsed().as_secs_f32() > 1.0 {
-                BulletConvertDisplay::print_report(entries_processed, entry_count, white_wins, white_draws, white_loses, unfiltered, mode_filter, mate_scores);
+                BulletConvertDisplay::print_report(
+                    entries_processed,
+                    entry_count,
+                    white_wins,
+                    white_draws,
+                    white_loses,
+                    unfiltered,
+                    mode_filter,
+                    mate_scores,
+                );
                 timer = Instant::now();
             }
 
@@ -77,7 +89,13 @@ impl BulletConverter {
                 board.get_piece_mask(Piece::KING).get_raw(),
             ];
 
-            let bullet_board = ChessBoard::from_raw(bbs, position.get_side_to_move().get_raw() as usize, score, result).expect("Couldnt create a bullet board");
+            let bullet_board = ChessBoard::from_raw(
+                bbs,
+                position.get_side_to_move().get_raw() as usize,
+                score,
+                result,
+            )
+            .expect("Couldnt create a bullet board");
 
             let chess_board_bytes = unsafe {
                 std::slice::from_raw_parts(
@@ -90,12 +108,14 @@ impl BulletConverter {
                 -1 => white_loses += 1,
                 0 => white_draws += 1,
                 1 => white_wins += 1,
-                _ => unreachable!()
+                _ => unreachable!(),
             }
 
-            output_file.write_all(&chess_board_bytes).expect("Couldnt write to output file");
+            output_file
+                .write_all(&chess_board_bytes)
+                .expect("Couldnt write to output file");
             unfiltered += 1;
-        }   
+        }
     }
 
     pub fn shuffle(path: &str, max_memory_usage: u64) {

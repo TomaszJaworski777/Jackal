@@ -10,7 +10,7 @@ fn main() {
     for arg in &args {
         match arg.as_str() {
             "convert" => convert(&args),
-            _ => continue
+            _ => continue,
         }
     }
 }
@@ -30,7 +30,7 @@ fn convert(args: &Vec<String>) {
                 match cmd.as_str() {
                     "input" => input_path = arg.as_str(),
                     "output" => output_path = arg.as_str(),
-                    _ => continue
+                    _ => continue,
                 };
             }
         }

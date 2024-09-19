@@ -1,12 +1,17 @@
-use std::sync::atomic::AtomicBool;
+use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
 use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, SearchTree};
 use spear::{ChessBoardPacked, ChessPosition, Move, Side};
-use super::{display::Printer, utils::DataGenUtils};
+use std::sync::atomic::AtomicBool;
 
 pub struct ValueGen;
 impl ValueGen {
-    pub fn start_game_loop(save_queue: &SegQueue<Vec<u8>>, iter_count: u32, printer: &Printer, interruption_token: &AtomicBool) {
+    pub fn start_game_loop(
+        save_queue: &SegQueue<Vec<u8>>,
+        iter_count: u32,
+        printer: &Printer,
+        interruption_token: &AtomicBool,
+    ) {
         let mut tree = SearchTree::new();
         let options = EngineOptions::new();
         let mut limits = SearchLimits::new();
@@ -53,7 +58,7 @@ impl ValueGen {
 
             if state != GameState::Drawn {
                 for pos in &mut packed_positions {
-                    pos.apply_result( position.board().side_to_move().flipped() )
+                    pos.apply_result(position.board().side_to_move().flipped())
                 }
             }
 

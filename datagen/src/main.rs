@@ -1,5 +1,9 @@
 use std::{
-    env, fs::{File, OpenOptions}, io::Write, sync::atomic::AtomicBool, time::Instant
+    env,
+    fs::{File, OpenOptions},
+    io::Write,
+    sync::atomic::AtomicBool,
+    time::Instant,
 };
 
 use crossbeam_queue::SegQueue;
@@ -17,7 +21,7 @@ pub enum DataGenMode {
     Value,
 }
 
-fn main() { 
+fn main() {
     let args: Vec<String> = env::args().collect();
 
     let mut mode = DataGenMode::Value;
@@ -38,47 +42,67 @@ fn main() {
                     "nodes" => iter_count = arg.parse::<u32>().unwrap_or(1000),
                     "path" => path = arg.as_str(),
                     "target" => target = arg.parse::<u64>().unwrap_or(1000),
-                    _ => continue
+                    _ => continue,
                 };
             }
         }
     }
 
     let mut file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(path)
-            .expect("Cannot open file");
+        .append(true)
+        .create(true)
+        .open(path)
+        .expect("Cannot open file");
 
-        let position_size = if mode == DataGenMode::Value {
-            std::mem::size_of::<ChessBoardPacked>() as u64
-        } else {
-            std::mem::size_of::<PolicyPacked>() as u64
-        };
+    let position_size = if mode == DataGenMode::Value {
+        std::mem::size_of::<ChessBoardPacked>() as u64
+    } else {
+        std::mem::size_of::<PolicyPacked>() as u64
+    };
 
-        let saved_positions = std::fs::metadata(&path).expect("Cannot get file metadata").len() / position_size;
-        let target = target * 1_000_000;
-        let printer = Printer::new(saved_positions, target, threads, iter_count);
+    let saved_positions = std::fs::metadata(&path)
+        .expect("Cannot get file metadata")
+        .len()
+        / position_size;
+    let target = target * 1_000_000;
+    let printer = Printer::new(saved_positions, target, threads, iter_count);
 
-        let save_queue: SegQueue<Vec<u8>> = SegQueue::new();
-        let interruption_token = AtomicBool::new(false);
+    let save_queue: SegQueue<Vec<u8>> = SegQueue::new();
+    let interruption_token = AtomicBool::new(false);
 
-        std::thread::scope(|s| {
-            for _ in 0..threads {
-                s.spawn(|| {
-                    if mode == DataGenMode::Value {
-                        ValueGen::start_game_loop(&save_queue, iter_count, &printer, &interruption_token)
-                    } else {
-                        //policy data gen loop
-                    }
-                });
-            }
+    std::thread::scope(|s| {
+        for _ in 0..threads {
+            s.spawn(|| {
+                if mode == DataGenMode::Value {
+                    ValueGen::start_game_loop(
+                        &save_queue,
+                        iter_count,
+                        &printer,
+                        &interruption_token,
+                    )
+                } else {
+                    //policy data gen loop
+                }
+            });
+        }
 
-            update_loop(&mut file, &save_queue, &printer, target, &interruption_token)
-        });
+        update_loop(
+            &mut file,
+            &save_queue,
+            &printer,
+            target,
+            &interruption_token,
+        )
+    });
 }
 
-fn update_loop(file: &mut File, save_queue: &SegQueue<Vec<u8>>, printer: &Printer, target: u64, interruption_token: &AtomicBool) {
+fn update_loop(
+    file: &mut File,
+    save_queue: &SegQueue<Vec<u8>>,
+    printer: &Printer,
+    target: u64,
+    interruption_token: &AtomicBool,
+) {
     let mut timer = Instant::now();
     loop {
         let time = timer.elapsed().as_millis();

@@ -5,5 +5,5 @@ mod utils;
 
 pub use options::EngineOptions;
 pub use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};
-pub use search::{SearchEngine, SearchTree, SearchLimits, GameState, SearchStats, Mcts, NoPrint};
+pub use search::{GameState, Mcts, NoPrint, SearchEngine, SearchLimits, SearchStats, SearchTree};
 pub use utils::clear_terminal_screen;

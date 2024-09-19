@@ -180,9 +180,7 @@ impl SearchTree {
         let best_action = self.get_best_action(node_index, |x| x.score() as f32);
         result.push(self[node_index].actions()[best_action].mv());
         let new_node_index = self[node_index].actions()[best_action].index();
-        if new_node_index == -1 {
-            return;
-        } else {
+        if new_node_index != -1 {
             self.get_pv_internal(new_node_index, result)
         }
     }
