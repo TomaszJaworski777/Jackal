@@ -1,15 +1,18 @@
 use std::env;
 
 use bullet_convert::{BulletConverter, DataConvertionMode};
+use value::ValueTrainer;
 
 mod bullet_convert;
 mod bullet_convert_display;
+mod value;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     for arg in &args {
         match arg.as_str() {
             "convert" => convert(&args),
+            "value" => ValueTrainer::execute(),
             _ => continue,
         }
     }
