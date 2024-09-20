@@ -89,6 +89,7 @@ impl Edge {
         lowest_policy: f32,
         highest_policy: f32,
         state: GameState,
+        flip_score: bool
     ) {
         let terminal_string = match state {
             GameState::Drawn => "   terminal draw".white().bold().to_string(),
@@ -123,6 +124,12 @@ impl Edge {
             )
         };
 
+        let score = if flip_score {
+            1.0 - self.score() as f32
+        } else {
+            self.score() as f32
+        };
+
         println!(
             "{}",
             format!(
@@ -130,10 +137,10 @@ impl Edge {
                 index_text,
                 pad_str(
                     heat_color(
-                        format!("{:.2}", self.score()).as_str(),
-                        self.score() as f32,
-                        0.25,
-                        0.75
+                        format!("{:.2}", score).as_str(),
+                        score,
+                        0.2,
+                        0.8
                     )
                     .as_str(),
                     4,

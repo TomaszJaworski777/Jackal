@@ -124,32 +124,37 @@ impl SearchTree {
         }
     }
 
-    pub fn get_best_move(&self, node_index: i32) -> (Move, f64, GameState) {
+    pub fn get_best_move(&self, node_index: i32) -> (Move, f64) {
         //Extracts the best move from all possible root moves
-        let action_index = self.get_best_action(node_index, |action| {
-            if action.visits() == 0 {
-                return f32::MIN;
-            }
-
-            action.score() as f32
-        });
+        let action_index = self.get_best_action(node_index);
 
         //If no action was selected then return null move
         if action_index == usize::MAX {
-            return (Move::NULL, self.root_edge.score(), GameState::Unresolved);
+            return (Move::NULL, self.root_edge.score());
         }
 
         let edge_clone = self.get_edge_clone(node_index, action_index);
-        let node_index = edge_clone.index();
-        let state = if node_index == -1 {
-            GameState::Unresolved
-        } else {
-            self[node_index].state()
-        };
-        (edge_clone.mv(), edge_clone.score(), state)
+        (edge_clone.mv(), edge_clone.score())
     }
 
-    pub fn get_best_action<F: FnMut(&Edge) -> f32>(&self, node_index: i32, mut method: F) -> usize {
+    pub fn get_best_action(&self, node_index: i32) -> usize {
+        self.get_best_action_by_key(node_index, |action| {
+            if action.visits() == 0 {
+                f32::NEG_INFINITY
+            } else if action.index() != -1 {
+                match self[action.index()].state() {
+                    GameState::Lost(n) => 1.0 + f32::from(n),
+                    GameState::Won(n) => f32::from(n) - 256.0,
+                    GameState::Drawn => 0.5,
+                    GameState::Unresolved => action.score() as f32,
+                }
+            } else {
+                action.score() as f32
+            }
+        })
+    }
+
+    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, node_index: i32, mut method: F) -> usize {
         let mut best_action_index = usize::MAX;
         let mut best_score = f32::MIN;
 
@@ -172,12 +177,12 @@ impl SearchTree {
     }
 
     fn get_pv_internal(&self, node_index: i32, result: &mut Vec<Move>) {
-        if !self[node_index].has_children() || self[node_index].is_termial() {
+        if !self[node_index].has_children() {
             return;
         }
 
         //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self.get_best_action(node_index, |x| x.score() as f32);
+        let best_action = self.get_best_action(node_index);
         result.push(self[node_index].actions()[best_action].mv());
         let new_node_index = self[node_index].actions()[best_action].index();
         if new_node_index != -1 {
@@ -187,15 +192,16 @@ impl SearchTree {
 
     pub fn draw_tree_from_root(&self, depth: u32) {
         self.root_edge()
-            .print::<true>(0.5, 0.5, self[self.root_index()].state());
+            .print::<true>(0.5, 0.5, self[self.root_index()].state(), true);
         self.draw_tree(self.root_index(), depth)
     }
 
     pub fn draw_tree(&self, node_index: i32, depth: u32) {
-        self.draw_tree_internal(node_index, depth - 1, &String::new())
+        self.draw_tree_internal(node_index, depth - 1, &String::new(), false)
     }
 
-    fn draw_tree_internal(&self, node_index: i32, depth: u32, prefix: &String) {
+    fn draw_tree_internal(&self, node_index: i32, depth: u32, prefix: &String, flip_score: bool) {
+
         let max_policy = self[node_index]
             .actions()
             .iter()
@@ -206,6 +212,7 @@ impl SearchTree {
             })
             .unwrap()
             .policy();
+
         let min_policy = self[node_index]
             .actions()
             .iter()
@@ -216,6 +223,7 @@ impl SearchTree {
             })
             .unwrap()
             .policy();
+
         let actions_len = self[node_index].actions().len();
         for (index, action) in self[node_index].actions().iter().enumerate() {
             let is_last = index == actions_len - 1;
@@ -225,13 +233,14 @@ impl SearchTree {
                 self[action.index()].state()
             };
             print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
-            action.print::<false>(min_policy, max_policy, state);
+            action.print::<false>(min_policy, max_policy, state, flip_score);
             if action.index() != -1 && self[action.index()].has_children() && depth > 0 {
                 let prefix_add = if is_last { "    " } else { "│   " };
                 self.draw_tree_internal(
                     action.index(),
                     depth - 1,
                     &format!("{}{}", prefix, prefix_add),
+                    !flip_score
                 )
             }
         }

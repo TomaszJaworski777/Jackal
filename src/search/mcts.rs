@@ -60,14 +60,14 @@ impl<'a> Mcts<'a> {
             self.main_loop::<PRINTER, false, true>()
         }
 
-        let (best_move, best_score, state) = self.tree.get_best_move(root_index);
+        let (best_move, best_score) = self.tree.get_best_move(root_index);
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
             self.stats,
             self.options,
             self.limits,
             best_score,
-            state,
+            self.tree[self.tree.root_index()].state(),
             &self.tree.get_pv(),
         );
         PRINTER::print_search_result(best_move, best_score);
@@ -120,13 +120,13 @@ impl<'a> Mcts<'a> {
             {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
-                let (_, best_score, state) = self.tree.get_best_move(root_index);
+                let (_, best_score) = self.tree.get_best_move(root_index);
                 PRINTER::print_search_raport(
                     self.stats,
                     self.options,
                     self.limits,
                     best_score,
-                    state,
+                    self.tree[self.tree.root_index()].state(),
                     &self.tree.get_pv(),
                 )
             }
@@ -246,7 +246,7 @@ impl<'a> Mcts<'a> {
         cpuct: f32,
     ) -> usize {
         let explore_value = cpuct * (visits_to_parent.max(1) as f32).sqrt();
-        self.tree.get_best_action(node_index, |action| {
+        self.tree.get_best_action_by_key(node_index, |action| {
             let visits = action.visits();
             let score = if visits == 0 {
                 0.5

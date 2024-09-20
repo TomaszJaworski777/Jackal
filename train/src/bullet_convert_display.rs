@@ -22,9 +22,9 @@ impl BulletConvertDisplay {
         );
         println!(
             "White WDL:       ({}%/{}%/{}%)",
-            (wins as f32 * 100.0 / current as f32) as u64,
-            (draws as f32 * 100.0 / current as f32) as u64,
-            (loses as f32 * 100.0 / current as f32) as u64
+            (wins as f32 * 100.0 / unfiltered.max(1) as f32) as u64,
+            (draws as f32 * 100.0 / unfiltered.max(1) as f32) as u64,
+            (loses as f32 * 100.0 / unfiltered.max(1) as f32) as u64
         );
         println!(
             "Unfiltered:      {}",
