@@ -7,3 +7,4 @@ Cargo.lock
 
 *.exe
 resources/sprt.txt
+*.bin
