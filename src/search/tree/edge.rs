@@ -6,7 +6,7 @@ use console::pad_str;
 use crate::utils::heat_color;
 use spear::Move;
 
-use super::GameState;
+use super::{node::NodeIndex, GameState};
 
 pub struct Edge {
     node_index: AtomicI32,
@@ -19,7 +19,7 @@ pub struct Edge {
 impl Clone for Edge {
     fn clone(&self) -> Self {
         Self {
-            node_index: AtomicI32::new(self.index()),
+            node_index: AtomicI32::new(self.index().get_raw()),
             mv: self.mv(),
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
@@ -29,9 +29,9 @@ impl Clone for Edge {
 }
 
 impl Edge {
-    pub fn new(node_index: i32, mv: Move, policy: f32) -> Self {
+    pub fn new(node_index: NodeIndex, mv: Move, policy: f32) -> Self {
         Self {
-            node_index: AtomicI32::new(node_index),
+            node_index: AtomicI32::new(node_index.get_raw()),
             mv,
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
@@ -40,13 +40,13 @@ impl Edge {
     }
 
     #[inline]
-    pub fn index(&self) -> i32 {
-        self.node_index.load(Ordering::Relaxed)
+    pub fn index(&self) -> NodeIndex {
+        NodeIndex::new(self.node_index.load(Ordering::Relaxed))
     }
 
     #[inline]
-    pub fn set_index(&self, index: i32) {
-        self.node_index.store(index, Ordering::Relaxed)
+    pub fn set_index(&self, index: NodeIndex) {
+        self.node_index.store(index.get_raw(), Ordering::Relaxed);
     }
 
     #[inline]
@@ -108,7 +108,7 @@ impl Edge {
             "root".bright_cyan().to_string()
         } else {
             format!(
-                "{}. {}",
+                "{}> {}",
                 pad_str(
                     self.index().to_string().bright_cyan().to_string().as_str(),
                     6,

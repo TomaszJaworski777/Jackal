@@ -3,7 +3,7 @@ use std::sync::{
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-use super::Edge;
+use crate::search::tree::Edge;
 
 #[derive(Clone, Copy, PartialEq, Default)]
 pub enum GameState {
