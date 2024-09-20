@@ -1,15 +1,9 @@
 debug/
 /target
 
-/resources/data
-/resources/training
-/resources/training/snapshots
-
 Cargo.lock
 **/*.rs.bk
 *.pdb
 
-cutechess_commands.txt
-output.txt
-error.txt
-/resources
+*.exe
+resources/sprt.txt
