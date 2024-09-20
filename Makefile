@@ -28,7 +28,7 @@ release:
 	cargo rustc --release --bin jackal -- -C target-cpu=x86-64-v3 -C target-feature=+bmi2 --emit link=$(X86_64_V3_PEXT)
 	cargo rustc --release --bin jackal -- -C target-cpu=x86-64-v4 --emit link=$(X86_64_V4)
 
-datagen:
+gen:
 	cargo rustc --release --package datagen --bin datagen -- -C target-cpu=native --emit link=$(DATAGEN)
 
 trainer:
