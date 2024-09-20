@@ -23,6 +23,7 @@ const HEAT_RED: (u8, u8, u8) = (200, 71, 71);
 const HEAT_YELLOW: (u8, u8, u8) = (200, 160, 71);
 const HEAT_GREEN: (u8, u8, u8) = (80, 191, 71);
 pub fn heat_color(content: &str, value: f32, min_value: f32, max_value: f32) -> String {
+    let value = value.max(min_value).min(max_value);
     let scalar = if min_value == max_value {
         0.5
     } else {

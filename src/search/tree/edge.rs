@@ -132,8 +132,8 @@ impl Edge {
                     heat_color(
                         format!("{:.2}", self.score()).as_str(),
                         self.score() as f32,
-                        0.0,
-                        1.0
+                        0.25,
+                        0.75
                     )
                     .as_str(),
                     4,
