@@ -4,7 +4,7 @@ use super::{networks::ValueNetwork, tree::GameState};
 
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork =
-    unsafe { std::mem::transmute(*include_bytes!("../../resources/networks/value_003.network")) };
+    unsafe { std::mem::transmute(*include_bytes!("../../resources/networks/value_004b.network")) };
 
 pub struct SearchHelpers;
 impl SearchHelpers {
