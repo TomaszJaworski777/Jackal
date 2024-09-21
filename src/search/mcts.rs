@@ -1,7 +1,7 @@
 use super::{
     print::SearchDisplay,
     search_limits::SearchLimits,
-    tree::{Edge, GameState},
+    tree::{Edge, GameState, NodeIndex},
     SearchHelpers, SearchStats, SearchTree,
 };
 use crate::options::EngineOptions;
@@ -84,7 +84,7 @@ impl<'a> Mcts<'a> {
             let root_index = self.tree.root_index();
             self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
                 root_index,
-                -1,
+                NodeIndex::NULL,
                 0,
                 self.tree.root_edge(),
                 &mut position,
@@ -135,8 +135,8 @@ impl<'a> Mcts<'a> {
 
     fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
-        current_node_index: i32,
-        edge_node_index: i32,
+        current_node_index: NodeIndex,
+        edge_node_index: NodeIndex,
         action_index: usize,
         action_cpy: Edge,
         current_position: &mut ChessPosition,
@@ -174,7 +174,7 @@ impl<'a> Mcts<'a> {
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Update the node on the tree
-            let new_node_index = if new_edge_cpy.index() != -1 {
+            let new_node_index = if !new_edge_cpy.index().is_null() {
                 new_edge_cpy.index()
             } else {
                 self.tree
@@ -220,7 +220,7 @@ impl<'a> Mcts<'a> {
 
     pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
-        node_index: i32,
+        node_index: NodeIndex,
         position: &ChessPosition,
     ) {
         let mut actions = self.tree[node_index].actions_mut();
@@ -228,7 +228,7 @@ impl<'a> Mcts<'a> {
         //Map moves into actions and set initial policy to 1
         position
             .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| actions.push(Edge::new(-1, mv, 1.0)));
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| actions.push(Edge::new(NodeIndex::NULL, mv, 1.0)));
 
         //Update the policy to 1/action_count for uniform policy
         let action_count = actions.len() as f32;
@@ -241,7 +241,7 @@ impl<'a> Mcts<'a> {
     #[inline]
     pub fn select_action<const ROOT: bool>(
         &self,
-        node_index: i32,
+        node_index: NodeIndex,
         visits_to_parent: u32,
         cpuct: f32,
     ) -> usize {
