@@ -108,7 +108,7 @@ impl Edge {
             "root".bright_cyan().to_string()
         } else {
             format!(
-                "{}> {}",
+                "{}. {}",
                 pad_str(
                     self.index().to_string().bright_cyan().to_string().as_str(),
                     6,
@@ -128,6 +128,12 @@ impl Edge {
             1.0 - self.score() as f32
         } else {
             self.score() as f32
+        };
+
+        let score = if self.visits() == 0 { 
+            0.5
+        } else {
+            score
         };
 
         println!(
