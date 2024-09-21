@@ -3,8 +3,11 @@ use spear::ChessPosition;
 use super::{networks::ValueNetwork, tree::GameState};
 
 #[allow(non_upper_case_globals)]
-pub const ValueNetwork: ValueNetwork =
-    unsafe { std::mem::transmute(*include_bytes!("../../resources/networks/value_002.network")) };
+pub const ValueNetwork: ValueNetwork = unsafe {
+    std::mem::transmute(*include_bytes!(
+        "../../resources/networks/value_002.network"
+    ))
+};
 
 pub struct SearchHelpers;
 impl SearchHelpers {
@@ -17,17 +20,22 @@ impl SearchHelpers {
             GameState::Drawn => 0.5,
             GameState::Lost(_) => 0.0,
             GameState::Won(_) => 1.0,
-            GameState::Unresolved => sigmoid(ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()))
+            GameState::Unresolved => {
+                sigmoid(ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()))
+            }
         }
+    }
+
+    pub fn is_draw_rule_met(position: &ChessPosition) -> bool {
+        position.is_repetition()
+            || position.board().is_insufficient_material()
+            || position.board().half_move_counter() >= 100
     }
 
     pub fn get_position_state<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         position: &ChessPosition,
     ) -> GameState {
-        if position.is_repetition()
-            || position.board().is_insufficient_material()
-            || position.board().half_move_counter() >= 100
-        {
+        if Self::is_draw_rule_met(position) {
             return GameState::Drawn;
         }
 

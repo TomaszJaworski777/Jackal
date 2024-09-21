@@ -106,6 +106,7 @@ impl MiscCommandsProcessor {
             1
         };
 
-        search_engine.tree().draw_tree_from_root(depth)
+        let guard = search_engine.tree().get_guard();
+        search_engine.tree().draw_tree_from_root(depth, &guard)
     }
 }

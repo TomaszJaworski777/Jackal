@@ -19,13 +19,13 @@ impl ValueGen {
 
         while !interruption_token.load(std::sync::atomic::Ordering::Relaxed) {
             let mut position = DataGenUtils::get_random_position();
-            tree.clear();
+            tree.clear(&position);
 
             let mut packed_positions: Vec<ChessBoardPacked> = Vec::new();
             let mut state = GameState::Unresolved;
 
             while state == GameState::Unresolved {
-                tree.clear();
+                tree.clear(&position);
 
                 let search_stats = SearchStats::new();
                 let search_interruption_token = AtomicBool::new(false);

@@ -1,28 +1,28 @@
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Clone, Copy, Default, PartialEq)]
-pub struct NodeIndex(i32);
+#[derive(Clone, Copy, Default, PartialEq, Hash, Eq, PartialOrd, Ord)]
+pub struct NodeIndex(u64);
 impl NodeIndex {
-    pub const NULL: NodeIndex = Self(-1);
+    pub const NULL: NodeIndex = Self(0);
 
     #[inline]
-    pub fn new(value: i32) -> Self {
+    pub fn new(value: u64) -> Self {
         Self(value)
     }
 
     #[inline]
-    pub fn get_raw(&self) -> i32 {
+    pub fn get_raw(&self) -> u64 {
         self.0
     }
 
     #[inline]
     pub fn is_null(&self) -> bool {
-        self.get_raw() == -1
+        self.get_raw() == 0
     }
 }
 
 impl Display for NodeIndex {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> Result {
-        write!(formatter, "{}", self.get_raw())
+        write!(formatter, "{:#x}", self.get_raw())
     }
 }

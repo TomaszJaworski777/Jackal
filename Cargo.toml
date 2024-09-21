@@ -13,8 +13,8 @@ opt-level = 3
 [dependencies]
 colored = "*"
 console = "0.15"
-spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
 flurry = "0.5.1"
+spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
 
 [workspace]
 members = ["datagen", "train"]

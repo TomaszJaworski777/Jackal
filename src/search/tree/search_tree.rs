@@ -1,14 +1,16 @@
 use core::f32;
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::hash::{DefaultHasher, Hash, Hasher};
+use flurry::{Guard, HashMap};
+use spear::{ChessPosition, Move};
 
-use spear::Move;
-
-use super::{node::{GameState, NodeIndex}, Edge, Node};
+use super::{
+    node::{GameState, NodeIndex},
+    Edge, Node,
+};
 
 pub struct SearchTree {
-    values: Vec<Node>,
+    values: HashMap<NodeIndex, Node>,
     root_edge: Edge,
-    last_index: AtomicI32,
 }
 
 impl Default for SearchTree {
@@ -19,30 +21,23 @@ impl Default for SearchTree {
 
 impl SearchTree {
     pub fn new() -> Self {
-        let mut tree = Self {
-            values: Vec::new(),
+        Self {
+            values: HashMap::with_capacity(10_000_000),
             root_edge: Edge::new(NodeIndex::new(0), Move::NULL, 0.0),
-            last_index: AtomicI32::new(0),
-        };
-
-        for _ in 0..20_000_000 {
-            tree.values.push(Node::new(GameState::Unresolved))
         }
-
-        tree.init_root();
-        tree
     }
 
     #[inline]
-    pub fn clear(&mut self) {
-        self.last_index.store(0, Ordering::Relaxed);
+    pub fn clear(&mut self, position: &ChessPosition) {
         self.root_edge = Edge::new(NodeIndex::new(0), Move::NULL, 0.0);
-        self.init_root();
+        let guard = self.values.guard();
+        self.values.clear(&guard);
+        self.init_root(position, &guard);
     }
 
     #[inline]
-    fn init_root(&self) {
-        let root_index = self.spawn_node(GameState::Unresolved);
+    fn init_root(&self, position: &ChessPosition, guard: &Guard) {
+        let root_index = self.spawn_node(position, GameState::Unresolved, guard);
         self.root_edge.set_index(root_index);
     }
 
@@ -57,18 +52,23 @@ impl SearchTree {
     }
 
     #[inline]
-    pub fn get(&self, index: NodeIndex) -> &Node {
-        &self.values[index.get_raw() as usize]
+    pub fn get_guard(&self) -> Guard {
+        self.values.guard()
     }
 
     #[inline]
-    pub fn get_mut(&mut self, index: NodeIndex) -> &mut Node {
-        &mut self.values[index.get_raw() as usize]
+    pub fn get<'b>(&'b self, index: NodeIndex, guard: &'b Guard) -> &'b Node {
+        self.values.get(&index, guard).unwrap()
     }
 
     #[inline]
-    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize) -> Edge {
-        self.get(node_index).actions()[action_index].clone()
+    pub fn get_edge_clone(
+        &self,
+        node_index: NodeIndex,
+        action_index: usize,
+        guard: &Guard,
+    ) -> Edge {
+        self.get(node_index, guard).actions()[action_index].clone()
     }
 
     #[inline]
@@ -77,8 +77,9 @@ impl SearchTree {
         edge_node_index: NodeIndex,
         action_index: usize,
         new_node_index: NodeIndex,
+        guard: &Guard,
     ) {
-        self.get(edge_node_index).actions()[action_index].set_index(new_node_index)
+        self.get(edge_node_index, guard).actions()[action_index].set_index(new_node_index)
     }
 
     #[inline]
@@ -87,35 +88,51 @@ impl SearchTree {
         node_index: NodeIndex,
         action_index: usize,
         score: f32,
+        guard: &Guard,
     ) {
         if ROOT {
             self.root_edge.add_score(score)
         } else {
-            self.get(node_index).actions()[action_index].add_score(score)
+            self.get(node_index, guard).actions()[action_index].add_score(score)
         }
     }
 
     #[inline]
-    pub fn spawn_node(&self, state: GameState) -> NodeIndex {
-        let new_node_index = NodeIndex::new(self.last_index.load(Ordering::Relaxed));
-        self.get(new_node_index).replace(state);
-        self.last_index.fetch_add(1, Ordering::Relaxed);
+    pub fn spawn_node(
+        &self,
+        position: &ChessPosition,
+        state: GameState,
+        guard: &Guard,
+    ) -> NodeIndex {
+        let mut hasher = DefaultHasher::default();
+        position.hash(&mut hasher);
+        let new_node_index = NodeIndex::new(hasher.finish());
+        let _result = self
+            .values
+            .try_insert(new_node_index, Node::new(state), guard);
         new_node_index
     }
 
-    pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
+    pub fn backpropagate_mates(
+        &self,
+        parent_node_index: NodeIndex,
+        child_state: GameState,
+        guard: &Guard,
+    ) {
         match child_state {
-            GameState::Lost(x) => self.get(parent_node_index).set_state(GameState::Won(x + 1)),
+            GameState::Lost(x) => self
+                .get(parent_node_index, guard)
+                .set_state(GameState::Won(x + 1)),
             GameState::Won(x) => {
                 //To backpropagate won state we need to check, if all states are won (forced check mate)
                 //and if we are sure that its forced, then we select the longest line and we pray that enemy will miss it
                 let mut proven_loss = true;
                 let mut longest_win_length = x;
-                for action in self.get(parent_node_index).actions().iter() {
+                for action in self.get(parent_node_index, guard).actions().iter() {
                     if action.index().is_null() {
                         proven_loss = false;
                         break;
-                    } else if let GameState::Won(x) = self.get(action.index()).state() {
+                    } else if let GameState::Won(x) = self.get(action.index(), guard).state() {
                         longest_win_length = x.max(longest_win_length);
                     } else {
                         proven_loss = false;
@@ -124,32 +141,33 @@ impl SearchTree {
                 }
 
                 if proven_loss {
-                    self.get(parent_node_index).set_state(GameState::Lost(longest_win_length + 1));
+                    self.get(parent_node_index, guard)
+                        .set_state(GameState::Lost(longest_win_length + 1));
                 }
             }
             _ => (),
         }
     }
 
-    pub fn get_best_move(&self, node_index: NodeIndex) -> (Move, f64) {
+    pub fn get_best_move(&self, node_index: NodeIndex, guard: &Guard) -> (Move, f64) {
         //Extracts the best move from all possible root moves
-        let action_index = self.get_best_action(node_index);
+        let action_index = self.get_best_action(node_index, guard);
 
         //If no action was selected then return null move
         if action_index == usize::MAX {
             return (Move::NULL, self.root_edge.score());
         }
 
-        let edge_clone = self.get_edge_clone(node_index, action_index);
+        let edge_clone = self.get_edge_clone(node_index, action_index, guard);
         (edge_clone.mv(), edge_clone.score())
     }
 
-    pub fn get_best_action(&self, node_index: NodeIndex) -> usize {
-        self.get_best_action_by_key(node_index, |action| {
+    pub fn get_best_action(&self, node_index: NodeIndex, guard: &Guard) -> usize {
+        self.get_best_action_by_key(node_index, guard, |action| {
             if action.visits() == 0 {
                 f32::NEG_INFINITY
             } else if !action.index().is_null() {
-                match self.get(action.index()).state() {
+                match self.get(action.index(), guard).state() {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
@@ -161,11 +179,16 @@ impl SearchTree {
         })
     }
 
-    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, node_index: NodeIndex, mut method: F) -> usize {
+    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(
+        &self,
+        node_index: NodeIndex,
+        guard: &Guard,
+        mut method: F,
+    ) -> usize {
         let mut best_action_index = usize::MAX;
         let mut best_score = f32::MIN;
 
-        for (index, action) in self.get(node_index).actions().iter().enumerate() {
+        for (index, action) in self.get(node_index, guard).actions().iter().enumerate() {
             let score = method(action);
             if score >= best_score {
                 best_action_index = index;
@@ -177,39 +200,46 @@ impl SearchTree {
     }
 
     #[inline]
-    pub fn get_pv(&self) -> Vec<Move> {
+    pub fn get_pv(&self, guard: &Guard) -> Vec<Move> {
         let mut result = Vec::new();
-        self.get_pv_internal(self.root_index(), &mut result);
+        self.get_pv_internal(self.root_index(), &mut result, guard);
         result
     }
 
-    fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
-        if !self.get(node_index).has_children() {
+    fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>, guard: &Guard) {
+        if !self.get(node_index, guard).has_children() {
             return;
         }
 
         //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self.get_best_action(node_index);
-        result.push(self.get(node_index).actions()[best_action].mv());
-        let new_node_index = self.get(node_index).actions()[best_action].index();
+        let best_action = self.get_best_action(node_index, guard);
+        result.push(self.get(node_index, guard).actions()[best_action].mv());
+        let new_node_index = self.get(node_index, guard).actions()[best_action].index();
         if !new_node_index.is_null() {
-            self.get_pv_internal(new_node_index, result)
+            self.get_pv_internal(new_node_index, result, guard)
         }
     }
 
-    pub fn draw_tree_from_root(&self, depth: u32) {
+    pub fn draw_tree_from_root(&self, depth: u32, guard: &Guard) {
         self.root_edge()
-            .print::<true>(0.5, 0.5, self.get(self.root_index()).state(), true);
-        self.draw_tree(self.root_index(), depth)
+            .print::<true>(0.5, 0.5, self.get(self.root_index(), guard).state(), true);
+        self.draw_tree(self.root_index(), depth, guard)
     }
 
-    pub fn draw_tree(&self, node_index: NodeIndex, depth: u32) {
-        self.draw_tree_internal(node_index, depth - 1, &String::new(), false)
+    pub fn draw_tree(&self, node_index: NodeIndex, depth: u32, guard: &Guard) {
+        self.draw_tree_internal(node_index, depth - 1, &String::new(), false, guard)
     }
 
-    fn draw_tree_internal(&self, node_index: NodeIndex, depth: u32, prefix: &String, flip_score: bool) {
-
-        let max_policy = self.get(node_index)
+    fn draw_tree_internal(
+        &self,
+        node_index: NodeIndex,
+        depth: u32,
+        prefix: &String,
+        flip_score: bool,
+        guard: &Guard,
+    ) {
+        let max_policy = self
+            .get(node_index, guard)
             .actions()
             .iter()
             .max_by(|&a, &b| {
@@ -220,7 +250,8 @@ impl SearchTree {
             .unwrap()
             .policy();
 
-        let min_policy = self.get(node_index)
+        let min_policy = self
+            .get(node_index, guard)
             .actions()
             .iter()
             .min_by(|&a, &b| {
@@ -231,23 +262,27 @@ impl SearchTree {
             .unwrap()
             .policy();
 
-        let actions_len = self.get(node_index).actions().len();
-        for (index, action) in self.get(node_index).actions().iter().enumerate() {
+        let actions_len = self.get(node_index, guard).actions().len();
+        for (index, action) in self.get(node_index, guard).actions().iter().enumerate() {
             let is_last = index == actions_len - 1;
             let state = if action.index().is_null() {
                 GameState::Unresolved
             } else {
-                self.get(action.index()).state()
+                self.get(action.index(), guard).state()
             };
             print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
             action.print::<false>(min_policy, max_policy, state, flip_score);
-            if !action.index().is_null() && self.get(action.index()).has_children() && depth > 0 {
+            if !action.index().is_null()
+                && self.get(action.index(), guard).has_children()
+                && depth > 0
+            {
                 let prefix_add = if is_last { "    " } else { "│   " };
                 self.draw_tree_internal(
                     action.index(),
                     depth - 1,
                     &format!("{}{}", prefix, prefix_add),
-                    !flip_score
+                    !flip_score,
+                    guard,
                 )
             }
         }

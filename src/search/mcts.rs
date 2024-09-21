@@ -5,6 +5,7 @@ use super::{
     SearchHelpers, SearchStats, SearchTree,
 };
 use crate::options::EngineOptions;
+use flurry::Guard;
 use spear::{ChessPosition, Move, Side};
 use std::{
     sync::atomic::{AtomicBool, Ordering},
@@ -43,13 +44,14 @@ impl<'a> Mcts<'a> {
         PRINTER::print_search_start(self.stats, self.options, self.limits);
 
         //Check if root node is expanded, and if not then expand it
+        let guard = self.tree.get_guard();
         let root_index = self.tree.root_index();
-        if !self.tree.get(root_index).has_children() {
+        if !self.tree.get(root_index, &guard).has_children() {
             let side_to_move = self.root_position.board().side_to_move();
             if side_to_move == Side::WHITE {
-                self.expand::<true, false, true>(root_index, &self.root_position)
+                self.expand::<true, false, true>(root_index, &self.root_position, &guard)
             } else {
-                self.expand::<false, true, true>(root_index, &self.root_position)
+                self.expand::<false, true, true>(root_index, &self.root_position, &guard)
             }
         }
 
@@ -60,15 +62,15 @@ impl<'a> Mcts<'a> {
             self.main_loop::<PRINTER, false, true>()
         }
 
-        let (best_move, best_score) = self.tree.get_best_move(root_index);
+        let (best_move, best_score) = self.tree.get_best_move(root_index, &guard);
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
             self.stats,
             self.options,
             self.limits,
             best_score,
-            self.tree.get(root_index).state(),
-            &self.tree.get_pv(),
+            self.tree.get(root_index, &guard).state(),
+            &self.tree.get_pv(&guard),
         );
         PRINTER::print_search_result(best_move, best_score);
         (best_move, best_score)
@@ -94,8 +96,10 @@ impl<'a> Mcts<'a> {
             //Increment search stats
             self.stats.add_iteration(depth);
 
+            let guard = self.tree.get_guard();
+
             //Interrupt search when root becomes terminal node, so when there is a force mate on board
-            if self.tree.get(root_index).is_termial() {
+            if self.tree.get(root_index, &guard).is_termial() {
                 self.interruption_token.store(true, Ordering::Relaxed)
             }
 
@@ -120,14 +124,14 @@ impl<'a> Mcts<'a> {
             {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
-                let (_, best_score) = self.tree.get_best_move(root_index);
+                let (_, best_score) = self.tree.get_best_move(root_index, &guard);
                 PRINTER::print_search_raport(
                     self.stats,
                     self.options,
                     self.limits,
                     best_score,
-                    self.tree.get(root_index).state(),
-                    &self.tree.get_pv(),
+                    self.tree.get(root_index, &guard).state(),
+                    &self.tree.get_pv(&guard),
                 )
             }
         }
@@ -145,45 +149,56 @@ impl<'a> Mcts<'a> {
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
         let mut new_node_state = GameState::Unresolved;
+        let guard = self.tree.get_guard();
         let score = if !ROOT
-            && (self.tree.get(current_node_index).is_termial() || action_cpy.visits() == 0)
+            && (self.tree.get(current_node_index, &guard).is_termial() || action_cpy.visits() == 0)
         {
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
-                self.tree.get(current_node_index).state(),
+                self.tree.get(current_node_index, &guard).state(),
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
-            if !self.tree.get(current_node_index).has_children() {
-                self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, current_position)
+            if !self.tree.get(current_node_index, &guard).has_children() {
+                self.expand::<STM_WHITE, NSTM_WHITE, false>(
+                    current_node_index,
+                    current_position,
+                    &guard,
+                )
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            if !self.tree.get(current_node_index).has_children() {
+            if !self.tree.get(current_node_index, &guard).has_children() {
                 current_position.board().draw_board()
             }
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy.visits(),
                 self.options.cpuct_value(),
+                &guard,
             );
-            let new_edge_cpy = self
-                .tree
-                .get_edge_clone(current_node_index, best_action_index);
+            let new_edge_cpy =
+                self.tree
+                    .get_edge_clone(current_node_index, best_action_index, &guard);
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Update the node on the tree
             let new_node_index = if !new_edge_cpy.index().is_null() {
                 new_edge_cpy.index()
             } else {
-                self.tree
-                    .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
-                        current_position,
-                    ))
+                self.tree.spawn_node(
+                    &current_position,
+                    SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(current_position),
+                    &guard,
+                )
             };
-            self.tree
-                .change_edge_node_index(current_node_index, best_action_index, new_node_index);
+            self.tree.change_edge_node_index(
+                current_node_index,
+                best_action_index,
+                new_node_index,
+                &guard,
+            );
 
             //Desent deeper into the tree
             *depth += 1;
@@ -199,7 +214,7 @@ impl<'a> Mcts<'a> {
             //This line is reached then desent is over and now scores are backpropagated
             //up the tree. Now we can read the state of the node and it will be taking into
             //consideration state backpropagated deeper in the tree
-            new_node_state = self.tree.get(new_node_index).state();
+            new_node_state = self.tree.get(new_node_index, &guard).state();
             score
         };
 
@@ -209,11 +224,11 @@ impl<'a> Mcts<'a> {
         //backpropagate it up the tree
         let score = 1.0 - score;
         self.tree
-            .add_edge_score::<ROOT>(edge_node_index, action_index, score);
+            .add_edge_score::<ROOT>(edge_node_index, action_index, score, &guard);
 
         //Backpropagate the terminal score up the tree
         self.tree
-            .backpropagate_mates(current_node_index, new_node_state);
+            .backpropagate_mates(current_node_index, new_node_state, &guard);
 
         score
     }
@@ -222,13 +237,16 @@ impl<'a> Mcts<'a> {
         &self,
         node_index: NodeIndex,
         position: &ChessPosition,
+        guard: &Guard,
     ) {
-        let mut actions = self.tree.get(node_index).actions_mut();
+        let mut actions = self.tree.get(node_index, guard).actions_mut();
 
         //Map moves into actions and set initial policy to 1
         position
             .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| actions.push(Edge::new(NodeIndex::NULL, mv, 1.0)));
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
+                actions.push(Edge::new(NodeIndex::NULL, mv, 1.0))
+            });
 
         //Update the policy to 1/action_count for uniform policy
         let action_count = actions.len() as f32;
@@ -244,17 +262,19 @@ impl<'a> Mcts<'a> {
         node_index: NodeIndex,
         visits_to_parent: u32,
         cpuct: f32,
+        guard: &Guard,
     ) -> usize {
         let explore_value = cpuct * (visits_to_parent.max(1) as f32).sqrt();
-        self.tree.get_best_action_by_key(node_index, |action| {
-            let visits = action.visits();
-            let score = if visits == 0 {
-                0.5
-            } else {
-                action.score() as f32
-            };
+        self.tree
+            .get_best_action_by_key(node_index, guard, |action| {
+                let visits = action.visits();
+                let score = if visits == 0 {
+                    0.5
+                } else {
+                    action.score() as f32
+                };
 
-            score + (explore_value * action.policy() / (visits as f32 + 1.0))
-        })
+                score + (explore_value * action.policy() / (visits as f32 + 1.0))
+            })
     }
 }

@@ -31,6 +31,7 @@ impl<'a> SearchEngine<'a> {
         options: &'a mut EngineOptions,
         command_queue: &'a mut Vec<String>,
     ) -> Self {
+        tree.clear(&position);
         Self {
             position,
             interruption_token,
@@ -71,14 +72,14 @@ impl<'a> SearchEngine<'a> {
 
     pub fn reset(&mut self) {
         self.position = ChessPosition::from_fen(&FEN::start_position());
-        self.tree.clear();
+        self.tree.clear(&self.position);
     }
 
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
         //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
         let search_stats = SearchStats::new();
-        self.tree.clear();
+        self.tree.clear(&self.position);
 
         //Start the search thread
         std::thread::scope(|s| {

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicI16, AtomicU32, AtomicU64, Ordering};
 
 use colored::Colorize;
 use console::pad_str;
@@ -9,7 +9,7 @@ use spear::Move;
 use super::{node::NodeIndex, GameState};
 
 pub struct Edge {
-    node_index: AtomicI32,
+    node_index: AtomicU64,
     mv: Move,
     policy: AtomicI16,
     visits: AtomicU32,
@@ -19,7 +19,7 @@ pub struct Edge {
 impl Clone for Edge {
     fn clone(&self) -> Self {
         Self {
-            node_index: AtomicI32::new(self.index().get_raw()),
+            node_index: AtomicU64::new(self.index().get_raw()),
             mv: self.mv(),
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
@@ -31,7 +31,7 @@ impl Clone for Edge {
 impl Edge {
     pub fn new(node_index: NodeIndex, mv: Move, policy: f32) -> Self {
         Self {
-            node_index: AtomicI32::new(node_index.get_raw()),
+            node_index: AtomicU64::new(node_index.get_raw()),
             mv,
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
@@ -89,7 +89,7 @@ impl Edge {
         lowest_policy: f32,
         highest_policy: f32,
         state: GameState,
-        flip_score: bool
+        flip_score: bool,
     ) {
         let terminal_string = match state {
             GameState::Drawn => "   terminal draw".white().bold().to_string(),
@@ -111,7 +111,7 @@ impl Edge {
                 "{}> {}",
                 pad_str(
                     self.index().to_string().bright_cyan().to_string().as_str(),
-                    6,
+                    18,
                     console::Alignment::Right,
                     None
                 ),
@@ -136,13 +136,7 @@ impl Edge {
                 "{}   {} score   {} visits   {} policy{}",
                 index_text,
                 pad_str(
-                    heat_color(
-                        format!("{:.2}", score).as_str(),
-                        score,
-                        0.2,
-                        0.8
-                    )
-                    .as_str(),
+                    heat_color(format!("{:.2}", score).as_str(), score, 0.2, 0.8).as_str(),
                     4,
                     console::Alignment::Right,
                     None
