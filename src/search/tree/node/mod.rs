@@ -1,6 +1,6 @@
 mod node_index;
-mod node;
+mod tree_node;
 
-pub use node::Node;
-pub use node::GameState;
+pub use tree_node::Node;
+pub use tree_node::GameState;
 pub use node_index::NodeIndex;

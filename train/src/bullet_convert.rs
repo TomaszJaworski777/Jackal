@@ -5,19 +5,13 @@ use std::{
 };
 
 use bullet::format::ChessBoard;
-use spear::{ChessBoardPacked, Piece};
+use spear::{ChessBoardPacked, Move, Piece, Side};
 
 use crate::bullet_convert_display::BulletConvertDisplay;
 
-#[derive(PartialEq)]
-pub enum DataConvertionMode {
-    Full,
-    NoDraws,
-}
-
 pub struct BulletConverter;
 impl BulletConverter {
-    pub fn convert(input_path: &str, output_path: &str, mode: DataConvertionMode) {
+    pub fn convert(input_path: &str, output_path: &str) {
         let input_file = File::open(input_path).expect("Cannot open input file");
         let input_meta = input_file.metadata().expect("Cannot obtain file metadata");
         let mut reader = BufReader::new(input_file);
@@ -36,8 +30,8 @@ impl BulletConverter {
         let mut timer = Instant::now();
         let mut entries_processed = 0;
         let mut unfiltered = 0;
-        let mut mode_filter = 0;
-        let mut mate_scores = 0;
+        let mut mate_scores: u64 = 0;
+        let mut material_advantage = 0;
 
         let mut white_wins = 0;
         let mut white_draws = 0;
@@ -52,8 +46,8 @@ impl BulletConverter {
                     white_draws,
                     white_loses,
                     unfiltered,
-                    mode_filter,
                     mate_scores,
+                    material_advantage
                 );
                 timer = Instant::now();
             }
@@ -61,23 +55,33 @@ impl BulletConverter {
             let position: ChessBoardPacked = unsafe { std::ptr::read(buffer.as_ptr() as *const _) };
             entries_processed += 1;
 
-            if mode == DataConvertionMode::NoDraws && position.get_result() == 0 {
-                mode_filter += 1;
-                continue;
-            }
-
             let score = position.get_white_perspective_score();
             if score <= 0.0 || score >= 1.0 {
                 mate_scores += 1;
                 continue;
             }
+            
+            let board = spear::ChessBoard::from_board_pack(&position);
+            let result = position.get_result();
+            let material_score = calculate_material(&board);
+            if (result == 1 && material_score >= 0) || (result == -1 && material_score <= 0) {
+                let material_score = if board.side_to_move() == Side::WHITE {
+                    qsearch::<true, false>(&board, -30000, 30000, 0)
+                } else {
+                    -qsearch::<false, true>(&board, -30000, 30000, 0)
+                };
+
+                if (result == 1 && material_score >= 0) || (result == -1 && material_score <= 0) {
+                    material_advantage += 1;
+                    continue;
+                }
+            }
 
             //rest of the filters
 
             let score = -(400.0 * (1.0 / score - 1.0).ln()) as i16;
-            let result = (position.get_result() + 1) as f32 / 2.0;
+            let result = (result + 1) as f32 / 2.0;
 
-            let board = spear::ChessBoard::from_board_pack(&position);
             let bbs = [
                 board.get_occupancy_for_side::<true>().get_raw(),
                 board.get_occupancy_for_side::<false>().get_raw(),
@@ -117,4 +121,88 @@ impl BulletConverter {
             unfiltered += 1;
         }
     }
+}
+
+fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>( board: &spear::ChessBoard, mut alpha: i32, beta: i32, depth: u8 ) -> i32 {
+    if board.is_insufficient_material() || board.half_move_counter() >= 100 {
+        return 0;
+    }
+
+    let evaluation = if STM_WHITE {
+        calculate_material(board)
+    } else {
+        -calculate_material(board)
+    };
+
+    if depth > 6 {
+        return evaluation;
+    }
+
+    if evaluation >= beta {
+        return beta;
+    }
+
+    if evaluation > alpha {
+        alpha = evaluation;
+    }
+
+    let mut move_list = Vec::new();
+    board.map_captures::<_, STM_WHITE, NSTM_WHITE>(|mv| move_list.push(mv));
+    move_list.sort_by( |a, b| get_move_value(board, *b).cmp(&get_move_value(board, *a)) );
+
+    for mv_index in 0..move_list.len() {
+        let mv = move_list[mv_index];
+        if mv == Move::NULL {
+            continue;
+        }
+
+        let mut board_copy = board.clone();
+        board_copy.make_move::<STM_WHITE, NSTM_WHITE>(mv);
+
+        let score = -qsearch::<NSTM_WHITE, STM_WHITE>(&board_copy, -beta, -alpha, depth + 1);
+
+        if score >= beta {
+            return beta;
+        }
+        if score > alpha {
+            alpha = score;
+        }
+    }
+
+    alpha
+}
+
+#[inline]
+fn get_move_value(position: &spear::ChessBoard, mv: Move) -> i32 {
+    let mut result: i32 = 0;
+
+    if mv.is_capture() {
+        let target_piece = position.get_piece_on_square(mv.get_to_square());
+        let moving_piece = position.get_piece_on_square(mv.get_from_square());
+        result += ((target_piece.get_raw() + 1) as i32 * 100) - (moving_piece.get_raw() + 1) as i32;
+    }
+    if mv.is_promotion() {
+        result += ((mv.get_promotion_piece().get_raw() + 1) as i32) * 100;
+    }
+
+    return result;
+}
+
+fn calculate_material(board: &spear::ChessBoard) -> i32 {
+    const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
+    let mut result = 0;
+
+    for side in Side::WHITE.get_raw()..=Side::BLACK.get_raw() {
+        for piece in Piece::PAWN.get_raw()..=Piece::QUEEN.get_raw() {
+            let piece_mask = if side == Side::WHITE.get_raw() {
+                board.get_piece_mask_for_side::<true>(Piece::from_raw(piece))
+            } else {
+                board.get_piece_mask_for_side::<false>(Piece::from_raw(piece))
+            };
+            result += piece_mask.pop_count() as i32 * PIECE_VALUES[piece as usize];
+        }
+        result = -result;
+    }
+
+    result
 }
