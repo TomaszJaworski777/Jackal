@@ -47,7 +47,7 @@ macro_rules! create_option_structs {
 
 create_option_structs!(
     move_overhead: SpinOptionInt => SpinOptionInt::new(10, 0, 500, 1.0, 0.0), "MoveOverhead",
-    hash: SpinOptionInt => SpinOptionInt::new(16, 1, 500, 1.0, 0.0), "Hash",
+    hash: SpinOptionInt => SpinOptionInt::new(16, 1, 65536, 1.0, 0.0), "Hash",
     cpuct_value: SpinOptionFloatTunable => SpinOptionFloatTunable::new(1.41, 0.1, 5.0, 1.0, 0.0), "CpuctValue",
 );
 
@@ -64,16 +64,16 @@ pub trait Tunable { }
 
 #[allow(unused)]
 pub struct SpinOptionInt {
-    value: i32,
-    default: i32,
-    min: i32,
-    max: i32,
+    value: i64,
+    default: i64,
+    min: i64,
+    max: i64,
     step: f32,
     r: f32,
 }
 
 impl SpinOptionInt {
-    fn new(value: i32, min: i32, max: i32, step: f32, r: f32) -> Self {
+    fn new(value: i64, min: i64, max: i64, step: f32, r: f32) -> Self {
         Self {
             value,
             default: value,
@@ -84,7 +84,7 @@ impl SpinOptionInt {
         }
     }
 
-    fn set_value(&mut self, new_value: i32) {
+    fn set_value(&mut self, new_value: i64) {
         if new_value >= self.min && new_value <= self.max {
             self.value = new_value;
         } else {
@@ -93,16 +93,16 @@ impl SpinOptionInt {
     }
 
     #[inline]
-    fn get(&self) -> i32 {
+    fn get(&self) -> i64 {
         self.value
     }
 }
 
 impl OptionTrait for SpinOptionInt {
-    type ValueType = i32;
+    type ValueType = i64;
 
     fn set(&mut self, new_value: &str) {
-        if let Ok(parsed_value) = new_value.parse::<i32>() {
+        if let Ok(parsed_value) = new_value.parse::<i64>() {
             self.set_value(parsed_value);
         } else {
             println!("Invalid value for option.");
@@ -110,7 +110,7 @@ impl OptionTrait for SpinOptionInt {
     }
 
     #[inline]
-    fn get(&self) -> i32 {
+    fn get(&self) -> i64 {
         self.get()
     }
 
@@ -185,17 +185,17 @@ impl OptionTrait for SpinOptionFloat {
 
 #[allow(unused)]
 pub struct SpinOptionIntTunable {
-    value: i32,
-    default: i32,
-    min: i32,
-    max: i32,
+    value: i64,
+    default: i64,
+    min: i64,
+    max: i64,
     step: f32,
     r: f32,
 }
 
 #[allow(unused)]
 impl SpinOptionIntTunable {
-    fn new(value: i32, min: i32, max: i32, step: f32, r: f32) -> Self {
+    fn new(value: i64, min: i64, max: i64, step: f32, r: f32) -> Self {
         Self {
             value,
             default: value,
@@ -206,7 +206,7 @@ impl SpinOptionIntTunable {
         }
     }
 
-    fn set_value(&mut self, new_value: i32) {
+    fn set_value(&mut self, new_value: i64) {
         if new_value >= self.min && new_value <= self.max {
             self.value = new_value;
         } else {
@@ -215,16 +215,16 @@ impl SpinOptionIntTunable {
     }
 
     #[inline]
-    fn get(&self) -> i32 {
+    fn get(&self) -> i64 {
         self.value
     }
 }
 
 impl OptionTrait for SpinOptionIntTunable {
-    type ValueType = i32;
+    type ValueType = i64;
 
     fn set(&mut self, new_value: &str) {
-        if let Ok(parsed_value) = new_value.parse::<i32>() {
+        if let Ok(parsed_value) = new_value.parse::<i64>() {
             self.set_value(parsed_value);
         } else {
             println!("Invalid value for option.");
@@ -232,7 +232,7 @@ impl OptionTrait for SpinOptionIntTunable {
     }
 
     #[inline]
-    fn get(&self) -> i32 {
+    fn get(&self) -> i64 {
         self.get()
     }
 

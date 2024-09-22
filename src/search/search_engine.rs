@@ -69,6 +69,10 @@ impl<'a> SearchEngine<'a> {
         self.tree
     }
 
+    pub fn tree_mut(&mut self) -> &mut SearchTree {
+        self.tree
+    }
+
     pub fn reset(&mut self) {
         self.position = ChessPosition::from_fen(&FEN::start_position());
         self.tree.clear();

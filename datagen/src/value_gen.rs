@@ -12,7 +12,7 @@ impl ValueGen {
         printer: &Printer,
         interruption_token: &AtomicBool,
     ) {
-        let mut tree = SearchTree::new();
+        let mut tree = SearchTree::new(32);
         let options = EngineOptions::new();
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);

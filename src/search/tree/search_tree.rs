@@ -14,26 +14,27 @@ pub struct SearchTree {
     last_index: AtomicI32,
 }
 
-impl Default for SearchTree {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl SearchTree {
-    pub fn new() -> Self {
+    pub fn new(size_in_mb: i64) -> Self {
+        let bytes = size_in_mb * 1024 * 1024;
+        let tree_size = bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
+
         let mut tree = Self {
-            values: Vec::new(),
+            values: Vec::with_capacity(tree_size),
             root_edge: Edge::new(NodeIndex::new(0), Move::NULL, 0.0),
             last_index: AtomicI32::new(0),
         };
 
-        for _ in 0..20_000_000 {
+        for _ in 0..tree_size {
             tree.values.push(Node::new(GameState::Unresolved))
         }
 
         tree.init_root();
         tree
+    }
+
+    pub fn resize_tree(&mut self, size_in_mb: i64) {
+        *self = Self::new(size_in_mb)
     }
 
     #[inline]

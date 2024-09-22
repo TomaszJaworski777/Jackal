@@ -12,8 +12,8 @@ fn main() {
     //Init search engine
     let start_position = ChessPosition::from_fen(&FEN::start_position());
     let interruption_token = AtomicBool::new(false);
-    let mut tree = SearchTree::new();
     let mut options = EngineOptions::new();
+    let mut tree = SearchTree::new(options.hash());
     let mut command_queue: Vec<String> = Vec::new();
     let mut search_engine = SearchEngine::new(
         start_position,
