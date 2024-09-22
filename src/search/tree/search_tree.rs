@@ -202,6 +202,10 @@ impl SearchTree {
 
     fn draw_tree_internal(&self, node_index: NodeIndex, depth: u32, prefix: &String, flip_score: bool) {
 
+        if self.last_index.load(Ordering::Relaxed) == 0 {
+            return;
+        }
+
         let max_policy = self[node_index]
             .actions()
             .iter()
@@ -210,7 +214,7 @@ impl SearchTree {
                     .partial_cmp(&b.policy())
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
-            .unwrap()
+            .unwrap_or(&Edge::new(NodeIndex::NULL, Move::NULL, 0.0))
             .policy();
 
         let min_policy = self[node_index]
@@ -221,7 +225,7 @@ impl SearchTree {
                     .partial_cmp(&b.policy())
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
-            .unwrap()
+            .unwrap_or(&Edge::new(NodeIndex::NULL, Move::NULL, 0.0))
             .policy();
 
         let actions_len = self[node_index].actions().len();
