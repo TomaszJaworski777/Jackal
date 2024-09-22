@@ -9,8 +9,8 @@ impl BulletConvertDisplay {
         draws: u64,
         loses: u64,
         unfiltered: u64,
-        mode_filter: u64,
         mate_scores: u64,
+        material_advantage: u64,
     ) {
         jackal::clear_terminal_screen();
         println!("Converting value data...");
@@ -32,12 +32,12 @@ impl BulletConvertDisplay {
         );
         println!("Filters: ");
         println!(
-            " - Convert mode: {}",
-            StringUtils::large_number_to_string(mode_filter as u128)
-        );
-        println!(
             " - Mate score:   {}",
             StringUtils::large_number_to_string(mate_scores as u128)
+        );
+        println!(
+            " - Material advantage:   {}",
+            StringUtils::large_number_to_string(material_advantage as u128)
         );
     }
 
