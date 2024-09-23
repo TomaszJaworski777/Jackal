@@ -145,8 +145,8 @@ impl Edge {
                     heat_color(
                         format!("{:.2}", score).as_str(),
                         score,
-                        0.2,
-                        0.8
+                        0.0,
+                        1.0
                     )
                     .as_str(),
                     4,

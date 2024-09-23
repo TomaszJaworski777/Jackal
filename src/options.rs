@@ -47,7 +47,7 @@ macro_rules! create_option_structs {
 
 create_option_structs!(
     move_overhead: SpinOptionInt => SpinOptionInt::new(10, 0, 500, 1.0, 0.0), "MoveOverhead",
-    hash: SpinOptionInt => SpinOptionInt::new(16, 1, 65536, 1.0, 0.0), "Hash",
+    hash: SpinOptionInt => SpinOptionInt::new(64, 1, 65536, 1.0, 0.0), "Hash",
     cpuct_value: SpinOptionFloatTunable => SpinOptionFloatTunable::new(1.41, 0.1, 5.0, 1.0, 0.0), "CpuctValue",
 );
 
