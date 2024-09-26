@@ -1,4 +1,7 @@
-use std::{fmt::{Display, Formatter, Result}, u32};
+use std::{
+    fmt::{Display, Formatter, Result},
+    u32,
+};
 
 #[derive(Clone, Copy, Default, PartialEq)]
 pub struct NodeIndex(u32);
@@ -38,6 +41,14 @@ impl NodeIndex {
 
 impl Display for NodeIndex {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> Result {
-        write!(formatter, "{}", if self.is_null() { "NULL".to_string() } else { format!("({}, {})", self.segment(), self.index()) })
+        write!(
+            formatter,
+            "{}",
+            if self.is_null() {
+                "NULL".to_string()
+            } else {
+                format!("({}, {})", self.segment(), self.index())
+            }
+        )
     }
 }

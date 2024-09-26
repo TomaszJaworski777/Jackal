@@ -60,7 +60,7 @@ pub trait OptionTrait {
 }
 
 #[allow(unused)]
-pub trait Tunable { }
+pub trait Tunable {}
 
 #[allow(unused)]
 pub struct SpinOptionInt {
@@ -127,7 +127,7 @@ pub struct SpinOptionFloat {
     value: f32,
     default: f32,
     min: f32,
-    max: f32
+    max: f32,
 }
 
 #[allow(unused)]
@@ -137,7 +137,7 @@ impl SpinOptionFloat {
             value,
             default: value,
             min,
-            max
+            max,
         }
     }
 
@@ -244,9 +244,7 @@ impl OptionTrait for SpinOptionIntTunable {
     }
 }
 
-impl Tunable for SpinOptionIntTunable {
-    
-}
+impl Tunable for SpinOptionIntTunable {}
 
 #[allow(unused)]
 pub struct SpinOptionFloatTunable {
@@ -313,6 +311,4 @@ impl OptionTrait for SpinOptionFloatTunable {
     }
 }
 
-impl Tunable for SpinOptionFloatTunable {
-    
-}
+impl Tunable for SpinOptionFloatTunable {}

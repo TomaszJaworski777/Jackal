@@ -1,11 +1,11 @@
 mod mcts;
+mod networks;
 mod print;
 mod search_engine;
 mod search_helpers;
 mod search_limits;
 mod search_stats;
 mod tree;
-mod networks;
 
 pub use mcts::Mcts;
 #[allow(unused)]

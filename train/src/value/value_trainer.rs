@@ -1,17 +1,20 @@
-use bullet::{inputs, loader, lr, optimiser, outputs, wdl, LocalSettings, Loss, TrainerBuilder, TrainingSchedule};
+use bullet::{
+    inputs, loader, lr, optimiser, outputs, wdl, LocalSettings, Loss, TrainerBuilder,
+    TrainingSchedule,
+};
 
 pub struct ValueTrainer;
 impl ValueTrainer {
     pub fn execute() {
         let mut trainer = TrainerBuilder::default()
-        .optimiser(optimiser::AdamW)
-        .single_perspective()
-        .input(inputs::Chess768::default())
-        .output_buckets(outputs::Single)
-        .feature_transformer(64)
-        .activate(bullet::Activation::SCReLU)
-        .add_layer(1)
-        .build();
+            .optimiser(optimiser::AdamW)
+            .single_perspective()
+            .input(inputs::Chess768::default())
+            .output_buckets(outputs::Single)
+            .feature_transformer(64)
+            .activate(bullet::Activation::SCReLU)
+            .add_layer(1)
+            .build();
 
         let schedule = TrainingSchedule {
             net_id: "value_005".to_string(),
@@ -42,7 +45,7 @@ impl ValueTrainer {
             threads: 7,
             test_set: None,
             output_directory: "checkpoints",
-            batch_queue_size: 512
+            batch_queue_size: 512,
         };
 
         let data_loader = loader::DirectSequentialDataLoader::new(&["./bullet_data_shuffled.bin"]);

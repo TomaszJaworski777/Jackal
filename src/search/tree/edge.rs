@@ -41,7 +41,8 @@ impl Edge {
 
     #[inline]
     pub fn clear(&self) {
-        self.node_index.store(NodeIndex::NULL.get_raw(), Ordering::Relaxed);
+        self.node_index
+            .store(NodeIndex::NULL.get_raw(), Ordering::Relaxed);
         self.mv.store(Move::NULL.get_raw(), Ordering::Relaxed);
         self.policy.store(i16::MAX, Ordering::Relaxed);
         self.visits.store(0, Ordering::Relaxed);
@@ -50,9 +51,11 @@ impl Edge {
 
     #[inline]
     pub fn replace(&self, node_index: NodeIndex, mv: Move, policy: f32) {
-        self.node_index.store(node_index.get_raw(), Ordering::Relaxed);
+        self.node_index
+            .store(node_index.get_raw(), Ordering::Relaxed);
         self.mv.store(mv.get_raw(), Ordering::Relaxed);
-        self.policy.store((policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed);
+        self.policy
+            .store((policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed);
         self.visits.store(0, Ordering::Relaxed);
         self.score.store(0, Ordering::Relaxed);
     }
@@ -107,7 +110,7 @@ impl Edge {
         lowest_policy: f32,
         highest_policy: f32,
         state: GameState,
-        flip_score: bool
+        flip_score: bool,
     ) {
         let terminal_string = match state {
             GameState::Drawn => "   terminal draw".white().bold().to_string(),
@@ -128,7 +131,11 @@ impl Edge {
             format!(
                 "{}. {}",
                 pad_str(
-                    self.node_index().to_string().bright_cyan().to_string().as_str(),
+                    self.node_index()
+                        .to_string()
+                        .bright_cyan()
+                        .to_string()
+                        .as_str(),
                     6,
                     console::Alignment::Right,
                     None
@@ -148,11 +155,7 @@ impl Edge {
             self.score() as f32
         };
 
-        let score = if self.visits() == 0 { 
-            0.5
-        } else {
-            score
-        };
+        let score = if self.visits() == 0 { 0.5 } else { score };
 
         println!(
             "{}",
@@ -160,13 +163,7 @@ impl Edge {
                 "{}   {} score   {} visits   {} policy{}",
                 index_text,
                 pad_str(
-                    heat_color(
-                        format!("{:.2}", score).as_str(),
-                        score,
-                        0.0,
-                        1.0
-                    )
-                    .as_str(),
+                    heat_color(format!("{:.2}", score).as_str(), score, 0.0, 1.0).as_str(),
                     4,
                     console::Alignment::Right,
                     None

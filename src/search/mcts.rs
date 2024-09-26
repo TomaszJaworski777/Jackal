@@ -88,7 +88,7 @@ impl<'a> Mcts<'a> {
                 0,
                 self.tree.root_edge(),
                 &mut position,
-                &mut depth
+                &mut depth,
             );
 
             //Increment search stats
@@ -140,10 +140,12 @@ impl<'a> Mcts<'a> {
         action_index: usize,
         action_cpy: Edge,
         current_position: &mut ChessPosition,
-        depth: &mut u32
+        depth: &mut u32,
     ) -> f32 {
         //Mark current node as recently used to make sure it won't get deleted
-        let current_node_index = self.tree.mark_as_used::<ROOT>(current_node_index, edge_node_index, action_index);
+        let current_node_index =
+            self.tree
+                .mark_as_used::<ROOT>(current_node_index, edge_node_index, action_index);
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
@@ -164,7 +166,7 @@ impl<'a> Mcts<'a> {
 
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index = self.select_action::<ROOT>(
-                current_node_index, 
+                current_node_index,
                 action_cpy.visits(),
                 self.options.cpuct_value(),
             );
@@ -195,7 +197,7 @@ impl<'a> Mcts<'a> {
                 best_action_index,
                 new_edge_cpy,
                 current_position,
-                depth
+                depth,
             );
 
             //This line is reached then desent is over and now scores are backpropagated
@@ -232,7 +234,9 @@ impl<'a> Mcts<'a> {
         //Map moves into actions and set initial policy to 1
         position
             .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| actions.push(Edge::new(NodeIndex::NULL, mv, 1.0)));
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
+                actions.push(Edge::new(NodeIndex::NULL, mv, 1.0))
+            });
 
         //Update the policy to 1/action_count for uniform policy
         let action_count = actions.len() as f32;

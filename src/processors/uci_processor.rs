@@ -42,8 +42,8 @@ impl UciProcessor {
             "Hash" => {
                 let hash_size = search_engine.engine_options().hash();
                 search_engine.tree_mut().resize_tree(hash_size)
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
 

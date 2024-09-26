@@ -10,10 +10,10 @@ pub struct TreeSegment {
 
 impl TreeSegment {
     pub fn new(size: usize, segment_index: u32) -> Self {
-        let mut segment = Self { 
-            nodes: Vec::with_capacity(size), 
-            length: AtomicU32::new(0) ,
-            segment: segment_index
+        let mut segment = Self {
+            nodes: Vec::with_capacity(size),
+            length: AtomicU32::new(0),
+            segment: segment_index,
         };
 
         for _ in 0..size {
