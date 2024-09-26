@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicI16, AtomicI32, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicI16, AtomicU16, AtomicU32, Ordering};
 
 use colored::Colorize;
 use console::pad_str;
@@ -9,8 +9,8 @@ use spear::Move;
 use super::{node::NodeIndex, GameState};
 
 pub struct Edge {
-    node_index: AtomicI32,
-    mv: Move,
+    node_index: AtomicU32,
+    mv: AtomicU16,
     policy: AtomicI16,
     visits: AtomicU32,
     score: AtomicU32,
@@ -19,8 +19,8 @@ pub struct Edge {
 impl Clone for Edge {
     fn clone(&self) -> Self {
         Self {
-            node_index: AtomicI32::new(self.index().get_raw()),
-            mv: self.mv(),
+            node_index: AtomicU32::new(self.node_index().get_raw()),
+            mv: AtomicU16::new(self.mv().get_raw()),
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
             score: AtomicU32::new(self.score.load(Ordering::Relaxed)),
@@ -31,8 +31,8 @@ impl Clone for Edge {
 impl Edge {
     pub fn new(node_index: NodeIndex, mv: Move, policy: f32) -> Self {
         Self {
-            node_index: AtomicI32::new(node_index.get_raw()),
-            mv,
+            node_index: AtomicU32::new(node_index.get_raw()),
+            mv: AtomicU16::new(mv.get_raw()),
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
             score: AtomicU32::new(0),
@@ -40,8 +40,26 @@ impl Edge {
     }
 
     #[inline]
-    pub fn index(&self) -> NodeIndex {
-        NodeIndex::new(self.node_index.load(Ordering::Relaxed))
+    pub fn clear(&self) {
+        self.node_index.store(NodeIndex::NULL.get_raw(), Ordering::Relaxed);
+        self.mv.store(Move::NULL.get_raw(), Ordering::Relaxed);
+        self.policy.store(i16::MAX, Ordering::Relaxed);
+        self.visits.store(0, Ordering::Relaxed);
+        self.score.store(0, Ordering::Relaxed);
+    }
+
+    #[inline]
+    pub fn replace(&self, node_index: NodeIndex, mv: Move, policy: f32) {
+        self.node_index.store(node_index.get_raw(), Ordering::Relaxed);
+        self.mv.store(mv.get_raw(), Ordering::Relaxed);
+        self.policy.store((policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed);
+        self.visits.store(0, Ordering::Relaxed);
+        self.score.store(0, Ordering::Relaxed);
+    }
+
+    #[inline]
+    pub fn node_index(&self) -> NodeIndex {
+        NodeIndex::from_raw(self.node_index.load(Ordering::Relaxed))
     }
 
     #[inline]
@@ -51,7 +69,7 @@ impl Edge {
 
     #[inline]
     pub fn mv(&self) -> Move {
-        self.mv
+        Move::from_raw(self.mv.load(Ordering::Relaxed))
     }
 
     #[inline]
@@ -110,7 +128,7 @@ impl Edge {
             format!(
                 "{}. {}",
                 pad_str(
-                    self.index().to_string().bright_cyan().to_string().as_str(),
+                    self.node_index().to_string().bright_cyan().to_string().as_str(),
                     6,
                     console::Alignment::Right,
                     None
