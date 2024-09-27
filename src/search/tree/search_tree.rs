@@ -121,7 +121,7 @@ impl SearchTree {
         &self,
         index: NodeIndex,
         edge_node_index: NodeIndex,
-        action_index: usize,
+        action_index: usize
     ) -> NodeIndex {
         if index.segment() == self.current_segment.load(Ordering::Relaxed) {
             return index;
@@ -135,9 +135,11 @@ impl SearchTree {
         let new_index = self.current_segment().add(old_node.state());
         assert!(new_index != NodeIndex::NULL);
 
-        let old_actions = &mut *old_node.actions_mut();
-        let new_actions = &mut *self[new_index].actions_mut();
-        std::mem::swap(old_actions, new_actions);
+        if index != new_index {
+            let old_actions = &mut *old_node.actions_mut();
+            let new_actions = &mut *self[new_index].actions_mut();
+            std::mem::swap(old_actions, new_actions);
+        }
 
         if ROOT {
             self.root_edge.set_index(new_index);
@@ -162,9 +164,7 @@ impl SearchTree {
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
         for i in 0..SEGMENT_COUNT {
-            if i != new_segment_index {
-                self.segments[i].clear_references(new_segment_index as u32);
-            }
+            self.segments[i].clear_references(new_segment_index as u32);
         }
 
         self.current_segment
