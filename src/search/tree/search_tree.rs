@@ -8,7 +8,7 @@ use super::{
     node::{GameState, NodeIndex},
     Edge, Node,
 };
-use spear::Move;
+use spear::{ChessBoard, Move, Side, ZobristKey};
 
 const SEGMENT_COUNT: usize = 4;
 
@@ -43,6 +43,50 @@ impl SearchTree {
 
     pub fn resize_tree(&mut self, size_in_mb: i64) {
         *self = Self::new(size_in_mb)
+    }
+
+    pub fn reuse_tree(&mut self, previous_board: &ChessBoard, current_board: &ChessBoard) {
+        let current_key = current_board.get_key();
+        if previous_board.get_key() == current_key {
+            return;
+        }
+
+        let node_index = if previous_board.side_to_move() == Side::WHITE {
+            self.find_position::<true, false>(previous_board, current_key, self.root_index(), 2)
+        } else {
+            self.find_position::<false, true>(previous_board, current_key, self.root_index(), 2)
+        };
+
+        if let Some((edge_idx, action_idx)) = node_index {
+            self.root_edge = self.get_edge_clone(edge_idx, action_idx);
+        } else {
+            self.clear();
+        }
+    }
+
+    fn find_position<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, previous_board: &ChessBoard, key: ZobristKey, node_index: NodeIndex, depth: u8) -> Option<(NodeIndex, usize)> {
+        let actions = &*self[node_index].actions();
+        for (index, action) in actions.iter().enumerate() {
+            let child_index = action.node_index();
+            if child_index == NodeIndex::NULL {
+                continue;
+            }
+
+            let mut board_clone = previous_board.clone();
+            board_clone.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
+            if board_clone.get_key() == key {
+                return Some((node_index, index));
+            }
+
+            if depth - 1 > 0 {
+                let result = self.find_position::<NSTM_WHITE, STM_WHITE >(&board_clone, key, child_index, depth - 1);
+                if result.is_some() {
+                    return result;
+                }
+            }
+        }
+
+        None
     }
 
     #[inline]
