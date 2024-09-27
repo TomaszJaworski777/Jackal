@@ -1,45 +1,58 @@
-use core::f32;
 use std::{
-    ops::{Index, IndexMut},
-    sync::atomic::{AtomicI32, Ordering},
+    ops::Index,
+    sync::atomic::{AtomicUsize, Ordering},
 };
 
+use super::tree_segment::TreeSegment;
+use super::{
+    node::{GameState, NodeIndex},
+    Edge, Node,
+};
 use spear::Move;
 
-use super::{node::{GameState, NodeIndex}, Edge, Node};
+const SEGMENT_COUNT: usize = 4;
 
 pub struct SearchTree {
-    values: Vec<Node>,
+    segments: [TreeSegment; SEGMENT_COUNT],
     root_edge: Edge,
-    last_index: AtomicI32,
-}
-
-impl Default for SearchTree {
-    fn default() -> Self {
-        Self::new()
-    }
+    current_segment: AtomicUsize,
 }
 
 impl SearchTree {
-    pub fn new() -> Self {
-        let mut tree = Self {
-            values: Vec::new(),
-            root_edge: Edge::new(NodeIndex::new(0), Move::NULL, 0.0),
-            last_index: AtomicI32::new(0),
-        };
+    pub fn new(size_in_mb: i64) -> Self {
+        let bytes = size_in_mb * 1024 * 1024;
+        let tree_size =
+            bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
+        let segment_size = (tree_size / SEGMENT_COUNT).min(0x3FFFFFFE);
+        let segments = [
+            TreeSegment::new(segment_size, 0),
+            TreeSegment::new(segment_size, 1),
+            TreeSegment::new(segment_size, 2),
+            TreeSegment::new(segment_size, 3),
+        ];
 
-        for _ in 0..20_000_000 {
-            tree.values.push(Node::new(GameState::Unresolved))
-        }
+        let tree = Self {
+            segments,
+            root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
+            current_segment: AtomicUsize::new(0),
+        };
 
         tree.init_root();
         tree
     }
 
+    pub fn resize_tree(&mut self, size_in_mb: i64) {
+        *self = Self::new(size_in_mb)
+    }
+
     #[inline]
     pub fn clear(&mut self) {
-        self.last_index.store(0, Ordering::Relaxed);
-        self.root_edge = Edge::new(NodeIndex::new(0), Move::NULL, 0.0);
+        for segment in &self.segments {
+            segment.clear();
+        }
+
+        self.current_segment.store(0, Ordering::Relaxed);
+        self.root_edge = Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0);
         self.init_root();
     }
 
@@ -51,12 +64,28 @@ impl SearchTree {
 
     #[inline]
     pub fn root_index(&self) -> NodeIndex {
-        self.root_edge.index()
+        self.root_edge.node_index()
     }
 
     #[inline]
     pub fn root_edge(&self) -> Edge {
         self.root_edge.clone()
+    }
+
+    #[inline]
+    pub fn current_segment(&self) -> &TreeSegment {
+        &self.segments[self.current_segment.load(Ordering::Relaxed)]
+    }
+
+    #[inline]
+    pub fn total_usage(&self) -> f32 {
+        let mut total = 0.0;
+
+        for idx in 0..SEGMENT_COUNT {
+            total += self.segments[idx].len() as f32 / self.segments[idx].size() as f32
+        }
+
+        total / SEGMENT_COUNT as f32
     }
 
     #[inline]
@@ -88,12 +117,59 @@ impl SearchTree {
         }
     }
 
+    pub fn mark_as_used<const ROOT: bool>(
+        &self,
+        index: NodeIndex,
+        edge_node_index: NodeIndex,
+        action_index: usize,
+    ) -> NodeIndex {
+        if index.segment() == self.current_segment.load(Ordering::Relaxed) {
+            return index;
+        }
+
+        if self.current_segment().is_full() {
+            self.advance_segments();
+        }
+
+        let old_node = &self[index];
+        let new_index = self.current_segment().add(old_node.state());
+        assert!(new_index != NodeIndex::NULL);
+
+        if index != new_index {
+            let old_actions = &mut *old_node.actions_mut();
+            let new_actions = &mut *self[new_index].actions_mut();
+            std::mem::swap(old_actions, new_actions);
+        }
+
+        if ROOT {
+            self.root_edge.set_index(new_index);
+        } else {
+            self.change_edge_node_index(edge_node_index, action_index, new_index);
+        }
+
+        new_index
+    }
+
     #[inline]
     pub fn spawn_node(&self, state: GameState) -> NodeIndex {
-        let new_node_index = NodeIndex::new(self.last_index.load(Ordering::Relaxed));
-        self[new_node_index].replace(state);
-        self.last_index.fetch_add(1, Ordering::Relaxed);
-        new_node_index
+        if self.current_segment().is_full() {
+            self.advance_segments();
+        }
+
+        self.current_segment().add(state)
+    }
+
+    fn advance_segments(&self) {
+        let current_segment_index = self.current_segment.load(Ordering::Relaxed);
+        let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
+
+        for i in 0..SEGMENT_COUNT {
+            self.segments[i].clear_references(new_segment_index as u32);
+        }
+
+        self.current_segment
+            .store(new_segment_index, Ordering::Relaxed);
+        self.segments[new_segment_index].clear();
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
@@ -105,10 +181,10 @@ impl SearchTree {
                 let mut proven_loss = true;
                 let mut longest_win_length = x;
                 for action in self[parent_node_index].actions().iter() {
-                    if action.index().is_null() {
+                    if action.node_index().is_null() {
                         proven_loss = false;
                         break;
-                    } else if let GameState::Won(x) = self[action.index()].state() {
+                    } else if let GameState::Won(x) = self[action.node_index()].state() {
                         longest_win_length = x.max(longest_win_length);
                     } else {
                         proven_loss = false;
@@ -141,8 +217,8 @@ impl SearchTree {
         self.get_best_action_by_key(node_index, |action| {
             if action.visits() == 0 {
                 f32::NEG_INFINITY
-            } else if !action.index().is_null() {
-                match self[action.index()].state() {
+            } else if !action.node_index().is_null() {
+                match self[action.node_index()].state() {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
@@ -154,7 +230,11 @@ impl SearchTree {
         })
     }
 
-    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, node_index: NodeIndex, mut method: F) -> usize {
+    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(
+        &self,
+        node_index: NodeIndex,
+        mut method: F,
+    ) -> usize {
         let mut best_action_index = usize::MAX;
         let mut best_score = f32::MIN;
 
@@ -184,7 +264,7 @@ impl SearchTree {
         //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
         let best_action = self.get_best_action(node_index);
         result.push(self[node_index].actions()[best_action].mv());
-        let new_node_index = self[node_index].actions()[best_action].index();
+        let new_node_index = self[node_index].actions()[best_action].node_index();
         if !new_node_index.is_null() {
             self.get_pv_internal(new_node_index, result)
         }
@@ -200,9 +280,14 @@ impl SearchTree {
         self.draw_tree_internal(node_index, depth - 1, &String::new(), false)
     }
 
-    fn draw_tree_internal(&self, node_index: NodeIndex, depth: u32, prefix: &String, flip_score: bool) {
-
-        if self.last_index.load(Ordering::Relaxed) == 0 {
+    fn draw_tree_internal(
+        &self,
+        node_index: NodeIndex,
+        depth: u32,
+        prefix: &String,
+        flip_score: bool,
+    ) {
+        if self.total_usage() == 0.0 {
             return;
         }
 
@@ -231,20 +316,23 @@ impl SearchTree {
         let actions_len = self[node_index].actions().len();
         for (index, action) in self[node_index].actions().iter().enumerate() {
             let is_last = index == actions_len - 1;
-            let state = if action.index().is_null() {
+            let state = if action.node_index().is_null() {
                 GameState::Unresolved
             } else {
-                self[action.index()].state()
+                self[action.node_index()].state()
             };
             print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
             action.print::<false>(min_policy, max_policy, state, flip_score);
-            if !action.index().is_null() && self[action.index()].has_children() && depth > 0 {
+            if !action.node_index().is_null()
+                && self[action.node_index()].has_children()
+                && depth > 0
+            {
                 let prefix_add = if is_last { "    " } else { "│   " };
                 self.draw_tree_internal(
-                    action.index(),
+                    action.node_index(),
                     depth - 1,
                     &format!("{}{}", prefix, prefix_add),
-                    !flip_score
+                    !flip_score,
                 )
             }
         }
@@ -256,13 +344,7 @@ impl Index<NodeIndex> for SearchTree {
 
     #[inline]
     fn index(&self, index: NodeIndex) -> &Self::Output {
-        &self.values[index.get_raw() as usize]
-    }
-}
-
-impl IndexMut<NodeIndex> for SearchTree {
-    #[inline]
-    fn index_mut(&mut self, index: NodeIndex) -> &mut Self::Output {
-        &mut self.values[index.get_raw() as usize]
+        assert!(index != NodeIndex::NULL);
+        self.segments[index.segment()].get(index)
     }
 }

@@ -1,9 +1,6 @@
 use spear::{ChessPosition, Move, Side, FEN};
 
-use crate::{
-    options::EngineOptions,
-    search::{SearchEngine, SearchLimits},
-};
+use crate::search::{SearchEngine, SearchLimits};
 
 pub struct UciProcessor;
 impl UciProcessor {
@@ -12,7 +9,7 @@ impl UciProcessor {
         match command {
             "uci" => Self::uci_message(search_engine),
             "isready" => println!("readyok"),
-            "setoption" => Self::set_option(args, search_engine.engine_options_mut()),
+            "setoption" => Self::set_option(args, search_engine),
             "position" => Self::position(args, search_engine),
             "ucinewgame" => search_engine.reset(),
             "go" => Self::go(args, search_engine),
@@ -29,14 +26,25 @@ impl UciProcessor {
         search_engine.init_uci()
     }
 
-    fn set_option(args: &[String], options: &mut EngineOptions) {
+    fn set_option(args: &[String], search_engine: &mut SearchEngine) {
         //Checks if command was initially correct
         if args.len() != 4 || args[0] != "name" || args[2] != "value" {
             return;
         }
 
+        let command = args[1].as_str();
+        let new_value = args[3].as_str();
+
         //Tries to execute the set option command
-        options.set(args[1].as_str(), args[3].as_str())
+        search_engine.engine_options_mut().set(command, new_value);
+
+        match command {
+            "Hash" => {
+                let hash_size = search_engine.engine_options().hash();
+                search_engine.tree_mut().resize_tree(hash_size)
+            }
+            _ => (),
+        }
     }
 
     fn position(args: &[String], search_engine: &mut SearchEngine) {

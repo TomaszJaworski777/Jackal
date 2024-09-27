@@ -47,7 +47,7 @@ impl BulletConverter {
                     white_loses,
                     unfiltered,
                     mate_scores,
-                    material_advantage
+                    material_advantage,
                 );
                 timer = Instant::now();
             }
@@ -60,7 +60,7 @@ impl BulletConverter {
                 mate_scores += 1;
                 continue;
             }
-            
+
             let board = spear::ChessBoard::from_board_pack(&position);
             let result = position.get_result();
             let material_score = calculate_material(&board);
@@ -123,7 +123,12 @@ impl BulletConverter {
     }
 }
 
-fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>( board: &spear::ChessBoard, mut alpha: i32, beta: i32, depth: u8 ) -> i32 {
+fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>(
+    board: &spear::ChessBoard,
+    mut alpha: i32,
+    beta: i32,
+    depth: u8,
+) -> i32 {
     if board.is_insufficient_material() || board.half_move_counter() >= 100 {
         return 0;
     }
@@ -148,7 +153,7 @@ fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>( board: &spear::ChessB
 
     let mut move_list = Vec::new();
     board.map_captures::<_, STM_WHITE, NSTM_WHITE>(|mv| move_list.push(mv));
-    move_list.sort_by( |a, b| get_move_value(board, *b).cmp(&get_move_value(board, *a)) );
+    move_list.sort_by(|a, b| get_move_value(board, *b).cmp(&get_move_value(board, *a)));
 
     for mv_index in 0..move_list.len() {
         let mv = move_list[mv_index];

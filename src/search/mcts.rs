@@ -60,7 +60,7 @@ impl<'a> Mcts<'a> {
             self.main_loop::<PRINTER, false, true>()
         }
 
-        let (best_move, best_score) = self.tree.get_best_move(root_index);
+        let (best_move, best_score) = self.tree.get_best_move(self.tree.root_index());
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
             self.stats,
@@ -88,7 +88,7 @@ impl<'a> Mcts<'a> {
                 0,
                 self.tree.root_edge(),
                 &mut position,
-                &mut depth
+                &mut depth,
             );
 
             //Increment search stats
@@ -140,8 +140,13 @@ impl<'a> Mcts<'a> {
         action_index: usize,
         action_cpy: Edge,
         current_position: &mut ChessPosition,
-        depth: &mut u32
+        depth: &mut u32,
     ) -> f32 {
+        //Mark current node as recently used to make sure it won't get deleted
+        let current_node_index =
+            self.tree
+                .mark_as_used::<ROOT>(current_node_index, edge_node_index, action_index);
+
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
         let mut new_node_state = GameState::Unresolved;
@@ -160,11 +165,8 @@ impl<'a> Mcts<'a> {
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            if !self.tree[current_node_index].has_children() {
-                current_position.board().draw_board()
-            }
             let best_action_index = self.select_action::<ROOT>(
-                current_node_index, 
+                current_node_index,
                 action_cpy.visits(),
                 self.options.cpuct_value(),
             );
@@ -175,14 +177,15 @@ impl<'a> Mcts<'a> {
 
             //If this edge doesn't have assigned node on the tree then spawn new node, otherwise select the node
             //that is assigned to this edge
-            let new_node_index = if !new_edge_cpy.index().is_null() {
-                new_edge_cpy.index()
+            let new_node_index = if !new_edge_cpy.node_index().is_null() {
+                new_edge_cpy.node_index()
             } else {
                 self.tree
                     .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
                         current_position,
                     ))
             };
+
             self.tree
                 .change_edge_node_index(current_node_index, best_action_index, new_node_index);
 
@@ -194,7 +197,7 @@ impl<'a> Mcts<'a> {
                 best_action_index,
                 new_edge_cpy,
                 current_position,
-                depth
+                depth,
             );
 
             //This line is reached then desent is over and now scores are backpropagated
@@ -203,6 +206,8 @@ impl<'a> Mcts<'a> {
             new_node_state = self.tree[new_node_index].state();
             score
         };
+
+        assert!(current_node_index != NodeIndex::NULL);
 
         //Inverse the score to adapt to side to move perspective.
         //MCTS always selects highest score move, and our opponents wants
@@ -229,7 +234,9 @@ impl<'a> Mcts<'a> {
         //Map moves into actions and set initial policy to 1
         position
             .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| actions.push(Edge::new(NodeIndex::NULL, mv, 1.0)));
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
+                actions.push(Edge::new(NodeIndex::NULL, mv, 1.0))
+            });
 
         //Update the policy to 1/action_count for uniform policy
         let action_count = actions.len() as f32;
