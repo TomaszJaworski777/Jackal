@@ -121,7 +121,7 @@ impl SearchTree {
         &self,
         index: NodeIndex,
         edge_node_index: NodeIndex,
-        action_index: usize
+        action_index: usize,
     ) -> NodeIndex {
         if index.segment() == self.current_segment.load(Ordering::Relaxed) {
             return index;
