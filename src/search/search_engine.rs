@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
 };
 
-use spear::{ChessPosition, FEN};
+use spear::{ChessBoard, ChessPosition, FEN};
 
 use crate::options::EngineOptions;
 
@@ -16,6 +16,7 @@ use super::{
 
 pub struct SearchEngine<'a> {
     position: ChessPosition,
+    previous_board: ChessBoard,
     interruption_token: &'a AtomicBool,
     tree: &'a mut SearchTree,
     options: &'a mut EngineOptions,
@@ -33,6 +34,7 @@ impl<'a> SearchEngine<'a> {
     ) -> Self {
         Self {
             position,
+            previous_board: *position.board(),
             interruption_token,
             tree,
             options,
@@ -82,7 +84,8 @@ impl<'a> SearchEngine<'a> {
         //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
         let search_stats = SearchStats::new();
-        self.tree.clear();
+        self.tree.reuse_tree(&self.previous_board, self.current_position().board());
+        self.previous_board = *self.current_position().board();
 
         //Start the search thread
         std::thread::scope(|s| {

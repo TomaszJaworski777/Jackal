@@ -23,9 +23,11 @@ impl ValueGen {
 
             let mut packed_positions: Vec<ChessBoardPacked> = Vec::new();
             let mut state = GameState::Unresolved;
+            let mut previous_position = *position.board();
 
             while state == GameState::Unresolved {
-                tree.clear();
+                tree.reuse_tree( &previous_position, position.board() );
+                previous_position = *position.board();
 
                 let search_stats = SearchStats::new();
                 let search_interruption_token = AtomicBool::new(false);
