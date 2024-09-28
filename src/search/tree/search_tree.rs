@@ -137,13 +137,11 @@ impl SearchTree {
             //We spawn a new node and update the corresponding edge. If the segment returned None,
             //then it means segment is full, we return that instantly and process it in the search
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
-            let new_index = self.current_segment().add(state);
+            let new_index = self.current_segment().add(state)?;
 
-            if let Some(idx) = new_index {
-                self[edge_index].actions()[action_index].set_index(idx);
-            }
+            self[edge_index].actions()[action_index].set_index(new_index);
 
-            new_index
+            Some(new_index)
 
         //When there is a node assigned to the selected move edge, but the assigned
         //node is in old tree segment, we want to copy it to the new tree segment
@@ -152,16 +150,13 @@ impl SearchTree {
             //We get new index from the segment. If the index is None, then segment is
             //full. When that happens we return it instantly and process it in the search
             let old_node = &self[child_index];
-            let new_index = self.current_segment().add(old_node.state());
+            let new_index = self.current_segment().add(old_node.state())?;
 
-            //If node index is not None, we copy the actions from the old node to the new one and
-            //we update the corresponding edge
-            if let Some(idx) = new_index {
-                self.copy_actions(child_index, idx);
-                self[edge_index].actions()[action_index].set_index(idx);
-            }
+            //Next, we copy the actions from the old node to the new one and
+            self.copy_actions(child_index, new_index);
+                self[edge_index].actions()[action_index].set_index(new_index);
 
-            new_index
+            Some(new_index)
 
         //When nthere is a node assigned to the selected move edge and it's located
         //in corrected segment, we can just return the index without changes
