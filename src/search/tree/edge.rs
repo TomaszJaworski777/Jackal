@@ -129,14 +129,14 @@ impl Edge {
             "root".bright_cyan().to_string()
         } else {
             format!(
-                "{}. {}",
+                "{}> {}",
                 pad_str(
                     self.node_index()
                         .to_string()
                         .bright_cyan()
                         .to_string()
                         .as_str(),
-                    6,
+                    12,
                     console::Alignment::Right,
                     None
                 ),
