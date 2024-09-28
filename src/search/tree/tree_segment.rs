@@ -43,8 +43,9 @@ impl TreeSegment {
         &self.nodes[index.index() as usize]
     }
 
-    pub fn add(&self, state: GameState) -> NodeIndex {
+    pub fn add(&self, state: GameState, path: &str) -> NodeIndex {
         let new_index = NodeIndex::from_parts(self.length.load(Ordering::Relaxed), self.segment);
+        assert!(new_index.index() < self.size() as u32, "{path}");
         self.get(new_index).replace(state);
         self.length.fetch_add(1, Ordering::Relaxed);
         new_index

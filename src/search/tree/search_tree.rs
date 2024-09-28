@@ -3,12 +3,14 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
+use crate::search::SearchHelpers;
+
 use super::tree_segment::TreeSegment;
 use super::{
     node::{GameState, NodeIndex},
     Edge, Node,
 };
-use spear::{ChessBoard, Move, Side};
+use spear::{ChessBoard, ChessPosition, Move, Side};
 
 const SEGMENT_COUNT: usize = 4;
 
@@ -77,7 +79,7 @@ impl SearchTree {
 
     #[inline]
     fn init_root(&self) {
-        let root_index = self.spawn_node(GameState::Unresolved);
+        let root_index = self.current_segment().add(GameState::Unresolved, "init");
         self.root_edge.set_index(root_index);
     }
 
@@ -113,16 +115,6 @@ impl SearchTree {
     }
 
     #[inline]
-    pub fn change_edge_node_index(
-        &self,
-        edge_node_index: NodeIndex,
-        action_index: usize,
-        new_node_index: NodeIndex,
-    ) {
-        self[edge_node_index].actions()[action_index].set_index(new_node_index)
-    }
-
-    #[inline]
     pub fn add_edge_score<const ROOT: bool>(
         &self,
         node_index: NodeIndex,
@@ -136,46 +128,54 @@ impl SearchTree {
         }
     }
 
-    pub fn mark_as_used<const ROOT: bool>(
-        &self,
-        index: NodeIndex,
-        edge_node_index: NodeIndex,
-        action_index: usize,
-    ) -> NodeIndex {
-        if index.segment() == self.current_segment.load(Ordering::Relaxed) {
-            return index;
-        }
+    pub fn get_node_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, position: &ChessPosition, child_index: NodeIndex, edge_index: NodeIndex, action_index: usize) -> NodeIndex {
 
-        if self.current_segment().is_full() {
-            self.advance_segments();
-        }
+        //When there is no node assigned to the selected move edge, we spawn new node
+        //and return its index
+        if child_index.is_null() {
 
-        let old_node = &self[index];
-        let new_index = self.current_segment().add(old_node.state());
-        assert!(new_index != NodeIndex::NULL);
+            //Before we spawn a new node we need to make sure that current tree segment
+            //is not full, and if it is, we advance to the next segment
+            if self.current_segment().is_full() {
+                self.advance_segments();
+            }
 
-        if index != new_index {
-            let old_actions = &mut *old_node.actions_mut();
-            let new_actions = &mut *self[new_index].actions_mut();
-            std::mem::swap(old_actions, new_actions);
-        }
+            //Finally we spawn a new node and update the corresponding edge
+            let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
+            let new_index = self.current_segment().add(state, "spawn");
 
-        if ROOT {
-            self.root_edge.set_index(new_index);
+            self[edge_index].actions()[action_index].set_index(new_index);
+
+            new_index
+
+        //When there is a node assigned to the selected move edge, but the assigned
+        //node is in old tree segment, we want to copy it to the new tree segment
+        } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
+
+            //Before update the node index, we need to make sure that current tree segment
+            //is not full, and if it is, we advance to the next segment
+            if self.current_segment().is_full() {
+                self.advance_segments();
+            }
+
+            //Now that we are sure that segment is ready to take new nodes, we get new index
+            //from the segment
+            let old_node = &self[child_index];
+            let new_index = self.current_segment().add(old_node.state(), "update");
+            assert!(new_index != NodeIndex::NULL);
+
+            //Next we copy the actions from the old node to the new one and we update the 
+            //corresponding edge
+            self.copy_actions(child_index, new_index);
+            self[edge_index].actions()[action_index].set_index(new_index);
+
+            new_index
+
+        //When nthere is a node assigned to the selected move edge and it's located
+        //in corrected segment, we can just return the index without changes
         } else {
-            self.change_edge_node_index(edge_node_index, action_index, new_index);
+            child_index
         }
-
-        new_index
-    }
-
-    #[inline]
-    pub fn spawn_node(&self, state: GameState) -> NodeIndex {
-        if self.current_segment().is_full() {
-            self.advance_segments();
-        }
-
-        self.current_segment().add(state)
     }
 
     fn advance_segments(&self) {
@@ -183,12 +183,34 @@ impl SearchTree {
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
         for i in 0..SEGMENT_COUNT {
-            self.segments[i].clear_references(new_segment_index as u32);
+            if i != new_segment_index {
+                self.segments[i].clear_references(new_segment_index as u32);
+            }
         }
 
         self.current_segment
             .store(new_segment_index, Ordering::Relaxed);
         self.segments[new_segment_index].clear();
+
+        let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved, "refresh");
+        self.copy_actions(self.root_index(), new_root_index);
+        self.root_edge.set_index(new_root_index);
+    }
+
+    fn copy_actions(&self, a: NodeIndex, b: NodeIndex) {
+
+        if a == b {
+            return;
+        }
+
+        let a_actions = &mut *self[a].actions_mut();
+        let b_actions = &mut *self[b].actions_mut();
+        
+        if a_actions.is_empty() {
+            return;
+        }
+
+        std::mem::swap(a_actions, b_actions);
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {

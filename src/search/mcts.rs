@@ -142,10 +142,6 @@ impl<'a> Mcts<'a> {
         current_position: &mut ChessPosition,
         depth: &mut u32,
     ) -> f32 {
-        //Mark current node as recently used to make sure it won't get deleted
-        let current_node_index =
-            self.tree
-                .mark_as_used::<ROOT>(current_node_index, edge_node_index, action_index);
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
@@ -175,19 +171,8 @@ impl<'a> Mcts<'a> {
                 .get_edge_clone(current_node_index, best_action_index);
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
-            //If this edge doesn't have assigned node on the tree then spawn new node, otherwise select the node
-            //that is assigned to this edge
-            let new_node_index = if !new_edge_cpy.node_index().is_null() {
-                new_edge_cpy.node_index()
-            } else {
-                self.tree
-                    .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
-                        current_position,
-                    ))
-            };
-
-            self.tree
-                .change_edge_node_index(current_node_index, best_action_index, new_node_index);
+            //Process the new action on the tree and obtain it's updated index
+            let new_node_index = self.tree.get_node_index::<STM_WHITE, NSTM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index);
 
             //Desent deeper into the tree
             *depth += 1;
