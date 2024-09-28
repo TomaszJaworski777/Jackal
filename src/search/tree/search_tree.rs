@@ -8,7 +8,7 @@ use super::{
     node::{GameState, NodeIndex},
     Edge, Node,
 };
-use spear::{ChessBoard, Move, Side, ZobristKey};
+use spear::{ChessBoard, Move, Side};
 
 const SEGMENT_COUNT: usize = 4;
 
@@ -52,41 +52,16 @@ impl SearchTree {
         }
 
         let node_index = if previous_board.side_to_move() == Side::WHITE {
-            self.find_position::<true, false>(previous_board, current_key, self.root_index(), 2)
+            self.find_position_by_key::<_, true, false>(previous_board, self.root_index(), 2, &|board, _| board.get_key() == current_key)
         } else {
-            self.find_position::<false, true>(previous_board, current_key, self.root_index(), 2)
+            self.find_position_by_key::<_, false, true>(previous_board, self.root_index(), 2, &|board, _| board.get_key() == current_key)
         };
 
-        if let Some((edge_idx, action_idx)) = node_index {
+        if let Some((edge_idx, action_idx, _)) = node_index {
             self.root_edge = self.get_edge_clone(edge_idx, action_idx);
         } else {
             self.clear();
         }
-    }
-
-    fn find_position<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, previous_board: &ChessBoard, key: ZobristKey, node_index: NodeIndex, depth: u8) -> Option<(NodeIndex, usize)> {
-        let actions = &*self[node_index].actions();
-        for (index, action) in actions.iter().enumerate() {
-            let child_index = action.node_index();
-            if child_index == NodeIndex::NULL {
-                continue;
-            }
-
-            let mut board_clone = previous_board.clone();
-            board_clone.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
-            if board_clone.get_key() == key {
-                return Some((node_index, index));
-            }
-
-            if depth - 1 > 0 {
-                let result = self.find_position::<NSTM_WHITE, STM_WHITE >(&board_clone, key, child_index, depth - 1);
-                if result.is_some() {
-                    return result;
-                }
-            }
-        }
-
-        None
     }
 
     #[inline]
@@ -314,14 +289,48 @@ impl SearchTree {
         }
     }
 
-    pub fn draw_tree_from_root(&self, depth: u32) {
-        self.root_edge()
-            .print::<true>(0.5, 0.5, self[self.root_index()].state(), true);
-        self.draw_tree(self.root_index(), depth)
+    pub fn draw_tree<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, current_board: &ChessBoard, node_index: NodeIndex, depth: u32) {
+        let mut node_depth = 0;
+        let is_root = node_index == self.root_index();
+        if is_root {
+            let edge = self.root_edge();
+            edge.print::<true>(edge.policy(), edge.policy(), self[node_index].state(), true);
+        } else {
+            let result = self.find_position_by_key::<_, NSTM_WHITE, STM_WHITE >(current_board, self.root_index(), 255, &|_, idx| idx == node_index);
+            if let Some((edge_index, action_index, depth)) = result {
+                node_depth = depth;
+                let edge = self.get_edge_clone(edge_index, action_index);
+                edge.print::<true>(edge.policy(), edge.policy(), self[node_index].state(), node_depth % 2 == 0);
+            } else {
+                return;
+            }
+        }
+        self.draw_tree_internal(node_index, depth - 1, &String::new(), node_depth % 2 == 1)
     }
 
-    pub fn draw_tree(&self, node_index: NodeIndex, depth: u32) {
-        self.draw_tree_internal(node_index, depth - 1, &String::new(), false)
+    fn find_position_by_key<F: Fn(ChessBoard, NodeIndex) -> bool, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, previous_board: &ChessBoard, node_index: NodeIndex, depth: u8, method: &F) -> Option<(NodeIndex, usize, u8)> {
+        let actions = &*self[node_index].actions();
+        for (index, action) in actions.iter().enumerate() {
+            let child_index = action.node_index();
+            if child_index == NodeIndex::NULL {
+                continue;
+            }
+
+            let mut board_clone = previous_board.clone();
+            board_clone.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
+            if method(board_clone, child_index) {
+                return Some((node_index, index, 1));
+            }
+
+            if depth - 1 > 0 {
+                let result = self.find_position_by_key::<F, NSTM_WHITE, STM_WHITE>(&board_clone, child_index, depth - 1, method);
+                if let Some((edge_index, action_index, depth)) = result {
+                    return Some((edge_index, action_index, depth + 1));
+                }
+            }
+        }
+
+        None
     }
 
     fn draw_tree_internal(

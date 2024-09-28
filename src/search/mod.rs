@@ -17,3 +17,4 @@ pub use search_stats::SearchStats;
 #[allow(unused)]
 pub use tree::GameState;
 pub use tree::SearchTree;
+pub use tree::NodeIndex;

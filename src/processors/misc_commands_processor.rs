@@ -1,7 +1,7 @@
 use spear::{Move, Perft, Side, FEN};
 
 use crate::{
-    search::SearchEngine,
+    search::{NodeIndex, SearchEngine},
     utils::{clear_terminal_screen, heat_color},
 };
 
@@ -96,16 +96,28 @@ impl MiscCommandsProcessor {
     }
 
     fn draw_tree(args: &[String], search_engine: &SearchEngine) {
-        if args.len() > 1 {
+        if args.len() > 3 {
             return;
         }
 
-        let depth = if args.len() == 1 {
+        let depth = if args.len() >= 1 {
             args[0].parse::<u32>().unwrap_or(1).max(1)
         } else {
             1
         };
 
-        search_engine.tree().draw_tree_from_root(depth)
+        let node_index = if args.len() == 3 {
+            let segment = args[1].replace("(", "").replace(",", "").trim().parse::<u32>().expect("Incorrect segment");
+            let index = args[2].replace(")", "").trim().parse::<u32>().expect("Incorrect index");
+            NodeIndex::from_parts(index, segment)
+        } else {
+            search_engine.tree().root_index()
+        };
+
+        if search_engine.current_position().board().side_to_move() == Side::WHITE {
+            search_engine.tree().draw_tree::<true, false>(search_engine.current_position().board(), node_index, depth)
+        } else {
+            search_engine.tree().draw_tree::<false, true>(search_engine.current_position().board(), node_index, depth)
+        }
     }
 }
