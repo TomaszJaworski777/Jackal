@@ -1,7 +1,7 @@
 use super::{
     print::SearchDisplay,
     search_limits::SearchLimits,
-    tree::{Edge, GameState, NodeIndex},
+    tree::{Edge, NodeIndex},
     SearchHelpers, SearchStats, SearchTree,
 };
 use crate::options::EngineOptions;
@@ -83,15 +83,14 @@ impl<'a> Mcts<'a> {
             let root_index = self.tree.root_index();
             let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
                 root_index,
-                NodeIndex::NULL,
-                0,
                 self.tree.root_edge(),
                 &mut position,
                 &mut depth,
             );
 
-            //If segment is full we swap to next segment as start another iteration
-            if result.is_none() {
+            if let Some(score) = result {
+                self.tree.add_edge_score::<true>(self.tree.root_index(), 0, score);
+            } else {
                 self.tree.advance_segments();
                 continue;
             }
@@ -141,8 +140,6 @@ impl<'a> Mcts<'a> {
     fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
         current_node_index: NodeIndex,
-        edge_node_index: NodeIndex,
-        action_index: usize,
         action_cpy: Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
@@ -150,14 +147,13 @@ impl<'a> Mcts<'a> {
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
-        let mut new_node_state = GameState::Unresolved;
         let score = if !ROOT
             && (self.tree[current_node_index].is_termial() || action_cpy.visits() == 0)
         {
-            Some(SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
+            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
                 self.tree[current_node_index].state(),
-            ))
+            )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
@@ -183,33 +179,19 @@ impl<'a> Mcts<'a> {
             *depth += 1;
             let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                 new_node_index,
-                current_node_index,
-                best_action_index,
                 new_edge_cpy,
                 current_position,
                 depth,
-            );
+            )?;
 
-            //This line is reached then descend is over and now scores are backpropagated
-            //up the tree. Now we can read the state of the node and it will be taking into
-            //consideration state backpropagated deeper in the tree
-            new_node_state = self.tree[new_node_index].state();
+            self.tree.add_edge_score::<false>(current_node_index, best_action_index, score);
+
+            self.tree.backpropagate_mates(current_node_index, self.tree[new_node_index].state());
+
             score
         };
 
-        //Inverse the score to adapt to side to move perspective.
-        //MCTS always selects highest score move, and our opponents wants
-        //to select worst move for us, so we have to alternate score as we
-        //backpropagate it up the tree
-        let score = 1.0 - score?;
-        self.tree
-            .add_edge_score::<ROOT>(edge_node_index, action_index, score);
-
-        //Backpropagate the terminal score up the tree
-        self.tree
-            .backpropagate_mates(current_node_index, new_node_state);
-
-        Some(score)
+        Some(1.0 - score)
     }
 
     pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(

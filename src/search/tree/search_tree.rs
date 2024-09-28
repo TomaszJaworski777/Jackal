@@ -169,9 +169,7 @@ impl SearchTree {
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
         for i in 0..SEGMENT_COUNT {
-            if i != new_segment_index {
-                self.segments[i].clear_references(new_segment_index as u32);
-            }
+            self.segments[i].clear_references(new_segment_index as u32);
         }
 
         self.current_segment
