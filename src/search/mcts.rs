@@ -7,8 +7,7 @@ use super::{
 use crate::options::EngineOptions;
 use spear::{ChessPosition, Move, Side};
 use std::{
-    sync::atomic::{AtomicBool, Ordering},
-    time::Instant,
+    sync::atomic::{AtomicBool, Ordering}, time::Instant
 };
 
 pub struct Mcts<'a> {
@@ -82,7 +81,7 @@ impl<'a> Mcts<'a> {
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
                 root_index,
                 NodeIndex::NULL,
                 0,
@@ -90,6 +89,12 @@ impl<'a> Mcts<'a> {
                 &mut position,
                 &mut depth,
             );
+
+            //If segment is full we swap to next segment as start another iteration
+            if result.is_none() {
+                self.tree.advance_segments();
+                continue;
+            }
 
             //Increment search stats
             self.stats.add_iteration(depth);
@@ -141,7 +146,7 @@ impl<'a> Mcts<'a> {
         action_cpy: Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
-    ) -> f32 {
+    ) -> Option<f32> {
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
@@ -149,10 +154,10 @@ impl<'a> Mcts<'a> {
         let score = if !ROOT
             && (self.tree[current_node_index].is_termial() || action_cpy.visits() == 0)
         {
-            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
+            Some(SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
                 self.tree[current_node_index].state(),
-            )
+            ))
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
@@ -172,7 +177,10 @@ impl<'a> Mcts<'a> {
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Process the new action on the tree and obtain it's updated index
-            let new_node_index = self.tree.get_node_index::<STM_WHITE, NSTM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index);
+            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index);
+
+            //If new node index is None, then segment is full and we want to abort the whole iteration
+            let new_node_index = new_node_index?;
 
             //Desent deeper into the tree
             *depth += 1;
@@ -192,13 +200,11 @@ impl<'a> Mcts<'a> {
             score
         };
 
-        assert!(current_node_index != NodeIndex::NULL);
-
         //Inverse the score to adapt to side to move perspective.
         //MCTS always selects highest score move, and our opponents wants
         //to select worst move for us, so we have to alternate score as we
         //backpropagate it up the tree
-        let score = 1.0 - score;
+        let score = 1.0 - score?;
         self.tree
             .add_edge_score::<ROOT>(edge_node_index, action_index, score);
 
@@ -206,7 +212,7 @@ impl<'a> Mcts<'a> {
         self.tree
             .backpropagate_mates(current_node_index, new_node_state);
 
-        score
+        Some(score)
     }
 
     pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
@@ -238,6 +244,8 @@ impl<'a> Mcts<'a> {
         visits_to_parent: u32,
         cpuct: f32,
     ) -> usize {
+        assert!(self.tree[node_index].has_children());
+
         let explore_value = cpuct * (visits_to_parent.max(1) as f32).sqrt();
         self.tree.get_best_action_by_key(node_index, |action| {
             let visits = action.visits();

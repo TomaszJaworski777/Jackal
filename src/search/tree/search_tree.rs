@@ -79,7 +79,7 @@ impl SearchTree {
 
     #[inline]
     fn init_root(&self) {
-        let root_index = self.current_segment().add(GameState::Unresolved, "init");
+        let root_index = self.current_segment().add(GameState::Unresolved).unwrap();
         self.root_edge.set_index(root_index);
     }
 
@@ -128,23 +128,20 @@ impl SearchTree {
         }
     }
 
-    pub fn get_node_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, position: &ChessPosition, child_index: NodeIndex, edge_index: NodeIndex, action_index: usize) -> NodeIndex {
+    pub fn get_node_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, position: &ChessPosition, child_index: NodeIndex, edge_index: NodeIndex, action_index: usize) -> Option<NodeIndex> {
 
         //When there is no node assigned to the selected move edge, we spawn new node
         //and return its index
         if child_index.is_null() {
 
-            //Before we spawn a new node we need to make sure that current tree segment
-            //is not full, and if it is, we advance to the next segment
-            if self.current_segment().is_full() {
-                self.advance_segments();
-            }
-
-            //Finally we spawn a new node and update the corresponding edge
+            //We spawn a new node and update the corresponding edge. If the segment returned None,
+            //then it means segment is full, we return that instantly and process it in the search
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
-            let new_index = self.current_segment().add(state, "spawn");
+            let new_index = self.current_segment().add(state);
 
-            self[edge_index].actions()[action_index].set_index(new_index);
+            if let Some(idx) = new_index {
+                self[edge_index].actions()[action_index].set_index(idx);
+            }
 
             new_index
 
@@ -152,33 +149,28 @@ impl SearchTree {
         //node is in old tree segment, we want to copy it to the new tree segment
         } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
 
-            //Before update the node index, we need to make sure that current tree segment
-            //is not full, and if it is, we advance to the next segment
-            if self.current_segment().is_full() {
-                self.advance_segments();
-            }
-
-            //Now that we are sure that segment is ready to take new nodes, we get new index
-            //from the segment
+            //We get new index from the segment. If the index is None, then segment is
+            //full. When that happens we return it instantly and process it in the search
             let old_node = &self[child_index];
-            let new_index = self.current_segment().add(old_node.state(), "update");
-            assert!(new_index != NodeIndex::NULL);
+            let new_index = self.current_segment().add(old_node.state());
 
-            //Next we copy the actions from the old node to the new one and we update the 
-            //corresponding edge
-            self.copy_actions(child_index, new_index);
-            self[edge_index].actions()[action_index].set_index(new_index);
+            //If node index is not None, we copy the actions from the old node to the new one and
+            //we update the corresponding edge
+            if let Some(idx) = new_index {
+                self.copy_actions(child_index, idx);
+                self[edge_index].actions()[action_index].set_index(idx);
+            }
 
             new_index
 
         //When nthere is a node assigned to the selected move edge and it's located
         //in corrected segment, we can just return the index without changes
         } else {
-            child_index
+            Some(child_index)
         }
     }
 
-    fn advance_segments(&self) {
+    pub fn advance_segments(&self) {
         let current_segment_index = self.current_segment.load(Ordering::Relaxed);
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
@@ -192,7 +184,7 @@ impl SearchTree {
             .store(new_segment_index, Ordering::Relaxed);
         self.segments[new_segment_index].clear();
 
-        let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved, "refresh");
+        let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
         self.copy_actions(self.root_index(), new_root_index);
         self.root_edge.set_index(new_root_index);
     }
