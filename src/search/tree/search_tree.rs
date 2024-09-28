@@ -149,12 +149,11 @@ impl SearchTree {
 
             //We get new index from the segment. If the index is None, then segment is
             //full. When that happens we return it instantly and process it in the search
-            let old_node = &self[child_index];
-            let new_index = self.current_segment().add(old_node.state())?;
+            let new_index = self.current_segment().add(GameState::Unresolved)?;
 
             //Next, we copy the actions from the old node to the new one and
-            self.copy_actions(child_index, new_index);
-                self[edge_index].actions()[action_index].set_index(new_index);
+            self.copy_node(child_index, new_index);
+            self[edge_index].actions()[action_index].set_index(new_index);
 
             Some(new_index)
 
@@ -180,12 +179,11 @@ impl SearchTree {
         self.segments[new_segment_index].clear();
 
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
-        self.copy_actions(self.root_index(), new_root_index);
+        self.copy_node(self.root_index(), new_root_index);
         self.root_edge.set_index(new_root_index);
     }
 
-    fn copy_actions(&self, a: NodeIndex, b: NodeIndex) {
-
+    fn copy_node(&self, a: NodeIndex, b: NodeIndex) {
         if a == b {
             return;
         }
@@ -193,6 +191,8 @@ impl SearchTree {
         let a_actions = &mut *self[a].actions_mut();
         let b_actions = &mut *self[b].actions_mut();
         
+        self[b].set_state(self[a].state());
+
         if a_actions.is_empty() {
             return;
         }

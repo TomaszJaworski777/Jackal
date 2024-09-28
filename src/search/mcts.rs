@@ -77,7 +77,7 @@ impl<'a> Mcts<'a> {
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {
-            //Start tree desent
+            //Start tree descend
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
@@ -177,12 +177,9 @@ impl<'a> Mcts<'a> {
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Process the new action on the tree and obtain it's updated index
-            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index);
+            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index)?;
 
-            //If new node index is None, then segment is full and we want to abort the whole iteration
-            let new_node_index = new_node_index?;
-
-            //Desent deeper into the tree
+            //Descend deeper into the tree
             *depth += 1;
             let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                 new_node_index,
@@ -193,7 +190,7 @@ impl<'a> Mcts<'a> {
                 depth,
             );
 
-            //This line is reached then desent is over and now scores are backpropagated
+            //This line is reached then descend is over and now scores are backpropagated
             //up the tree. Now we can read the state of the node and it will be taking into
             //consideration state backpropagated deeper in the tree
             new_node_state = self.tree[new_node_index].state();
