@@ -1,10 +1,10 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use super::{GameState, Node, NodeIndex};
 
 pub struct TreeSegment {
     nodes: Vec<Node>,
-    length: AtomicU32,
+    length: AtomicUsize,
     segment: u32,
 }
 
@@ -12,7 +12,7 @@ impl TreeSegment {
     pub fn new(size: usize, segment_index: u32) -> Self {
         let mut segment = Self {
             nodes: Vec::with_capacity(size),
-            length: AtomicU32::new(0),
+            length: AtomicUsize::new(0),
             segment: segment_index,
         };
 
@@ -43,11 +43,15 @@ impl TreeSegment {
         &self.nodes[index.index() as usize]
     }
 
-    pub fn add(&self, state: GameState) -> NodeIndex {
-        let new_index = NodeIndex::from_parts(self.length.load(Ordering::Relaxed), self.segment);
-        self.get(new_index).replace(state);
-        self.length.fetch_add(1, Ordering::Relaxed);
-        new_index
+    pub fn add(&self, state: GameState) -> Option<NodeIndex> {
+        let new_index = self.length.fetch_add(1, Ordering::Relaxed);
+
+        if new_index >= self.nodes.len() {
+            return None;
+        }
+        
+        self.nodes[new_index].replace(state);
+        Some(NodeIndex::from_parts(new_index as u32, self.segment))
     }
 
     pub fn clear_references(&self, target_segment: u32) {

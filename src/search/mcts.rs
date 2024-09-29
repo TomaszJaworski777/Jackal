@@ -1,14 +1,13 @@
 use super::{
     print::SearchDisplay,
     search_limits::SearchLimits,
-    tree::{Edge, GameState, NodeIndex},
+    tree::{Edge, NodeIndex},
     SearchHelpers, SearchStats, SearchTree,
 };
 use crate::options::EngineOptions;
 use spear::{ChessPosition, Move, Side};
 use std::{
-    sync::atomic::{AtomicBool, Ordering},
-    time::Instant,
+    sync::atomic::{AtomicBool, Ordering}, time::Instant
 };
 
 pub struct Mcts<'a> {
@@ -78,18 +77,23 @@ impl<'a> Mcts<'a> {
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {
-            //Start tree desent
+            //Start tree descend
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
                 root_index,
-                NodeIndex::NULL,
-                0,
                 self.tree.root_edge(),
                 &mut position,
                 &mut depth,
             );
+
+            if let Some(score) = result {
+                self.tree.add_edge_score::<true>(self.tree.root_index(), 0, score);
+            } else {
+                self.tree.advance_segments();
+                continue;
+            }
 
             //Increment search stats
             self.stats.add_iteration(depth);
@@ -136,20 +140,13 @@ impl<'a> Mcts<'a> {
     fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
         current_node_index: NodeIndex,
-        edge_node_index: NodeIndex,
-        action_index: usize,
-        action_cpy: Edge,
+        action_cpy: &Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
-    ) -> f32 {
-        //Mark current node as recently used to make sure it won't get deleted
-        let current_node_index =
-            self.tree
-                .mark_as_used::<ROOT>(current_node_index, edge_node_index, action_index);
+    ) -> Option<f32> {
 
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
-        let mut new_node_state = GameState::Unresolved;
         let score = if !ROOT
             && (self.tree[current_node_index].is_termial() || action_cpy.visits() == 0)
         {
@@ -175,53 +172,26 @@ impl<'a> Mcts<'a> {
                 .get_edge_clone(current_node_index, best_action_index);
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
-            //If this edge doesn't have assigned node on the tree then spawn new node, otherwise select the node
-            //that is assigned to this edge
-            let new_node_index = if !new_edge_cpy.node_index().is_null() {
-                new_edge_cpy.node_index()
-            } else {
-                self.tree
-                    .spawn_node(SearchHelpers::get_position_state::<NSTM_WHITE, STM_WHITE>(
-                        current_position,
-                    ))
-            };
+            //Process the new action on the tree and obtain it's updated index
+            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index)?;
 
-            self.tree
-                .change_edge_node_index(current_node_index, best_action_index, new_node_index);
-
-            //Desent deeper into the tree
+            //Descend deeper into the tree
             *depth += 1;
             let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                 new_node_index,
-                current_node_index,
-                best_action_index,
-                new_edge_cpy,
+                &new_edge_cpy,
                 current_position,
                 depth,
-            );
+            )?;
 
-            //This line is reached then desent is over and now scores are backpropagated
-            //up the tree. Now we can read the state of the node and it will be taking into
-            //consideration state backpropagated deeper in the tree
-            new_node_state = self.tree[new_node_index].state();
+            self.tree.add_edge_score::<false>(current_node_index, best_action_index, score);
+
+            self.tree.backpropagate_mates(current_node_index, self.tree[new_node_index].state());
+
             score
         };
 
-        assert!(current_node_index != NodeIndex::NULL);
-
-        //Inverse the score to adapt to side to move perspective.
-        //MCTS always selects highest score move, and our opponents wants
-        //to select worst move for us, so we have to alternate score as we
-        //backpropagate it up the tree
-        let score = 1.0 - score;
-        self.tree
-            .add_edge_score::<ROOT>(edge_node_index, action_index, score);
-
-        //Backpropagate the terminal score up the tree
-        self.tree
-            .backpropagate_mates(current_node_index, new_node_state);
-
-        score
+        Some(1.0 - score)
     }
 
     pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
@@ -253,6 +223,8 @@ impl<'a> Mcts<'a> {
         visits_to_parent: u32,
         cpuct: f32,
     ) -> usize {
+        assert!(self.tree[node_index].has_children());
+
         let explore_value = cpuct * (visits_to_parent.max(1) as f32).sqrt();
         self.tree.get_best_action_by_key(node_index, |action| {
             let visits = action.visits();

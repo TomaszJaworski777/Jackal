@@ -28,6 +28,12 @@ impl Clone for Edge {
     }
 }
 
+impl Default for Edge {
+    fn default() -> Self {
+        Self::new(NodeIndex::NULL, Move::NULL, 1.0)
+    }
+}
+
 impl Edge {
     pub fn new(node_index: NodeIndex, mv: Move, policy: f32) -> Self {
         Self {
@@ -129,14 +135,14 @@ impl Edge {
             "root".bright_cyan().to_string()
         } else {
             format!(
-                "{}. {}",
+                "{}> {}",
                 pad_str(
                     self.node_index()
                         .to_string()
                         .bright_cyan()
                         .to_string()
                         .as_str(),
-                    6,
+                    12,
                     console::Alignment::Right,
                     None
                 ),
