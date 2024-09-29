@@ -64,7 +64,7 @@ impl BulletConverter {
             let board = spear::ChessBoard::from_board_pack(&position);
             let result = position.get_result();
             let material_score = calculate_material(&board);
-            if (result == 1 && material_score >= 0) || (result == -1 && material_score <= 0) {
+            if ((result == 1 && material_score >= 0) || (result == -1 && material_score <= 0)) && true {
                 let material_score = if board.side_to_move() == Side::WHITE {
                     qsearch::<true, false>(&board, -30000, 30000, 0)
                 } else {

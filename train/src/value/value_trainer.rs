@@ -17,18 +17,18 @@ impl ValueTrainer {
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_005".to_string(),
+            net_id: "value_006a".to_string(),
             eval_scale: 400.0,
             ft_regularisation: 0.0,
             batch_size: 16_384,
             batches_per_superbatch: 6104,
-            start_superbatch: 31,
-            end_superbatch: 40,
+            start_superbatch: 51,
+            end_superbatch: 60,
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::StepLR {
                 start: 0.001,
                 gamma: 0.1,
-                step: 10,
+                step: 15,
             },
             loss_function: Loss::SigmoidMSE,
             save_rate: 5,
@@ -48,9 +48,9 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader = loader::DirectSequentialDataLoader::new(&["./bullet_data_shuffled.bin"]);
+        let data_loader = loader::DirectSequentialDataLoader::new(&["./finetune_data_shuffled.bin"]);
 
-        trainer.load_from_checkpoint("checkpoints/value_005-30");
+        trainer.load_from_checkpoint("checkpoints/value_006a-50");
         trainer.run(&schedule, &settings, &data_loader);
     }
 }
