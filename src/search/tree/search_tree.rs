@@ -63,7 +63,7 @@ impl SearchTree {
         };
 
         if !node_index.is_null() && self[node_index].has_children() {
-            self[self.root_index()].clear();
+            self[self.root_index()].replace(GameState::Unresolved);
             self.copy_node(node_index, self.root_index());
             self.root_edge = edge;
             println!("info string reusing tree");
@@ -217,7 +217,7 @@ impl SearchTree {
         self.segments[new_segment_index].clear();
 
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
-        self[new_root_index].clear();
+        self[new_root_index].replace(GameState::Unresolved);
 
         self.copy_node(old_root_index, new_root_index);
     }

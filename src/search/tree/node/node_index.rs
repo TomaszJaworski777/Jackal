@@ -15,7 +15,7 @@ impl NodeIndex {
 
     #[inline]
     pub fn from_parts(index: u32, segment: u32) -> Self {
-        Self((segment << 30) | (index & 0x7FFFFFFF))
+        Self((segment << 30) | (index & 0x3FFFFFFF))
     }
 
     #[inline]
@@ -25,7 +25,7 @@ impl NodeIndex {
 
     #[inline]
     pub fn index(&self) -> u32 {
-        self.0 & 0x7FFFFFFF
+        self.0 & 0x3FFFFFFF
     }
 
     #[inline]
