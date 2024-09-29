@@ -28,6 +28,12 @@ impl Clone for Edge {
     }
 }
 
+impl Default for Edge {
+    fn default() -> Self {
+        Self::new(NodeIndex::NULL, Move::NULL, 1.0)
+    }
+}
+
 impl Edge {
     pub fn new(node_index: NodeIndex, mv: Move, policy: f32) -> Self {
         Self {

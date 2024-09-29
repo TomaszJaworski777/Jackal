@@ -140,7 +140,7 @@ impl<'a> Mcts<'a> {
     fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
         current_node_index: NodeIndex,
-        action_cpy: Edge,
+        action_cpy: &Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
     ) -> Option<f32> {
@@ -179,7 +179,7 @@ impl<'a> Mcts<'a> {
             *depth += 1;
             let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                 new_node_index,
-                new_edge_cpy,
+                &new_edge_cpy,
                 current_position,
                 depth,
             )?;

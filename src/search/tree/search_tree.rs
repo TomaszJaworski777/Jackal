@@ -39,7 +39,6 @@ impl SearchTree {
             current_segment: AtomicUsize::new(0),
         };
 
-        tree.init_root();
         tree
     }
 
@@ -48,22 +47,68 @@ impl SearchTree {
     }
 
     pub fn reuse_tree(&mut self, previous_board: &ChessBoard, current_board: &ChessBoard) {
-        let current_key = current_board.get_key();
-        if previous_board.get_key() == current_key {
+        if self.total_usage() == 0.0 {
+            println!("info string tree was empty");
+            _ = self.current_segment().add(GameState::Unresolved);
             return;
         }
 
-        let node_index = if previous_board.side_to_move() == Side::WHITE {
-            self.find_position_by_key::<_, true, false>(previous_board, self.root_index(), 2, &|board, _| board.get_key() == current_key)
+        if previous_board == current_board {
+            println!("info string no tree change");
+            return;
+        }
+
+        let (node_index, edge) = if previous_board.side_to_move() == Side::WHITE {
+            self.recurse_find::<_, true, false>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
         } else {
-            self.find_position_by_key::<_, false, true>(previous_board, self.root_index(), 2, &|board, _| board.get_key() == current_key)
+            self.recurse_find::<_, false, true>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
         };
 
-        if let Some((edge_idx, action_idx, _)) = node_index {
-            self.root_edge = self.get_edge_clone(edge_idx, action_idx);
+        if !node_index.is_null() && self[node_index].has_children() {
+            self[self.root_index()].replace(GameState::Unresolved);
+            self.copy_node(node_index, self.root_index());
+            self.root_edge = edge;
+            println!("info string reusing tree");
         } else {
             self.clear();
+            _ = self.current_segment().add(GameState::Unresolved);
+            println!("info string no reuse node found");
         }
+    }
+
+    fn recurse_find<F: Fn(&ChessBoard, NodeIndex) -> bool, const STM_WHITE: bool, const NSTM_WHITE: bool>(
+        &self,
+        start: NodeIndex,
+        board: &ChessBoard,
+        edge: Edge,
+        depth: u8,
+        method: &F
+    ) -> (NodeIndex, Edge) {
+        if method(board, start) {
+            return (start, edge);
+        }
+
+        if start.is_null() || depth == 0 {
+            return (NodeIndex::NULL, Edge::default());
+        }
+
+        let node = &self[start];
+
+        for action in node.actions().iter() {
+            let child_index = action.node_index();
+            let mut child_board = board.clone();
+
+            child_board.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
+
+            let (idx, edge) =
+                self.recurse_find::<F, NSTM_WHITE, STM_WHITE>(child_index, &child_board, action.clone(), depth - 1, method);
+
+            if !idx.is_null() {
+                return (idx, edge);
+            }
+        }
+
+        (NodeIndex::NULL, Edge::default())
     }
 
     #[inline]
@@ -73,24 +118,17 @@ impl SearchTree {
         }
 
         self.current_segment.store(0, Ordering::Relaxed);
-        self.root_edge = Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0);
-        self.init_root();
-    }
-
-    #[inline]
-    fn init_root(&self) {
-        let root_index = self.current_segment().add(GameState::Unresolved).unwrap();
-        self.root_edge.set_index(root_index);
+        self.root_edge = Edge::default();
     }
 
     #[inline]
     pub fn root_index(&self) -> NodeIndex {
-        self.root_edge.node_index()
+        NodeIndex::from_parts(0, self.current_segment.load(Ordering::Relaxed) as u32)
     }
 
     #[inline]
-    pub fn root_edge(&self) -> Edge {
-        self.root_edge.clone()
+    pub fn root_edge(&self) -> &Edge {
+        &self.root_edge
     }
 
     #[inline]
@@ -165,11 +203,15 @@ impl SearchTree {
     }
 
     pub fn advance_segments(&self) {
+        let old_root_index = self.root_index();
+
         let current_segment_index = self.current_segment.load(Ordering::Relaxed);
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
         for i in 0..SEGMENT_COUNT {
-            self.segments[i].clear_references(new_segment_index as u32);
+            if i != new_segment_index {
+                self.segments[i].clear_references(new_segment_index as u32);
+            }
         }
 
         self.current_segment
@@ -177,8 +219,9 @@ impl SearchTree {
         self.segments[new_segment_index].clear();
 
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
-        self.copy_node(self.root_index(), new_root_index);
-        self.root_edge.set_index(new_root_index);
+        self[new_root_index].replace(GameState::Unresolved);
+
+        self.copy_node(old_root_index, new_root_index);
     }
 
     fn copy_node(&self, a: NodeIndex, b: NodeIndex) {
