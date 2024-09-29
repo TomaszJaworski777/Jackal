@@ -5,7 +5,7 @@ use super::{networks::ValueNetwork, tree::GameState};
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../resources/networks/value_005d.network"
+        "../../resources/networks/value_006a.network"
     ))
 };
 
