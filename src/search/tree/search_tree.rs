@@ -25,7 +25,7 @@ impl SearchTree {
         let bytes = size_in_mb * 1024 * 1024;
         let tree_size =
             bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
-        let segment_size = (tree_size / SEGMENT_COUNT).min(0x3FFFFFFE);
+        let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
             TreeSegment::new(segment_size, 1),
@@ -63,7 +63,7 @@ impl SearchTree {
         };
 
         if !node_index.is_null() && self[node_index].has_children() {
-            self[self.root_index()].replace(GameState::Unresolved);
+            self[self.root_index()].clear();
             self.copy_node(node_index, self.root_index());
             self.root_edge = edge;
             println!("info string reusing tree");
@@ -217,7 +217,7 @@ impl SearchTree {
         self.segments[new_segment_index].clear();
 
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
-        self[new_root_index].replace(GameState::Unresolved);
+        self[new_root_index].clear();
 
         self.copy_node(old_root_index, new_root_index);
     }

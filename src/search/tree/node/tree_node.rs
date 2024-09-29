@@ -53,6 +53,11 @@ impl Node {
     }
 
     #[inline]
+    pub fn clear(&self) {
+        self.replace(GameState::Unresolved);
+    }
+
+    #[inline]
     pub fn replace(&self, state: GameState) {
         *self.actions_mut() = Vec::new();
         self.state.store(u16::from(state), Ordering::Relaxed)
