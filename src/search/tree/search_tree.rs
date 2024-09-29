@@ -12,7 +12,7 @@ use super::{
 };
 use spear::{ChessBoard, ChessPosition, Move, Side};
 
-const SEGMENT_COUNT: usize = 4;
+const SEGMENT_COUNT: usize = 2;
 
 pub struct SearchTree {
     segments: [TreeSegment; SEGMENT_COUNT],
@@ -25,12 +25,10 @@ impl SearchTree {
         let bytes = size_in_mb * 1024 * 1024;
         let tree_size =
             bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
-        let segment_size = (tree_size / SEGMENT_COUNT).min(0x3FFFFFFE);
+        let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
             TreeSegment::new(segment_size, 1),
-            TreeSegment::new(segment_size, 2),
-            TreeSegment::new(segment_size, 3),
         ];
 
         let tree = Self {
