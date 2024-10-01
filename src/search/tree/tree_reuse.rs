@@ -22,7 +22,7 @@ impl Tree {
         };
 
         if !node_index.is_null() && self[node_index].has_children() {
-            self[self.root_index()].replace(GameState::Unresolved);
+            self[self.root_index()].clear();
             self.copy_node(node_index, self.root_index());
             self.root_edge = edge;
         } else {

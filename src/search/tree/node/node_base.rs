@@ -10,6 +10,12 @@ pub struct Node {
     state: AtomicU16,
 }
 
+impl Default for Node {
+    fn default() -> Self {
+        Self::new(GameState::Unresolved)
+    }
+}
+
 impl Node {
     pub fn new(state: GameState) -> Self {
         Self {

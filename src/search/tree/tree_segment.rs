@@ -19,7 +19,7 @@ impl TreeSegment {
         };
 
         for _ in 0..size {
-            segment.nodes.push(Node::new(GameState::Unresolved));
+            segment.nodes.push(Node::default());
         }
 
         segment

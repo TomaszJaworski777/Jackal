@@ -60,7 +60,7 @@ impl Tree {
         self.segments[new_segment_index].clear();
 
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
-        self[new_root_index].replace(GameState::Unresolved);
+        self[new_root_index].clear();
 
         self.copy_node(old_root_index, new_root_index);
     }
