@@ -48,7 +48,8 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader = loader::DirectSequentialDataLoader::new(&["./finetune_data_shuffled.bin"]);
+        let data_loader =
+            loader::DirectSequentialDataLoader::new(&["./finetune_data_shuffled.bin"]);
 
         trainer.load_from_checkpoint("checkpoints/value_006a-50");
         trainer.run(&schedule, &settings, &data_loader);

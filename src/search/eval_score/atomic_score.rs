@@ -11,7 +11,7 @@ impl Default for AtomicScore {
 }
 
 impl Clone for AtomicScore {
-    fn clone(&self) -> Self { 
+    fn clone(&self) -> Self {
         Self(AtomicU32::new(self.0.load(Ordering::Relaxed)))
     }
 }

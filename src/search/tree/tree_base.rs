@@ -6,10 +6,7 @@ use std::{
 use crate::{search::Score, GameState};
 
 use super::tree_segment::TreeSegment;
-use super::{
-    node::NodeIndex,
-    Edge, Node,
-};
+use super::{node::NodeIndex, Edge, Node};
 use spear::Move;
 
 pub(super) const SEGMENT_COUNT: usize = 2;

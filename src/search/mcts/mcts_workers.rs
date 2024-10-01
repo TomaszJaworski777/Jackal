@@ -5,7 +5,13 @@ use crate::search::print::SearchDisplay;
 use super::Mcts;
 
 impl<'a> Mcts<'a> {
-    pub(super) fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
+    pub(super) fn main_loop<
+        PRINTER: SearchDisplay,
+        const STM_WHITE: bool,
+        const NSTM_WHITE: bool,
+    >(
+        &self,
+    ) {
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {
@@ -21,7 +27,8 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree.add_edge_score::<true>(self.tree.root_index(), 0, score);
+                self.tree
+                    .add_edge_score::<true>(self.tree.root_index(), 0, score);
             } else {
                 self.tree.advance_segments();
                 continue;

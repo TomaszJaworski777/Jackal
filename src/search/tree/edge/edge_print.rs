@@ -5,7 +5,7 @@ use super::Edge;
 use colored::Colorize;
 use console::pad_str;
 
-impl Edge { 
+impl Edge {
     pub fn print<const ROOT: bool>(
         &self,
         lowest_policy: f32,
@@ -56,7 +56,11 @@ impl Edge {
             self.score()
         };
 
-        let score = if self.visits() == 0 { Score::DRAW } else { score };
+        let score = if self.visits() == 0 {
+            Score::DRAW
+        } else {
+            score
+        };
         let score_cp = score.as_cp_f32();
         let score_cp_string = if score_cp >= 0.0 {
             format!("+{:.2}", score_cp)
@@ -71,7 +75,7 @@ impl Edge {
                 index_text,
                 pad_str(
                     heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0).as_str(),
-                    5,
+                    6,
                     console::Alignment::Right,
                     None
                 ),

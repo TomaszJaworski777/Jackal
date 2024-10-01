@@ -1,6 +1,9 @@
 use spear::Move;
 
-use crate::{search::{tree::Edge, Score}, GameState, Tree};
+use crate::{
+    search::{tree::Edge, Score},
+    GameState, Tree,
+};
 
 use super::Node;
 
@@ -35,10 +38,7 @@ impl Node {
         })
     }
 
-    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(
-        &self,
-        mut method: F,
-    ) -> usize {
+    pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, mut method: F) -> usize {
         let mut best_action_index = usize::MAX;
         let mut best_score = f32::MIN;
 

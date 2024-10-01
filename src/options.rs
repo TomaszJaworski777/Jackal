@@ -46,8 +46,9 @@ macro_rules! create_option_structs {
 }
 
 create_option_structs!(
-    move_overhead: SpinOptionInt => SpinOptionInt::new(10, 0, 500, 1.0, 0.0), "MoveOverhead",
-    hash: SpinOptionInt => SpinOptionInt::new(32, 1, 131072, 1.0, 0.0), "Hash",
+    move_overhead: SpinOptionInt        => SpinOptionInt::new(10, 0, 500),                        "MoveOverhead",
+    hash: SpinOptionInt                 => SpinOptionInt::new(32, 1, 131072),                     "Hash",
+    threads: SpinOptionInt              => SpinOptionInt::new(1, 1, 256),                         "Threads",
     cpuct_value: SpinOptionFloatTunable => SpinOptionFloatTunable::new(1.41, 0.1, 5.0, 1.0, 0.0), "CpuctValue",
 );
 
@@ -68,19 +69,15 @@ pub struct SpinOptionInt {
     default: i64,
     min: i64,
     max: i64,
-    step: f32,
-    r: f32,
 }
 
 impl SpinOptionInt {
-    fn new(value: i64, min: i64, max: i64, step: f32, r: f32) -> Self {
+    fn new(value: i64, min: i64, max: i64) -> Self {
         Self {
             value,
             default: value,
             min,
             max,
-            step,
-            r,
         }
     }
 

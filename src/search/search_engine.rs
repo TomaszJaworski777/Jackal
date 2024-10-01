@@ -84,7 +84,8 @@ impl<'a> SearchEngine<'a> {
         //Init values for the search
         self.interruption_token.store(false, Ordering::Relaxed);
         let search_stats = SearchStats::new();
-        self.tree.reuse_tree(&self.previous_board, self.current_position().board());
+        self.tree
+            .reuse_tree(&self.previous_board, self.current_position().board());
         self.previous_board = *self.current_position().board();
 
         //Start the search thread

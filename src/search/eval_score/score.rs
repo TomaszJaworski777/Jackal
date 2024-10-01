@@ -2,38 +2,38 @@
 pub struct Score(f32);
 
 impl From<f32> for Score {
-    fn from(value: f32) -> Self { 
+    fn from(value: f32) -> Self {
         Self(value)
     }
 }
 
 impl From<f64> for Score {
-    fn from(value: f64) -> Self { 
+    fn from(value: f64) -> Self {
         Self(value as f32)
     }
 }
 
 impl From<Score> for f32 {
-    fn from(value: Score) -> Self { 
+    fn from(value: Score) -> Self {
         value.0
     }
 }
 
 impl From<Score> for f64 {
-    fn from(value: Score) -> Self { 
+    fn from(value: Score) -> Self {
         value.0 as f64
     }
 }
 
 impl From<u32> for Score {
-    fn from(value: u32) -> Self { 
+    fn from(value: u32) -> Self {
         let new_value = f64::from(value) / f64::from(u32::MAX);
         Self::from(new_value)
     }
 }
 
 impl From<Score> for u32 {
-    fn from(value: Score) -> Self { 
+    fn from(value: Score) -> Self {
         (f64::from(value) * f64::from(u32::MAX)) as u32
     }
 }

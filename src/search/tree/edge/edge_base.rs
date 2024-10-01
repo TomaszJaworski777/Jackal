@@ -88,7 +88,8 @@ impl Edge {
     pub fn add_score(&self, score: Score) {
         let score = f64::from(score);
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
-        let new_score = (f64::from(self.score()) * previous_visits + score) / (previous_visits + 1.0);
+        let new_score =
+            (f64::from(self.score()) * previous_visits + score) / (previous_visits + 1.0);
         self.score.store(Score::from(new_score))
     }
 

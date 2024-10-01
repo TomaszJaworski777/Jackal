@@ -16,9 +16,21 @@ impl Tree {
         }
 
         let (node_index, edge) = if previous_board.side_to_move() == Side::WHITE {
-            self.recurse_find::<_, true, false>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
+            self.recurse_find::<_, true, false>(
+                self.root_index(),
+                previous_board,
+                self.root_edge().clone(),
+                2,
+                &|board, _| board == current_board,
+            )
         } else {
-            self.recurse_find::<_, false, true>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
+            self.recurse_find::<_, false, true>(
+                self.root_index(),
+                previous_board,
+                self.root_edge().clone(),
+                2,
+                &|board, _| board == current_board,
+            )
         };
 
         if !node_index.is_null() && self[node_index].has_children() {
@@ -31,13 +43,17 @@ impl Tree {
         }
     }
 
-    fn recurse_find<F: Fn(&ChessBoard, NodeIndex) -> bool, const STM_WHITE: bool, const NSTM_WHITE: bool>(
+    fn recurse_find<
+        F: Fn(&ChessBoard, NodeIndex) -> bool,
+        const STM_WHITE: bool,
+        const NSTM_WHITE: bool,
+    >(
         &self,
         start: NodeIndex,
         board: &ChessBoard,
         edge: Edge,
         depth: u8,
-        method: &F
+        method: &F,
     ) -> (NodeIndex, Edge) {
         if method(board, start) {
             return (start, edge);
@@ -55,8 +71,13 @@ impl Tree {
 
             child_board.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
 
-            let (idx, edge) =
-                self.recurse_find::<F, NSTM_WHITE, STM_WHITE>(child_index, &child_board, action.clone(), depth - 1, method);
+            let (idx, edge) = self.recurse_find::<F, NSTM_WHITE, STM_WHITE>(
+                child_index,
+                &child_board,
+                action.clone(),
+                depth - 1,
+                method,
+            );
 
             if !idx.is_null() {
                 return (idx, edge);
