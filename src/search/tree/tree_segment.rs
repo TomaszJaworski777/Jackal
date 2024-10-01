@@ -62,7 +62,7 @@ impl TreeSegment {
         for node in nodes {
             for action in &*node.actions() {
                 if action.node_index().segment() == target_segment as usize {
-                    action.set_index(NodeIndex::NULL);
+                    action.set_node_index(NodeIndex::NULL);
                 }
             }
         }

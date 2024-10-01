@@ -175,7 +175,7 @@ impl SearchTree {
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
             let new_index = self.current_segment().add(state)?;
 
-            self[edge_index].actions()[action_index].set_index(new_index);
+            self[edge_index].actions()[action_index].set_node_index(new_index);
 
             Some(new_index)
 
@@ -189,7 +189,7 @@ impl SearchTree {
 
             //Next, we copy the actions from the old node to the new one and
             self.copy_node(child_index, new_index);
-            self[edge_index].actions()[action_index].set_index(new_index);
+            self[edge_index].actions()[action_index].set_node_index(new_index);
 
             Some(new_index)
 
