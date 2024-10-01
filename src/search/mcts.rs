@@ -2,7 +2,7 @@ use super::{
     print::SearchDisplay,
     search_limits::SearchLimits,
     tree::{Edge, NodeIndex},
-    SearchHelpers, SearchStats, SearchTree,
+    SearchHelpers, SearchStats, Tree,
 };
 use crate::options::EngineOptions;
 use spear::{ChessPosition, Move, Side};
@@ -12,7 +12,7 @@ use std::{
 
 pub struct Mcts<'a> {
     root_position: ChessPosition,
-    tree: &'a SearchTree,
+    tree: &'a Tree,
     interruption_token: &'a AtomicBool,
     options: &'a EngineOptions,
     stats: &'a SearchStats,
@@ -22,7 +22,7 @@ pub struct Mcts<'a> {
 impl<'a> Mcts<'a> {
     pub fn new(
         root_position: ChessPosition,
-        tree: &'a SearchTree,
+        tree: &'a Tree,
         interruption_token: &'a AtomicBool,
         options: &'a EngineOptions,
         stats: &'a SearchStats,

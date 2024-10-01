@@ -1,6 +1,6 @@
 use spear::ChessPosition;
 
-use crate::{search::tree::Edge, SearchTree};
+use crate::{search::tree::Edge, Tree};
 
 use super::{Node, NodeIndex};
 
@@ -29,7 +29,7 @@ impl Node {
     #[inline]
     pub fn select_action<const ROOT: bool>(
         &self,
-        tree: &SearchTree,
+        tree: &Tree,
         node_idx: NodeIndex,
         parent_visits: u32,
         cpuct: f32,

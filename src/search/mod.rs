@@ -17,5 +17,5 @@ pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
 #[allow(unused)]
 pub use game_state::GameState;
-pub use tree::SearchTree;
+pub use tree::Tree;
 pub use tree::NodeIndex;
