@@ -1,6 +1,6 @@
 use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
-use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, SearchTree};
+use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree};
 use spear::{ChessBoardPacked, ChessPosition, Move, Side};
 use std::sync::atomic::AtomicBool;
 
@@ -12,7 +12,7 @@ impl ValueGen {
         printer: &Printer,
         interruption_token: &AtomicBool,
     ) {
-        let mut tree = SearchTree::new(32);
+        let mut tree = Tree::new(32);
         let options = EngineOptions::new();
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);
@@ -43,7 +43,7 @@ impl ValueGen {
 
                 let (best_move, best_score) = mcts.search::<NoPrint>();
                 let packed_position =
-                    ChessBoardPacked::from_board(position.board(), best_score as f32);
+                    ChessBoardPacked::from_board(position.board(), f32::from(best_score));
 
                 let is_game_end = if position.board().side_to_move() == Side::WHITE {
                     Self::process_move::<true, false>(&mut position, best_move, &mut state)

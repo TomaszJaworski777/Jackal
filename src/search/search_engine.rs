@@ -10,7 +10,7 @@ use crate::options::EngineOptions;
 use super::{
     print::{NoPrint, UciPrint},
     search_limits::SearchLimits,
-    tree::SearchTree,
+    tree::Tree,
     Mcts, SearchStats,
 };
 
@@ -18,7 +18,7 @@ pub struct SearchEngine<'a> {
     position: ChessPosition,
     previous_board: ChessBoard,
     interruption_token: &'a AtomicBool,
-    tree: &'a mut SearchTree,
+    tree: &'a mut Tree,
     options: &'a mut EngineOptions,
     command_queue: &'a mut Vec<String>,
     uci_initialized: bool,
@@ -28,7 +28,7 @@ impl<'a> SearchEngine<'a> {
     pub fn new(
         position: ChessPosition,
         interruption_token: &'a AtomicBool,
-        tree: &'a mut SearchTree,
+        tree: &'a mut Tree,
         options: &'a mut EngineOptions,
         command_queue: &'a mut Vec<String>,
     ) -> Self {
@@ -67,11 +67,11 @@ impl<'a> SearchEngine<'a> {
         self.position
     }
 
-    pub fn tree(&self) -> &SearchTree {
+    pub fn tree(&self) -> &Tree {
         self.tree
     }
 
-    pub fn tree_mut(&mut self) -> &mut SearchTree {
+    pub fn tree_mut(&mut self) -> &mut Tree {
         self.tree
     }
 

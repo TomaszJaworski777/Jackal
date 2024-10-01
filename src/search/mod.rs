@@ -6,15 +6,16 @@ mod search_helpers;
 mod search_limits;
 mod search_stats;
 mod tree;
+mod game_state;
+mod eval_score;
 
 pub use mcts::Mcts;
-#[allow(unused)]
 pub use print::NoPrint;
 pub use search_engine::SearchEngine;
 pub(super) use search_helpers::SearchHelpers;
 pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
-#[allow(unused)]
-pub use tree::GameState;
-pub use tree::SearchTree;
+pub use game_state::GameState;
+pub use tree::Tree;
 pub use tree::NodeIndex;
+pub use eval_score::Score;

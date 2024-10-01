@@ -1,6 +1,6 @@
 use spear::ChessPosition;
 
-use super::{networks::ValueNetwork, tree::GameState};
+use super::{networks::ValueNetwork, GameState, Score};
 
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork = unsafe {
@@ -15,13 +15,13 @@ impl SearchHelpers {
     pub fn get_node_score<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         current_position: &mut ChessPosition,
         state: GameState,
-    ) -> f32 {
+    ) -> Score {
         match state {
-            GameState::Drawn => 0.5,
-            GameState::Lost(_) => 0.0,
-            GameState::Won(_) => 1.0,
+            GameState::Drawn => Score::DRAW,
+            GameState::Lost(_) => Score::LOSE,
+            GameState::Won(_) => Score::WIN,
             GameState::Unresolved => {
-                sigmoid(ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()))
+                Score::from(sigmoid(ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board())))
             }
         }
     }
@@ -50,11 +50,6 @@ impl SearchHelpers {
         }
 
         GameState::Unresolved
-    }
-
-    #[inline]
-    pub fn score_into_cp(score: f32) -> i32 {
-        (-400.0 * (1.0 / score.clamp(0.0, 1.0) - 1.0).ln()) as i32
     }
 }
 

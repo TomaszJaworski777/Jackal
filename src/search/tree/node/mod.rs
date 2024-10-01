@@ -1,6 +1,7 @@
 mod node_index;
-mod tree_node;
+mod node_base;
+mod node_search_methods;
+mod node_best_action;
 
 pub use node_index::NodeIndex;
-pub use tree_node::GameState;
-pub use tree_node::Node;
+pub use node_base::Node;
