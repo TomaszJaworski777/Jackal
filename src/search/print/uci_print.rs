@@ -1,9 +1,9 @@
-use crate::GameState;
+use crate::{search::Score, GameState};
 use spear::Move;
 
 use crate::{
     options::EngineOptions,
-    search::{SearchHelpers, SearchLimits, SearchStats},
+    search::{SearchLimits, SearchStats},
 };
 
 use super::SearchDisplay;
@@ -15,7 +15,7 @@ impl SearchDisplay for UciPrint {
         search_stats: &SearchStats,
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
-        score: f64,
+        score: Score,
         state: GameState,
         pv: &[Move],
     ) {
@@ -28,7 +28,7 @@ impl SearchDisplay for UciPrint {
             GameState::Drawn => "score cp 0".to_string(),
             GameState::Won(x) => format!("score mate {}", (x as f32 / 2.0).ceil() as u32),
             GameState::Lost(x) => format!("score mate -{}", (x as f32 / 2.0).ceil() as u32),
-            _ => format!("score cp {}", SearchHelpers::score_into_cp(score as f32)),
+            _ => format!("score cp {}", score.as_cp()),
         };
 
         println!(
@@ -42,7 +42,7 @@ impl SearchDisplay for UciPrint {
             pv_string
         )
     }
-    fn print_search_result(mv: Move, score: f64) {
+    fn print_search_result(mv: Move, score: Score) {
         println!("bestmove {}", mv)
     }
 }

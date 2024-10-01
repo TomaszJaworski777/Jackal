@@ -1,4 +1,4 @@
-use crate::{utils::heat_color, GameState};
+use crate::{search::Score, utils::heat_color, GameState};
 
 use super::Edge;
 
@@ -51,12 +51,18 @@ impl Edge {
         };
 
         let score = if flip_score {
-            1.0 - self.score() as f32
+            self.score().reversed()
         } else {
-            self.score() as f32
+            self.score()
         };
 
-        let score = if self.visits() == 0 { 0.5 } else { score };
+        let score = if self.visits() == 0 { Score::DRAW } else { score };
+        let score_cp = score.as_cp_f32();
+        let score_cp_string = if score_cp >= 0.0 {
+            format!("+{:.2}", score_cp)
+        } else {
+            format!("{:.2}", score_cp)
+        };
 
         println!(
             "{}",
@@ -64,8 +70,8 @@ impl Edge {
                 "{}   {} score   {} visits   {} policy{}",
                 index_text,
                 pad_str(
-                    heat_color(format!("{:.2}", score).as_str(), score, 0.0, 1.0).as_str(),
-                    4,
+                    heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0).as_str(),
+                    5,
                     console::Alignment::Right,
                     None
                 ),

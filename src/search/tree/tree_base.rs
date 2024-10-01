@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::GameState;
+use crate::{search::Score, GameState};
 
 use super::tree_segment::TreeSegment;
 use super::{
@@ -100,7 +100,7 @@ impl Tree {
         &self,
         node_index: NodeIndex,
         action_index: usize,
-        score: f32,
+        score: Score,
     ) {
         if ROOT {
             self.root_edge.add_score(score)

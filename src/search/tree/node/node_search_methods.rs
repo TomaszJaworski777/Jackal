@@ -42,7 +42,7 @@ impl Node {
             let score = if visits == 0 {
                 0.5
             } else {
-                action.score() as f32
+                f32::from(action.score())
             };
 
             score + (explore_value * action.policy() / (visits as f32 + 1.0))

@@ -1,17 +1,17 @@
 use spear::Move;
 
-use crate::{search::tree::Edge, GameState, Tree};
+use crate::{search::{tree::Edge, Score}, GameState, Tree};
 
 use super::Node;
 
 impl Node {
-    pub fn get_best_move(&self, tree: &Tree) -> (Move, f64) {
+    pub fn get_best_move(&self, tree: &Tree) -> (Move, Score) {
         //Extracts the best move from all possible root moves
         let action_index = self.get_best_action(tree);
 
         //If no action was selected then return null move
         if action_index == usize::MAX {
-            return (Move::NULL, 0.5);
+            return (Move::NULL, Score::DRAW);
         }
 
         let edge_clone = &self.actions()[action_index];
@@ -27,10 +27,10 @@ impl Node {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => action.score() as f32,
+                    GameState::Unresolved => f32::from(action.score()),
                 }
             } else {
-                action.score() as f32
+                f32::from(action.score())
             }
         })
     }

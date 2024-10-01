@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicI16, AtomicU16, AtomicU32, Ordering};
 
-use crate::search::NodeIndex;
+use crate::search::{eval_score::AtomicScore, NodeIndex, Score};
 use spear::Move;
 
 pub struct Edge {
@@ -8,7 +8,7 @@ pub struct Edge {
     mv: AtomicU16,
     policy: AtomicI16,
     visits: AtomicU32,
-    score: AtomicU32,
+    score: AtomicScore,
 }
 
 impl Clone for Edge {
@@ -18,7 +18,7 @@ impl Clone for Edge {
             mv: AtomicU16::new(self.mv().get_raw()),
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
-            score: AtomicU32::new(self.score.load(Ordering::Relaxed)),
+            score: self.score.clone(),
         }
     }
 }
@@ -36,7 +36,7 @@ impl Edge {
             mv: AtomicU16::new(mv.get_raw()),
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
-            score: AtomicU32::new(0),
+            score: AtomicScore::default(),
         }
     }
 
@@ -51,7 +51,7 @@ impl Edge {
         self.mv.store(mv.get_raw(), Ordering::Relaxed);
         self.update_policy(policy);
         self.visits.store(0, Ordering::Relaxed);
-        self.score.store(0, Ordering::Relaxed);
+        self.score.store(Score::default());
     }
 
     #[inline]
@@ -80,17 +80,16 @@ impl Edge {
     }
 
     #[inline]
-    pub fn score(&self) -> f64 {
-        f64::from(self.score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
+    pub fn score(&self) -> Score {
+        self.score.load()
     }
 
     #[inline]
-    pub fn add_score(&self, score: f32) {
+    pub fn add_score(&self, score: Score) {
         let score = f64::from(score);
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
-        let new_score = (self.score() * previous_visits + score) / (previous_visits + 1.0);
-        self.score
-            .store((new_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed)
+        let new_score = (f64::from(self.score()) * previous_visits + score) / (previous_visits + 1.0);
+        self.score.store(Score::from(new_score))
     }
 
     #[inline]
