@@ -6,6 +6,7 @@ mod search_helpers;
 mod search_limits;
 mod search_stats;
 mod tree;
+mod game_state;
 
 pub use mcts::Mcts;
 #[allow(unused)]
@@ -15,6 +16,6 @@ pub(super) use search_helpers::SearchHelpers;
 pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
 #[allow(unused)]
-pub use tree::GameState;
+pub use game_state::GameState;
 pub use tree::SearchTree;
 pub use tree::NodeIndex;

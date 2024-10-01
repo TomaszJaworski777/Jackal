@@ -3,11 +3,11 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::search::SearchHelpers;
+use crate::{search::SearchHelpers, GameState};
 
 use super::tree_segment::TreeSegment;
 use super::{
-    node::{GameState, NodeIndex},
+    node::NodeIndex,
     Edge, Node,
 };
 use spear::{ChessBoard, ChessPosition, Move, Side};

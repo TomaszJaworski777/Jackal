@@ -1,4 +1,4 @@
-use crate::search::tree::GameState;
+use crate::GameState;
 use spear::Move;
 
 use crate::{

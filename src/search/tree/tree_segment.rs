@@ -1,6 +1,8 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use super::{GameState, Node, NodeIndex};
+use crate::GameState;
+
+use super::{Node, NodeIndex};
 
 pub struct TreeSegment {
     nodes: Vec<Node>,
@@ -17,7 +19,7 @@ impl TreeSegment {
         };
 
         for _ in 0..size {
-            segment.nodes.push(Node::new(super::GameState::Unresolved));
+            segment.nodes.push(Node::new(GameState::Unresolved));
         }
 
         segment

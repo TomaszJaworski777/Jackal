@@ -1,6 +1,6 @@
 use spear::ChessPosition;
 
-use super::{networks::ValueNetwork, tree::GameState};
+use super::{networks::ValueNetwork, GameState};
 
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork = unsafe {
