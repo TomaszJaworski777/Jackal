@@ -15,7 +15,7 @@ impl Tree {
         }
 
         //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self.get_best_action(node_index);
+        let best_action = self[node_index].get_best_action(self);
         result.push(self[node_index].actions()[best_action].mv());
         let new_node_index = self[node_index].actions()[best_action].node_index();
         if !new_node_index.is_null() {

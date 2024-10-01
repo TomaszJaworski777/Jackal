@@ -37,7 +37,7 @@ impl Node {
         assert!(self.has_children());
 
         let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
-        tree.get_best_action_by_key(node_idx, |action| {
+        tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
             let score = if visits == 0 {
                 0.5

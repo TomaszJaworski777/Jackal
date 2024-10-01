@@ -59,7 +59,7 @@ impl<'a> Mcts<'a> {
             self.main_loop::<PRINTER, false, true>()
         }
 
-        let (best_move, best_score) = self.tree.get_best_move(self.tree.root_index());
+        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(&self.tree);
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
             self.stats,
@@ -124,7 +124,7 @@ impl<'a> Mcts<'a> {
             {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
-                let (_, best_score) = self.tree.get_best_move(root_index);
+                let (_, best_score) = self.tree[root_index].get_best_move(&self.tree);
                 PRINTER::print_search_raport(
                     self.stats,
                     self.options,
