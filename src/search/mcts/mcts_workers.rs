@@ -27,8 +27,7 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree
-                    .add_edge_score::<true>(self.tree.root_index(), 0, score);
+                self.tree.root_edge().add_score(score);
             } else {
                 self.tree.advance_segments();
                 continue;

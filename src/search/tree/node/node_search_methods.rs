@@ -21,7 +21,7 @@ impl Node {
         //Update the policy to 1/action_count for uniform policy
         let action_count = actions.len() as f32;
         for action in actions.iter_mut() {
-            action.update_policy(1.0 / action_count)
+            action.set_policy(1.0 / action_count)
         }
     }
 

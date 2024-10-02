@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::{search::Score, GameState};
+use crate::GameState;
 
 use super::tree_segment::TreeSegment;
 use super::{node::NodeIndex, Edge, Node};
@@ -85,25 +85,6 @@ impl Tree {
         }
 
         total / SEGMENT_COUNT as f32
-    }
-
-    #[inline]
-    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize) -> Edge {
-        self[node_index].actions()[action_index].clone()
-    }
-
-    #[inline]
-    pub fn add_edge_score<const ROOT: bool>(
-        &self,
-        node_index: NodeIndex,
-        action_index: usize,
-        score: Score,
-    ) {
-        if ROOT {
-            self.root_edge.add_score(score)
-        } else {
-            self[node_index].actions()[action_index].add_score(score)
-        }
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {

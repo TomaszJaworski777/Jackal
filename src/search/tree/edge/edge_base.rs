@@ -49,7 +49,7 @@ impl Edge {
     pub fn replace(&self, node_index: NodeIndex, mv: Move, policy: f32) {
         self.set_node_index(node_index);
         self.mv.store(mv.get_raw(), Ordering::Relaxed);
-        self.update_policy(policy);
+        self.set_policy(policy);
         self.visits.store(0, Ordering::Relaxed);
         self.score.store(Score::default());
     }
@@ -75,6 +75,12 @@ impl Edge {
     }
 
     #[inline]
+    pub fn set_policy(&self, new_policy: f32) {
+        self.policy
+            .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
+    }
+
+    #[inline]
     pub fn visits(&self) -> u32 {
         self.visits.load(Ordering::Relaxed)
     }
@@ -91,11 +97,5 @@ impl Edge {
         let new_score =
             (f64::from(self.score()) * previous_visits + score) / (previous_visits + 1.0);
         self.score.store(Score::from(new_score))
-    }
-
-    #[inline]
-    pub fn update_policy(&self, new_policy: f32) {
-        self.policy
-            .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
     }
 }

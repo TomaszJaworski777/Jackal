@@ -11,7 +11,7 @@ impl<'a> Mcts<'a> {
         const ROOT: bool,
     >(
         &self,
-        current_node_index: NodeIndex,
+        current_node_idx: NodeIndex,
         action_cpy: &Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
@@ -19,53 +19,50 @@ impl<'a> Mcts<'a> {
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
         let score =
-            if !ROOT && (self.tree[current_node_index].is_termial() || action_cpy.visits() == 0) {
+            if !ROOT && (self.tree[current_node_idx].is_termial() || action_cpy.visits() == 0) {
                 SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                     current_position,
-                    self.tree[current_node_index].state(),
+                    self.tree[current_node_idx].state(),
                 )
             } else {
                 //On second visit we expand the node, if it wasn't already expanded.
                 //This allows us to reduce amount of time we evaluate policy net
-                if !self.tree[current_node_index].has_children() {
-                    self.tree[current_node_index]
+                if !self.tree[current_node_idx].has_children() {
+                    self.tree[current_node_idx]
                         .expand::<STM_WHITE, NSTM_WHITE, false>(current_position)
                 }
 
                 //We then select the best action to evaluate and advance the position to the move of this action
-                let best_action_index = self.tree[current_node_index].select_action::<ROOT>(
+                let best_action_idx = self.tree[current_node_idx].select_action::<ROOT>(
                     &self.tree,
-                    current_node_index,
+                    current_node_idx,
                     action_cpy.visits(),
                     self.options.cpuct_value(),
                 );
-                let new_edge_cpy = self
-                    .tree
-                    .get_edge_clone(current_node_index, best_action_index);
-                current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
+                let edge = &self.tree[current_node_idx].actions()[best_action_idx];
+                current_position.make_move::<STM_WHITE, NSTM_WHITE>(edge.mv());
 
                 //Process the new action on the tree and obtain it's updated index
                 let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
                     &current_position,
-                    new_edge_cpy.node_index(),
-                    current_node_index,
-                    best_action_index,
+                    edge.node_index(),
+                    current_node_idx,
+                    best_action_idx,
                 )?;
 
                 //Descend deeper into the tree
                 *depth += 1;
                 let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
                     new_node_index,
-                    &new_edge_cpy,
+                    &edge,
                     current_position,
                     depth,
                 )?;
 
-                self.tree
-                    .add_edge_score::<false>(current_node_index, best_action_index, score);
+                self.tree[current_node_idx].actions()[best_action_idx].add_score(score);
 
                 self.tree
-                    .backpropagate_mates(current_node_index, self.tree[new_node_index].state());
+                    .backpropagate_mates(current_node_idx, self.tree[new_node_index].state());
 
                 score
             };
