@@ -47,8 +47,7 @@ impl SearchStats {
     pub fn add_iteration(&self, depth: u32) {
         self.iters.fetch_add(1, Ordering::Relaxed);
         self.total_depth.fetch_add(depth, Ordering::Relaxed);
-        self.max_depth
-            .store(self.max_depth().max(depth), Ordering::Relaxed);
+        self.max_depth.fetch_max(depth, Ordering::Relaxed);
     }
 
     pub fn update_time_passed(&self) {

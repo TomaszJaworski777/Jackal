@@ -45,7 +45,7 @@ impl Node {
                 f32::from(action.score())
             };
 
-            score + (explore_value * action.policy() / (visits as f32 + 1.0))
+            score + (explore_value * action.policy() / ((visits + action.threads() as u32) as f32 + 1.0))
         })
     }
 }

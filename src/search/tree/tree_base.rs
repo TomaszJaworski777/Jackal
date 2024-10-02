@@ -3,7 +3,7 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 
-use crate::GameState;
+use crate::{search::Score, GameState};
 
 use super::tree_segment::TreeSegment;
 use super::{node::NodeIndex, Edge, Node};
@@ -28,7 +28,7 @@ impl Index<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn new(size_in_mb: i64) -> Self {
+    pub fn new(size_in_mb: i32) -> Self {
         let bytes = size_in_mb * 1024 * 1024;
         let tree_size =
             bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
@@ -47,7 +47,7 @@ impl Tree {
         tree
     }
 
-    pub fn resize_tree(&mut self, size_in_mb: i64) {
+    pub fn resize_tree(&mut self, size_in_mb: i32) {
         *self = Self::new(size_in_mb)
     }
 
@@ -76,14 +76,20 @@ impl Tree {
         &self.segments[self.current_segment.load(Ordering::Relaxed)]
     }
 
-    pub fn has_threads_active(&self) -> bool {
-        for action in &*self[self.root_index()].actions() {
-            if action.threads() > 0 {
-                return true;
-            }
-        }
+    pub fn get_edge_clone(&self, node_idx: NodeIndex, action_idx: usize) -> Edge {
+        self[node_idx].actions()[action_idx].clone()
+    }
 
-        return false;
+    pub fn add_score_to_edge(&self, node_idx: NodeIndex, action_idx: usize, score: Score) {
+        self[node_idx].actions()[action_idx].add_score(score);
+    }
+
+    pub fn add_thread(&self, node_idx: NodeIndex, action_idx: usize) {
+        self[node_idx].actions()[action_idx].add_thread();
+    }
+
+    pub fn remove_thread(&self, node_idx: NodeIndex, action_idx: usize) {
+        self[node_idx].actions()[action_idx].remove_thread();
     }
 
     #[inline]

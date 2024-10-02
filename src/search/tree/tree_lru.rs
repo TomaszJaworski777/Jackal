@@ -17,25 +17,41 @@ impl Tree {
         //When there is no node assigned to the selected move edge, we spawn new node
         //and return its index
         if child_index.is_null() {
+
+            let actions = self[edge_index].actions_mut();
+
+            let idx = actions[action_index].node_index();
+            if !idx.is_null() {
+                return Some(idx);
+            }
+
             //We spawn a new node and update the corresponding edge. If the segment returned None,
             //then it means segment is full, we return that instantly and process it in the search
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
             let new_index = self.current_segment().add(state)?;
 
-            self[edge_index].actions()[action_index].set_node_index(new_index);
+            actions[action_index].set_node_index(new_index);
 
             Some(new_index)
 
         //When there is a node assigned to the selected move edge, but the assigned
         //node is in old tree segment, we want to copy it to the new tree segment
         } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
+
+            let actions = self[edge_index].actions_mut();
+
+            let idx = actions[action_index].node_index();
+            if idx.segment() == self.current_segment.load(Ordering::Relaxed) {
+                return Some(idx);
+            }
+
             //We get new index from the segment. If the index is None, then segment is
             //full. When that happens we return it instantly and process it in the search
             let new_index = self.current_segment().add(GameState::Unresolved)?;
 
             //Next, we copy the actions from the old node to the new one and
             self.copy_node(child_index, new_index);
-            self[edge_index].actions()[action_index].set_node_index(new_index);
+            actions[action_index].set_node_index(new_index);
 
             Some(new_index)
 

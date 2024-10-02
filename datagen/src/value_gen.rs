@@ -39,6 +39,7 @@ impl ValueGen {
                     &options,
                     &search_stats,
                     &limits,
+                    1
                 );
 
                 let (best_move, best_score) = mcts.search::<NoPrint>();

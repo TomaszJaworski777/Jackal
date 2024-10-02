@@ -13,6 +13,7 @@ pub struct Mcts<'a> {
     pub(super) options: &'a EngineOptions,
     pub(super) stats: &'a SearchStats,
     pub(super) limits: &'a SearchLimits,
+    pub(super) threads: i32
 }
 
 impl<'a> Mcts<'a> {
@@ -23,6 +24,7 @@ impl<'a> Mcts<'a> {
         options: &'a EngineOptions,
         stats: &'a SearchStats,
         limits: &'a SearchLimits,
+        threads: i32
     ) -> Self {
         Self {
             root_position,
@@ -31,6 +33,7 @@ impl<'a> Mcts<'a> {
             options,
             stats,
             limits,
+            threads
         }
     }
 
@@ -50,9 +53,9 @@ impl<'a> Mcts<'a> {
 
         //Start mcts search loop
         if self.root_position.board().side_to_move() == Side::WHITE {
-            self.main_loop::<PRINTER, true, false>()
+            self.execute::<PRINTER, true, false>()
         } else {
-            self.main_loop::<PRINTER, false, true>()
+            self.execute::<PRINTER, false, true>()
         }
 
         let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(&self.tree);

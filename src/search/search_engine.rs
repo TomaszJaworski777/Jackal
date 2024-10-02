@@ -77,7 +77,7 @@ impl<'a> SearchEngine<'a> {
 
     pub fn reset(&mut self) {
         self.position = ChessPosition::from_fen(&FEN::start_position());
-        self.tree.clear();
+        self.tree.resize_tree(self.options.hash());
     }
 
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
@@ -98,6 +98,7 @@ impl<'a> SearchEngine<'a> {
                     self.options,
                     &search_stats,
                     search_limits,
+                    self.options.threads()
                 );
                 let (_, _) = if print_reports {
                     if self.uci_initialized {
