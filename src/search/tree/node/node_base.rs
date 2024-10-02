@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicU16, Ordering},
+    atomic::{AtomicU16, AtomicU8, Ordering},
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
@@ -8,6 +8,7 @@ use crate::{search::tree::Edge, GameState};
 pub struct Node {
     actions: RwLock<Vec<Edge>>,
     state: AtomicU16,
+    threads: AtomicU8
 }
 
 impl Default for Node {
@@ -21,6 +22,7 @@ impl Node {
         Self {
             actions: RwLock::new(Vec::new()),
             state: AtomicU16::new(u16::from(state)),
+            threads: AtomicU8::new(0)
         }
     }
 
@@ -52,6 +54,19 @@ impl Node {
     #[inline]
     pub fn actions_mut(&self) -> RwLockWriteGuard<Vec<Edge>> {
         self.actions.write().unwrap()
+    }
+
+    pub fn threads(&self) -> u8 {
+        self.threads.load(Ordering::Relaxed)
+    }
+
+    pub fn add_thread(&self) {
+        self.threads.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn remove_thread(&self) {
+        let previous = self.threads.fetch_sub(1, Ordering::Relaxed);
+        assert_ne!(previous, 0)
     }
 
     #[inline]

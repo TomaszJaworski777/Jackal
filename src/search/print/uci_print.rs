@@ -32,12 +32,13 @@ impl SearchDisplay for UciPrint {
         };
 
         println!(
-            "info depth {} seldepth {} {} time {} nodes {} nps {} pv {}",
+            "info depth {} seldepth {} {} time {} nodes {}/{} nps {} pv {}",
             search_stats.avg_depth(),
             search_stats.max_depth(),
             score_text,
             search_stats.time_passed() as u128,
             search_stats.iters() as u128,
+            search_stats.iters_main() as u128,
             search_stats.iters() as u128 * 1000 / search_stats.time_passed().max(1) as u128,
             pv_string
         )

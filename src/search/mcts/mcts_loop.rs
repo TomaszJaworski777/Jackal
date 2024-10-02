@@ -17,7 +17,11 @@ impl<'a> Mcts<'a> {
 
         loop {
             thread::scope(|s| {
-                s.spawn(|| self.run_main_loop::<PRINTER ,STM_WHITE, NSTM_WHITE>(&mut last_raport_time, &mut last_avg_depth));
+                s.spawn(|| {
+                    if self.run_main_loop::<PRINTER ,STM_WHITE, NSTM_WHITE>(&mut last_raport_time, &mut last_avg_depth) {
+                        self.interruption_token.store(true, Ordering::Relaxed)
+                    }
+                });
 
                 for _ in 0..(self.threads - 1) {
                     s.spawn(|| self.run_worker::<STM_WHITE, NSTM_WHITE>());
@@ -32,7 +36,7 @@ impl<'a> Mcts<'a> {
         }
     }
 
-    fn run_main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, last_raport_time: &mut Instant, last_avg_depth: &mut u32) {
+    fn run_main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, last_raport_time: &mut Instant, last_avg_depth: &mut u32) -> bool{
         loop {
             let mut depth = 0;
             let mut position = self.root_position;
@@ -47,15 +51,15 @@ impl<'a> Mcts<'a> {
             if let Some(score) = result {
                 self.tree.root_edge().add_score(score);
             } else {
-                return;
+                return false;
             }
 
             //Increment search stats
-            self.stats.add_iteration(depth);
+            self.stats.add_iteration(depth, true);
 
             //Interrupt search when root becomes terminal node, so when there is a force mate on board
             if self.tree[root_index].is_termial() {
-                self.interruption_token.store(true, Ordering::Relaxed)
+                return true;
             }
 
             //Update timer every few iterations to reduce the slowdown caused by obtaining time
@@ -65,11 +69,11 @@ impl<'a> Mcts<'a> {
 
             //Check for end of the search
             if self.limits.is_limit_reached(self.stats, self.options) {
-                self.interruption_token.store(true, Ordering::Relaxed)
+                return true;
             }
                     
             if self.interruption_token.load(Ordering::Relaxed) {
-                break;
+                return true;
             }
 
             //Draws report when avg_depth increases or if there wasnt any report for 1s
@@ -108,14 +112,14 @@ impl<'a> Mcts<'a> {
                 return;
             }
 
-            self.stats.add_iteration(depth);
+            self.stats.add_iteration(depth, false);
                     
             if self.tree[root_index].is_termial() {
                 return;
             }
 
             if self.interruption_token.load(Ordering::Relaxed) {
-                break;
+                return;
             }
         }
     }

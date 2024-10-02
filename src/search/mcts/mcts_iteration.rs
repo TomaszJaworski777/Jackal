@@ -49,7 +49,8 @@ impl<'a> Mcts<'a> {
                     current_node_idx,
                     best_action_idx,
                 )?;
-                self.tree.add_thread(current_node_idx, best_action_idx);
+                
+                self.tree[new_node_idx].add_thread();
 
                 //Descend deeper into the tree
                 *depth += 1;
@@ -60,7 +61,7 @@ impl<'a> Mcts<'a> {
                     depth,
                 );
 
-                self.tree.remove_thread(current_node_idx, best_action_idx);
+                self.tree[new_node_idx].remove_thread();
 
                 let score = nullable_score?;
                 self.tree.add_score_to_edge(current_node_idx, best_action_idx, score);

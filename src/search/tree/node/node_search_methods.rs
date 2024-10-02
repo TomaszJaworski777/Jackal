@@ -38,14 +38,18 @@ impl Node {
 
         let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
         tree[node_idx].get_best_action_by_key(|action| {
-            let visits = action.visits();
+            let mut visits = action.visits();
             let score = if visits == 0 {
                 0.5
             } else {
                 f32::from(action.score())
             };
 
-            score + (explore_value * action.policy() / ((visits + action.threads() as u32) as f32 + 1.0))
+            if !action.node_index().is_null() {
+                visits += tree[action.node_index()].threads() as u32
+            }
+
+            score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }
 }

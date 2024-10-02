@@ -84,14 +84,6 @@ impl Tree {
         self[node_idx].actions()[action_idx].add_score(score);
     }
 
-    pub fn add_thread(&self, node_idx: NodeIndex, action_idx: usize) {
-        self[node_idx].actions()[action_idx].add_thread();
-    }
-
-    pub fn remove_thread(&self, node_idx: NodeIndex, action_idx: usize) {
-        self[node_idx].actions()[action_idx].remove_thread();
-    }
-
     #[inline]
     pub fn total_usage(&self) -> f32 {
         let mut total = 0.0;

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicI16, AtomicU16, AtomicU32, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicI16, AtomicU16, AtomicU32, Ordering};
 
 use crate::search::{eval_score::AtomicScore, NodeIndex, Score};
 use spear::Move;
@@ -8,8 +8,7 @@ pub struct Edge {
     mv: AtomicU16,
     policy: AtomicI16,
     visits: AtomicU32,
-    score: AtomicScore,
-    threads: AtomicU8
+    score: AtomicScore
 }
 
 impl Clone for Edge {
@@ -19,8 +18,7 @@ impl Clone for Edge {
             mv: AtomicU16::new(self.mv().get_raw()),
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
-            score: self.score.clone(),
-            threads: AtomicU8::new(0)
+            score: self.score.clone()
         }
     }
 }
@@ -38,8 +36,7 @@ impl Edge {
             mv: AtomicU16::new(mv.get_raw()),
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
-            score: AtomicScore::default(),
-            threads: AtomicU8::new(0)
+            score: AtomicScore::default()
         }
     }
 
@@ -55,7 +52,6 @@ impl Edge {
         self.set_policy(policy);
         self.visits.store(0, Ordering::Relaxed);
         self.score.store(Score::default());
-        self.threads.store(0, Ordering::Relaxed);
     }
 
     #[inline]
@@ -82,19 +78,6 @@ impl Edge {
     pub fn set_policy(&self, new_policy: f32) {
         self.policy
             .store((new_policy * f32::from(i16::MAX)) as i16, Ordering::Relaxed)
-    }
-
-    pub fn threads(&self) -> u8 {
-        self.threads.load(Ordering::Relaxed)
-    }
-
-    pub fn add_thread(&self) {
-        self.threads.fetch_add(1, Ordering::Relaxed);
-    }
-
-    pub fn remove_thread(&self) {
-        let previous = self.threads.fetch_sub(1, Ordering::Relaxed);
-        assert_ne!(previous, 0)
     }
 
     #[inline]

@@ -8,6 +8,7 @@ pub struct SearchStats {
     total_depth: AtomicU32,
     max_depth: AtomicU32,
     iters: AtomicU32,
+    iters_main: AtomicU32,
     time_passed: AtomicU64,
 }
 
@@ -24,6 +25,7 @@ impl SearchStats {
             total_depth: AtomicU32::new(0),
             max_depth: AtomicU32::new(0),
             iters: AtomicU32::new(0),
+            iters_main: AtomicU32::new(0),
             time_passed: AtomicU64::new(0),
         }
     }
@@ -44,8 +46,15 @@ impl SearchStats {
         self.iters.load(Ordering::Relaxed)
     }
 
-    pub fn add_iteration(&self, depth: u32) {
+    pub fn iters_main(&self) -> u32 {
+        self.iters_main.load(Ordering::Relaxed)
+    }
+
+    pub fn add_iteration(&self, depth: u32, main: bool) {
         self.iters.fetch_add(1, Ordering::Relaxed);
+        if main {
+            self.iters_main.fetch_add(1, Ordering::Relaxed);
+        }
         self.total_depth.fetch_add(depth, Ordering::Relaxed);
         self.max_depth.fetch_max(depth, Ordering::Relaxed);
     }
