@@ -1,5 +1,5 @@
 mod mcts_base;
 mod mcts_iteration;
-mod mcts_workers;
+mod mcts_manager;
 
 pub use mcts_base::Mcts;

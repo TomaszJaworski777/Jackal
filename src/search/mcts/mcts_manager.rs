@@ -26,6 +26,8 @@ impl<'a> Mcts<'a> {
                 &mut depth,
             );
 
+            assert!(!self.tree.has_threads_active());
+
             if let Some(score) = result {
                 self.tree.root_edge().add_score(score);
             } else {

@@ -43,26 +43,29 @@ impl<'a> Mcts<'a> {
                 current_position.make_move::<STM_WHITE, NSTM_WHITE>(edge.mv());
 
                 //Process the new action on the tree and obtain it's updated index
-                let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
+                let new_node_idx = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
                     &current_position,
                     edge.node_index(),
                     current_node_idx,
                     best_action_idx,
                 )?;
 
+                edge.add_thread();
+
                 //Descend deeper into the tree
                 *depth += 1;
-                let score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
-                    new_node_index,
+                let nullable_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
+                    new_node_idx,
                     &edge,
                     current_position,
                     depth,
-                )?;
+                );
 
+                edge.remove_thread();
+
+                let score = nullable_score?;
                 self.tree[current_node_idx].actions()[best_action_idx].add_score(score);
-
-                self.tree
-                    .backpropagate_mates(current_node_idx, self.tree[new_node_index].state());
+                self.tree.backpropagate_mates(current_node_idx, self.tree[new_node_idx].state());
 
                 score
             };

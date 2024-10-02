@@ -76,6 +76,16 @@ impl Tree {
         &self.segments[self.current_segment.load(Ordering::Relaxed)]
     }
 
+    pub fn has_threads_active(&self) -> bool {
+        for action in &*self[self.root_index()].actions() {
+            if action.threads() > 0 {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     #[inline]
     pub fn total_usage(&self) -> f32 {
         let mut total = 0.0;
