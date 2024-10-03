@@ -55,7 +55,7 @@ impl<'a> Mcts<'a> {
             }
 
             //Increment search stats
-            self.stats.add_iteration(depth, true);
+            self.stats.add_iteration(depth);
 
             //Interrupt search when root becomes terminal node, so when there is a force mate on board
             if self.tree[root_index].is_termial() {
@@ -112,7 +112,7 @@ impl<'a> Mcts<'a> {
                 return;
             }
 
-            self.stats.add_iteration(depth, false);
+            self.stats.add_iteration(depth);
                     
             if self.tree[root_index].is_termial() {
                 return;
