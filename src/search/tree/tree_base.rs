@@ -32,9 +32,8 @@ impl Index<NodeIndex> for Tree {
 
 impl Tree {
     pub fn new(size_in_mb: i32) -> Self {
-        let bytes = size_in_mb * 1024 * 1024;
-        let tree_size =
-            bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
+        let bytes = (size_in_mb as usize) * 1024 * 1024;
+        let tree_size = bytes as usize / (48 + 12 * 16);
         let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
