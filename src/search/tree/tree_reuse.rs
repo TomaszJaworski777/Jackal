@@ -6,25 +6,34 @@ use super::{Edge, NodeIndex, Tree};
 
 impl Tree {
     pub fn reuse_tree(&mut self, previous_board: &ChessBoard, current_board: &ChessBoard) {
+
+        //When tree is empty then we don't need to check for possible reuse, we can just return,
+        //but before that we add a root node to make sure that tree is valid
         if self.total_usage() == 0.0 {
             _ = self.current_segment().add(GameState::Unresolved);
             return;
         }
 
+        //If position didn't change then we can continue with current tree
         if previous_board == current_board {
             return;
         }
 
+        //Finds the new position in the tree up to depth 2
         let (node_index, edge) = if previous_board.side_to_move() == Side::WHITE {
             self.recurse_find::<_, true, false>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
         } else {
             self.recurse_find::<_, false, true>(self.root_index(), previous_board, self.root_edge().clone(), 2, &|board, _| board == current_board)
         };
 
+        //If the position was found and tree after that position is not empty,
+        //we can move the position to the root postion
         if !node_index.is_null() && self[node_index].has_children() {
             self[self.root_index()].clear();
             self.copy_node(node_index, self.root_index());
             self.root_edge = edge;
+        
+        //Otherwise we clear the tree and reinit the root node
         } else {
             self.clear();
             _ = self.current_segment().add(GameState::Unresolved);

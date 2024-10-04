@@ -13,13 +13,14 @@ impl Tree {
         //and return its index
         if child_index.is_null() {
 
+            //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
-            //We spawn a new node and update the corresponding edge. If the segment returned None,
-            //then it means segment is full, we return that instantly and process it in the search
+            //Create new node in the current segment
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
             let new_index = self.current_segment().add(state)?;
 
+            //Assign new node index to the edge
             actions[action_index].set_node_index(new_index);
 
             Some(new_index)
@@ -28,13 +29,14 @@ impl Tree {
         //node is in old tree segment, we want to copy it to the new tree segment
         } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
 
+            //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
-            //We get new index from the segment. If the index is None, then segment is
-            //full. When that happens we return it instantly and process it in the search
+            //Obtain new node index from the current segment
             let new_index = self.current_segment().add(GameState::Unresolved)?;
 
-            //Next, we copy the actions from the old node to the new one and
+            //Copy the node from old location to the new one and check it's index
+            //in the edge
             self.copy_node(child_index, new_index);
             actions[action_index].set_node_index(new_index);
 
@@ -47,22 +49,27 @@ impl Tree {
         }
     }
 
+    //When segment is full we want to prepare new segment and swap our tree to it
     pub fn advance_segments(&self) {
         let old_root_index = self.root_index();
 
+        //Calculate new segment index
         let current_segment_index = self.current_segment.load(Ordering::Relaxed);
         let new_segment_index = (current_segment_index + 1) % SEGMENT_COUNT;
 
+        //Iterate through segments and kill all pointers to the segment we are about to clear
         for i in 0..SEGMENT_COUNT {
             if i != new_segment_index {
                 self.segments[i].clear_references(new_segment_index as u32);
             }
         }
 
+        //Clear the segment
         self.current_segment
             .store(new_segment_index, Ordering::Relaxed);
         self.segments[new_segment_index].clear();
 
+        //Move root to the new segment
         let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
         self[new_root_index].clear();
 

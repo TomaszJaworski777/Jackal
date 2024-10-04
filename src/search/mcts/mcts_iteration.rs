@@ -52,8 +52,10 @@ impl<'a> Mcts<'a> {
                 depth,
             )?;
 
-            self.tree.add_edge_score::<false>(current_node_index, best_action_index, score);
+            //Backpropagate the score up the tree
+            self.tree.add_edge_score(current_node_index, best_action_index, score);
 
+            //Backpropagate mates to assure our engine avoids/follows mating line
             self.tree.backpropagate_mates(current_node_index, self.tree[new_node_index].state());
 
             score

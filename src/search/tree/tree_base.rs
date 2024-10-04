@@ -31,7 +31,7 @@ impl Index<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn new(size_in_mb: i64) -> Self {
+    pub fn new(size_in_mb: i32) -> Self {
         let bytes = size_in_mb * 1024 * 1024;
         let tree_size =
             bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
@@ -50,7 +50,7 @@ impl Tree {
         tree
     }
 
-    pub fn resize_tree(&mut self, size_in_mb: i64) {
+    pub fn resize_tree(&mut self, size_in_mb: i32) {
         *self = Self::new(size_in_mb)
     }
 
@@ -96,17 +96,13 @@ impl Tree {
     }
 
     #[inline]
-    pub fn add_edge_score<const ROOT: bool>(
+    pub fn add_edge_score(
         &self,
         node_index: NodeIndex,
         action_index: usize,
         score: Score,
     ) {
-        if ROOT {
-            self.root_edge.add_score(score)
-        } else {
-            self[node_index].actions()[action_index].add_score(score)
-        }
+        self[node_index].actions()[action_index].add_score(score)
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
@@ -148,7 +144,7 @@ impl Tree {
             return;
         }
 
-        //We recursivly desent down the tree picking the best moves and adding them to the result forming pv line
+        //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
         let best_action = self[node_index].get_best_action(self);
         result.push(self[node_index].actions()[best_action].mv());
         let new_node_index = self[node_index].actions()[best_action].node_index();

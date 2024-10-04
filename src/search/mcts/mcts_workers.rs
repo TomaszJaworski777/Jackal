@@ -21,7 +21,7 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree.add_edge_score::<true>(self.tree.root_index(), 0, score);
+                self.tree.root_edge().add_score(score);
             } else {
                 self.tree.advance_segments();
                 continue;
@@ -50,7 +50,7 @@ impl<'a> Mcts<'a> {
                 break;
             }
 
-            //draws report when avg_depth increases or if there wasnt any report for 1s
+            //Draws report when avg_depth increases or if there wasn't any report for 1s
             if self.stats.avg_depth() > last_avg_depth
                 || last_raport_time.elapsed().as_secs_f32() > 1.0
             {

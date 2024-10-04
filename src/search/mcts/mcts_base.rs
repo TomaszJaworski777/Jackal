@@ -51,6 +51,8 @@ impl<'a> Mcts<'a> {
             self.main_loop::<PRINTER, false, true>()
         }
 
+        //At the end of the search print the last search update raport and then print
+        //end of search message containing search result
         let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(&self.tree);
         self.stats.update_time_passed();
         PRINTER::print_search_raport(
