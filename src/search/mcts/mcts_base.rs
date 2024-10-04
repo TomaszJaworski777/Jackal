@@ -59,6 +59,7 @@ impl<'a> Mcts<'a> {
             self.stats,
             self.options,
             self.limits,
+            self.tree.total_usage(),
             best_score,
             self.tree[self.tree.root_index()].state(),
             &self.tree.get_pv(),

@@ -18,6 +18,7 @@ pub struct Tree {
     pub(super) segments: [TreeSegment; SEGMENT_COUNT],
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
+    pub(super) tree_size_in_bytes: usize
 }
 
 impl Index<NodeIndex> for Tree {
@@ -44,6 +45,7 @@ impl Tree {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
+            tree_size_in_bytes: bytes
         };
 
         tree

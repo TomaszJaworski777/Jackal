@@ -1,11 +1,13 @@
+use colored::Colorize;
 use spear::{ChessBoard, Move};
 
-use crate::GameState;
+use crate::{utils::heat_color, GameState};
 
 use super::{Edge, NodeIndex, Tree};
 
 impl Tree {
     pub fn draw_tree<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, board: &ChessBoard, node_idx: NodeIndex, depth: u32) {
+        self.print_usage_text();
         let mut node_depth = 0;
         let is_root = node_idx == self.root_index();
         if is_root {
@@ -22,6 +24,23 @@ impl Tree {
             }
         }
         self.draw_tree_internal(node_idx, depth - 1, &String::new(), node_depth % 2 == 1)
+    }
+
+    fn print_usage_text(&self) {
+        let usage = self.total_usage();
+        let usage_percent = heat_color(format!("{}%", (usage * 100.0) as u32).as_str(), 1.0 - usage, 0.0, 1.0);
+        let used_bytes = format!("{}B", Self::bytes_to_string(( self.tree_size_in_bytes as f32 * usage) as u128)).white();
+        let total_bytes = format!("{}B", Self::bytes_to_string(self.tree_size_in_bytes as u128)).white();
+        println!("{}", format!("\nUsage: {}/{} ({})\n", used_bytes, total_bytes, usage_percent).bright_black());
+    }
+
+    fn bytes_to_string(number: u128) -> String {
+        match number {
+            0..=1023 => format!("{number}"),
+            1024..=1_048_575 => format!("{:.2}K", number as f64 / 1024.0),
+            1_048_576..=1_073_741_823 => format!("{:.2}M", number as f64 / 1_048_576.0),
+            1_073_741_824.. => format!("{:.2}G", number as f64 / 1_073_741_824.0),
+        }
     }
 
     fn find_position_by_key<F: Fn(ChessBoard, NodeIndex) -> bool, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, previous_board: &ChessBoard, node_idx: NodeIndex, depth: u8, method: &F) -> Option<(NodeIndex, usize, u8)> {

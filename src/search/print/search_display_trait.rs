@@ -18,6 +18,7 @@ pub trait SearchDisplay {
         search_stats: &SearchStats,
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
+        usage: f32,
         score: Score,
         state: GameState,
         pv: &[Move],
