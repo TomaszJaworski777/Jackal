@@ -6,8 +6,6 @@ use jackal::{
 use spear::{ChessPosition, FEN};
 
 fn main() {
-    //Process arguments passed when starting the engine
-    ParamsProcessor::execute(env::args().collect());
 
     //Init search engine
     let start_position = ChessPosition::from_fen(&FEN::start_position());
@@ -22,6 +20,9 @@ fn main() {
         &mut options,
         &mut command_queue,
     );
+
+    //Process arguments passed when starting the engine
+    ParamsProcessor::execute(env::args().collect(), &mut search_engine);
 
     println!("Jackal v{} by Tomasz Jaworski\n", env!("CARGO_PKG_VERSION"));
 

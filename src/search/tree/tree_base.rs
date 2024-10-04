@@ -62,6 +62,8 @@ impl Tree {
 
         self.current_segment.store(0, Ordering::Relaxed);
         self.root_edge = Edge::default();
+
+        _ = self.current_segment().add(GameState::Unresolved);
     }
 
     #[inline]
