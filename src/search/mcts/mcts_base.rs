@@ -38,9 +38,9 @@ impl<'a> Mcts<'a> {
         if !self.tree[root_index].has_children() {
             let side_to_move = self.root_position.board().side_to_move();
             if side_to_move == Side::WHITE {
-                self.tree[root_index].expand::<true, false, true>(&self.root_position)
+                self.expand::<true, false, true>(root_index, &self.root_position)
             } else {
-                self.tree[root_index].expand::<false, true, true>(&self.root_position)
+                self.expand::<false, true, true>(root_index, &self.root_position)
             }
         }
 

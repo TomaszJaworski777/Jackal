@@ -26,12 +26,11 @@ impl<'a> Mcts<'a> {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                self.tree[current_node_index].expand::<STM_WHITE, NSTM_WHITE, false>(current_position)
+                self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, current_position)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.tree[current_node_index].select_action::<ROOT>(
-                &self.tree,
+            let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy.visits(),
                 self.options.cpuct_value(),
@@ -61,5 +60,49 @@ impl<'a> Mcts<'a> {
         };
 
         Some(score.reversed())
+    }
+
+    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+        &self,
+        node_idx: NodeIndex,
+        position: &ChessPosition,
+    ) {
+        let mut actions = self.tree[node_idx].actions_mut();
+
+        //Map moves into actions and set initial policy to 1
+        position
+            .board()
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
+                actions.push(Edge::new(NodeIndex::NULL, mv, 1.0))
+            });
+
+        //Update the policy to 1/action_count for uniform policy
+        let action_count = actions.len() as f32;
+        for action in actions.iter_mut() {
+            action.update_policy(1.0 / action_count)
+        }
+    }
+
+    //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
+    #[inline]
+    fn select_action<const ROOT: bool>(
+        &self,
+        node_idx: NodeIndex,
+        parent_visits: u32,
+        cpuct: f32,
+    ) -> usize {
+        assert!(self.tree[node_idx].has_children());
+
+        let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
+        self.tree[node_idx].get_best_action_by_key(|action| {
+            let visits = action.visits();
+            let score = if visits == 0 {
+                0.5
+            } else {
+                f32::from(action.score())
+            };
+
+            score + (explore_value * action.policy() / (visits as f32 + 1.0))
+        })
     }
 }
