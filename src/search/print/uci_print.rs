@@ -1,5 +1,5 @@
 use crate::{search::Score, GameState};
-use spear::Move;
+use spear::{ChessPosition, Move};
 
 use crate::{
     options::EngineOptions,
@@ -11,7 +11,7 @@ use super::SearchDisplay;
 pub struct UciPrint;
 #[allow(unused)]
 impl SearchDisplay for UciPrint {
-    fn new() -> Self {
+    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
         UciPrint
     }   
 

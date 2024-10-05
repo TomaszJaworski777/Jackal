@@ -1,5 +1,5 @@
 use crate::{search::Score, GameState};
-use spear::Move;
+use spear::{ChessPosition, Move};
 
 use crate::{
     options::EngineOptions,
@@ -8,14 +8,7 @@ use crate::{
 
 #[allow(unused)]
 pub trait SearchDisplay {
-    fn new() -> Self;
-    fn print_search_start(
-        &mut self,
-        search_stats: &SearchStats,
-        engine_options: &EngineOptions,
-        search_limits: &SearchLimits,
-    ) {
-    }
+    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
     fn print_search_raport<const FINAL: bool>(
         &mut self,
         search_stats: &SearchStats,
