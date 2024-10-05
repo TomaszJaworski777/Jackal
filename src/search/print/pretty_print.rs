@@ -121,8 +121,8 @@ impl SearchDisplay for PrettyPrint {
         );
         print!("                                                                                                             \r");
         let pv_string = pv_to_string::<FINAL>(pv);
-        println!(" {}  {}\n", "Best Line:".bright_black(), pv_string);
-
+        println!(" {}  {}", "Best Line:".bright_black(), pv_string);
+        println!("                                                                                                             ");
         println!(" Search History:");
         let start_idx = self.history.len() - self.max_history_size.min(self.history.len());
 
@@ -188,6 +188,8 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
             idx as f32 / (pv_length - 1).max(14) as f32,
         ));
     }
+
+    pv_string.push_str("                                                                    \n");
 
     if rest > 0 {
         pv_string.push_str(&lerp_color(
