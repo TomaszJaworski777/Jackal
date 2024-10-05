@@ -124,6 +124,8 @@ impl SearchDisplay for PrettyPrint {
 
         println!(" Search History:");
         let start_idx = self.history.len() - self.max_history_size.min(self.history.len());
+        
+        #[allow(clippy::needless_range_loop)]
         for idx in start_idx..self.history.len() {
             let (timestamp, pv_line) = &self.history[idx];
             println!(
@@ -140,7 +142,7 @@ impl SearchDisplay for PrettyPrint {
         }
         println!("                                                  ");
 
-        if pv.len() > 0 && pv[0] != self.last_best_move {
+        if !pv.is_empty() && pv[0] != self.last_best_move {
             self.last_best_move = pv[0];
             self.history
                 .push((search_stats.time_passed() as u128, pv_string));

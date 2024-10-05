@@ -100,7 +100,7 @@ impl MiscCommandsProcessor {
             return;
         }
 
-        let depth = if args.len() >= 1 {
+        let depth = if !args.is_empty() {
             args[0].parse::<u32>().unwrap_or(1).max(1)
         } else {
             1
@@ -108,13 +108,13 @@ impl MiscCommandsProcessor {
 
         let node_index = if args.len() == 3 {
             let segment = args[1]
-                .replace("(", "")
-                .replace(",", "")
+                .replace('(', "")
+                .replace(',', "")
                 .trim()
                 .parse::<u32>()
                 .expect("Incorrect segment");
             let index = args[2]
-                .replace(")", "")
+                .replace(')', "")
                 .trim()
                 .parse::<u32>()
                 .expect("Incorrect index");

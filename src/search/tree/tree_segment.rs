@@ -30,7 +30,7 @@ impl TreeSegment {
     }
 
     pub fn len(&self) -> usize {
-        self.length.load(Ordering::Relaxed) as usize
+        self.length.load(Ordering::Relaxed)
     }
 
     pub fn size(&self) -> usize {

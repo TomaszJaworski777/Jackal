@@ -9,6 +9,7 @@ use crate::{
 #[allow(unused)]
 pub trait SearchDisplay {
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
+    #[allow(clippy::too_many_arguments)]
     fn print_search_raport<const FINAL: bool>(
         &mut self,
         search_stats: &SearchStats,

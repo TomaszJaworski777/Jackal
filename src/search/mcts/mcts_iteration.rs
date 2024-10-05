@@ -45,7 +45,7 @@ impl<'a> Mcts<'a> {
 
             //Process the new action on the tree and obtain it's updated index
             let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
-                &current_position,
+                current_position,
                 new_edge_cpy.node_index(),
                 current_node_index,
                 best_action_index,

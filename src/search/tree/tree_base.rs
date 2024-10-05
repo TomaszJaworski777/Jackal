@@ -38,14 +38,12 @@ impl Tree {
             TreeSegment::new(segment_size, 1),
         ];
 
-        let tree = Self {
+        Self {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
             tree_size_in_bytes: bytes,
-        };
-
-        tree
+        }
     }
 
     pub fn resize_tree(&mut self, size_in_mb: i32) {

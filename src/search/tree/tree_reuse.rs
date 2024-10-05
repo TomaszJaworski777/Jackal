@@ -75,7 +75,7 @@ impl Tree {
 
         for action in node.actions().iter() {
             let child_index = action.node_index();
-            let mut child_board = board.clone();
+            let mut child_board = *board;
 
             child_board.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
 

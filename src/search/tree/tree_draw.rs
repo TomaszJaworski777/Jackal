@@ -96,7 +96,7 @@ impl Tree {
                 continue;
             }
 
-            let mut board_clone = previous_board.clone();
+            let mut board_clone = *previous_board;
             board_clone.make_move::<STM_WHITE, NSTM_WHITE>(action.mv());
             if method(board_clone, child_idx) {
                 return Some((node_idx, idx, 1));
@@ -148,7 +148,7 @@ impl Tree {
                     .partial_cmp(&b.policy())
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
-            .unwrap_or(&&Edge::new(NodeIndex::NULL, Move::NULL, 0.0))
+            .unwrap_or(&Edge::new(NodeIndex::NULL, Move::NULL, 0.0))
             .policy();
 
         let actions_len = self[node_index].actions().len();

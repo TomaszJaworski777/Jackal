@@ -70,7 +70,7 @@ impl Bench {
         let mut tree = Tree::new(options.hash());
 
         for fen in Bench::FENS {
-            let position = ChessPosition::from_fen(&FEN::from_str(&fen));
+            let position = ChessPosition::from_fen(&FEN::from_str(fen));
             let stats = SearchStats::new();
             let token = AtomicBool::new(false);
             tree.clear();

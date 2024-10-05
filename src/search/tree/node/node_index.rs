@@ -1,7 +1,4 @@
-use std::{
-    fmt::{Display, Formatter, Result},
-    u32,
-};
+use std::fmt::{Display, Formatter, Result};
 
 #[derive(Clone, Copy, Default, PartialEq)]
 pub struct NodeIndex(u32);

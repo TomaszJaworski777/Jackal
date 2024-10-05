@@ -35,7 +35,7 @@ impl<'a> Mcts<'a> {
     }
 
     pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, Score) {
-        let mut printer = PRINTER::new(&self.root_position, &self.options);
+        let mut printer = PRINTER::new(&self.root_position, self.options);
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
@@ -57,7 +57,7 @@ impl<'a> Mcts<'a> {
 
         //At the end of the search print the last search update raport and then print
         //end of search message containing search result
-        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(&self.tree);
+        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree);
         self.stats.update_time_passed();
         printer.print_search_raport::<true>(
             self.stats,
