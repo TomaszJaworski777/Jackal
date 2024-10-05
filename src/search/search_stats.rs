@@ -5,9 +5,9 @@ use std::{
 
 pub struct SearchStats {
     timer: Instant,
-    total_depth: AtomicU32,
+    total_depth: AtomicU64,
     max_depth: AtomicU32,
-    iters: AtomicU32,
+    iters: AtomicU64,
     time_passed: AtomicU64,
 }
 
@@ -21,9 +21,9 @@ impl SearchStats {
     pub fn new() -> Self {
         Self {
             timer: Instant::now(),
-            total_depth: AtomicU32::new(0),
+            total_depth: AtomicU64::new(0),
             max_depth: AtomicU32::new(0),
-            iters: AtomicU32::new(0),
+            iters: AtomicU64::new(0),
             time_passed: AtomicU64::new(0),
         }
     }
@@ -33,7 +33,7 @@ impl SearchStats {
     }
 
     pub fn avg_depth(&self) -> u32 {
-        self.total_depth.load(Ordering::Relaxed) / self.iters()
+        (self.total_depth.load(Ordering::Relaxed) / self.iters() as u64) as u32
     }
 
     pub fn max_depth(&self) -> u32 {
@@ -41,12 +41,12 @@ impl SearchStats {
     }
 
     pub fn iters(&self) -> u32 {
-        self.iters.load(Ordering::Relaxed)
+        self.iters.load(Ordering::Relaxed) as u32
     }
 
     pub fn add_iteration(&self, depth: u32) {
         self.iters.fetch_add(1, Ordering::Relaxed);
-        self.total_depth.fetch_add(depth, Ordering::Relaxed);
+        self.total_depth.fetch_add(depth as u64, Ordering::Relaxed);
         self.max_depth
             .store(self.max_depth().max(depth), Ordering::Relaxed);
     }

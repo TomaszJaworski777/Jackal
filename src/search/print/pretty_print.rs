@@ -185,7 +185,7 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
             &format!("{} ", pv[idx]),
             start_pv_color,
             end_pv_color,
-            idx as f32 / 14.0,
+            idx as f32 / (pv_length - 1).max(14) as f32,
         ));
     }
 
