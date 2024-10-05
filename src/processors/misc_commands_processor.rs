@@ -108,8 +108,7 @@ impl MiscCommandsProcessor {
 
         let node_index = if args.len() == 3 {
             let segment = args[1]
-                .replace('(', "")
-                .replace(',', "")
+                .replace(['(', ','], "")
                 .trim()
                 .parse::<u32>()
                 .expect("Incorrect segment");

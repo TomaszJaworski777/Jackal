@@ -46,6 +46,7 @@ impl SearchDisplay for PrettyPrint {
         }
     }
 
+    #[allow(clippy::needless_range_loop)]
     fn print_search_raport<const FINAL: bool>(
         &mut self,
         search_stats: &SearchStats,
@@ -124,8 +125,7 @@ impl SearchDisplay for PrettyPrint {
 
         println!(" Search History:");
         let start_idx = self.history.len() - self.max_history_size.min(self.history.len());
-        
-        #[allow(clippy::needless_range_loop)]
+
         for idx in start_idx..self.history.len() {
             let (timestamp, pv_line) = &self.history[idx];
             println!(
@@ -172,6 +172,7 @@ fn usage_bar(length: usize, fill: f32) -> String {
     result
 }
 
+#[allow(clippy::needless_range_loop)]
 fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
     let start_pv_color = (255, 255, 255);
     let end_pv_color = (100, 100, 100);
