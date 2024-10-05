@@ -33,15 +33,20 @@ pub fn heat_color(content: &str, value: f32, min_value: f32, max_value: f32) -> 
     } else {
         (value - min_value) / (max_value - min_value)
     };
-    let (r, g, b) = if scalar >= 0.5 {
-        lerp_color(HEAT_YELLOW, HEAT_GREEN, (scalar - 0.5) * 2.0)
+
+    if scalar >= 0.5 {
+        lerp_color(content, HEAT_YELLOW, HEAT_GREEN, (scalar - 0.5) * 2.0)
     } else {
-        lerp_color(HEAT_RED, HEAT_YELLOW, scalar * 2.0)
-    };
+        lerp_color(content, HEAT_RED, HEAT_YELLOW, scalar * 2.0)
+    }
+}
+
+pub fn lerp_color(content: &str, a: (u8, u8, u8), b: (u8, u8, u8), value: f32) -> String {
+    let (r, g, b) = lerp_color_internal(a, b, value);
     content.truecolor(r, g, b).to_string()
 }
 
-pub fn lerp_color(a: (u8, u8, u8), b: (u8, u8, u8), value: f32) -> (u8, u8, u8) {
+fn lerp_color_internal(a: (u8, u8, u8), b: (u8, u8, u8), value: f32) -> (u8, u8, u8) {
     let result_r = a.0 as i16 + ((b.0 as i16 - a.0 as i16) as f32 * value) as i16;
     let result_g = a.1 as i16 + ((b.1 as i16 - a.1 as i16) as f32 * value) as i16;
     let result_b = a.2 as i16 + ((b.2 as i16 - a.2 as i16) as f32 * value) as i16;

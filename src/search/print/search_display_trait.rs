@@ -1,5 +1,5 @@
 use crate::{search::Score, GameState};
-use spear::Move;
+use spear::{ChessPosition, Move};
 
 use crate::{
     options::EngineOptions,
@@ -8,20 +8,18 @@ use crate::{
 
 #[allow(unused)]
 pub trait SearchDisplay {
-    fn print_search_start(
+    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
+    #[allow(clippy::too_many_arguments)]
+    fn print_search_raport<const FINAL: bool>(
+        &mut self,
         search_stats: &SearchStats,
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
-    ) {
-    }
-    fn print_search_raport(
-        search_stats: &SearchStats,
-        engine_options: &EngineOptions,
-        search_limits: &SearchLimits,
+        usage: f32,
         score: Score,
         state: GameState,
         pv: &[Move],
     ) {
     }
-    fn print_search_result(mv: Move, score: Score) {}
+    fn print_search_result(&self, mv: Move, score: Score) {}
 }

@@ -38,12 +38,9 @@ impl UciProcessor {
         //Tries to execute the set option command
         search_engine.engine_options_mut().set(command, new_value);
 
-        match command {
-            "Hash" => {
-                let hash_size = search_engine.engine_options().hash();
-                search_engine.tree_mut().resize_tree(hash_size)
-            }
-            _ => (),
+        if command == "Hash" {
+            let hash_size = search_engine.engine_options().hash();
+            search_engine.tree_mut().resize_tree(hash_size)
         }
     }
 

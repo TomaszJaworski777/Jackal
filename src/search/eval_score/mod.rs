@@ -1,5 +1,5 @@
-mod score;
 mod atomic_score;
+mod score;
 
-pub use score::Score;
 pub use atomic_score::AtomicScore;
+pub use score::Score;

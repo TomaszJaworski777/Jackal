@@ -6,10 +6,7 @@ use std::{
 use crate::{search::Score, GameState};
 
 use super::tree_segment::TreeSegment;
-use super::{
-    node::NodeIndex,
-    Edge, Node,
-};
+use super::{node::NodeIndex, Edge, Node};
 use spear::Move;
 
 pub(super) const SEGMENT_COUNT: usize = 2;
@@ -18,6 +15,7 @@ pub struct Tree {
     pub(super) segments: [TreeSegment; SEGMENT_COUNT],
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
+    pub(super) tree_size_in_bytes: usize,
 }
 
 impl Index<NodeIndex> for Tree {
@@ -31,26 +29,24 @@ impl Index<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn new(size_in_mb: i64) -> Self {
-        let bytes = size_in_mb * 1024 * 1024;
-        let tree_size =
-            bytes as usize / (std::mem::size_of::<Node>() + 8 * std::mem::size_of::<Edge>());
+    pub fn new(size_in_mb: i32) -> Self {
+        let bytes = (size_in_mb as usize) * 1024 * 1024;
+        let tree_size = bytes / (48 + 12 * 16);
         let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
             TreeSegment::new(segment_size, 1),
         ];
 
-        let tree = Self {
+        Self {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
-        };
-
-        tree
+            tree_size_in_bytes: bytes,
+        }
     }
 
-    pub fn resize_tree(&mut self, size_in_mb: i64) {
+    pub fn resize_tree(&mut self, size_in_mb: i32) {
         *self = Self::new(size_in_mb)
     }
 
@@ -62,6 +58,8 @@ impl Tree {
 
         self.current_segment.store(0, Ordering::Relaxed);
         self.root_edge = Edge::default();
+
+        _ = self.current_segment().add(GameState::Unresolved);
     }
 
     #[inline]
@@ -96,17 +94,8 @@ impl Tree {
     }
 
     #[inline]
-    pub fn add_edge_score<const ROOT: bool>(
-        &self,
-        node_index: NodeIndex,
-        action_index: usize,
-        score: Score,
-    ) {
-        if ROOT {
-            self.root_edge.add_score(score)
-        } else {
-            self[node_index].actions()[action_index].add_score(score)
-        }
+    pub fn add_edge_score(&self, node_index: NodeIndex, action_index: usize, score: Score) {
+        self[node_index].actions()[action_index].add_score(score)
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
@@ -134,6 +123,26 @@ impl Tree {
                 }
             }
             _ => (),
+        }
+    }
+
+    pub fn get_pv(&self) -> Vec<Move> {
+        let mut result = Vec::new();
+        self.get_pv_internal(self.root_index(), &mut result);
+        result
+    }
+
+    fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
+        if !self[node_index].has_children() {
+            return;
+        }
+
+        //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
+        let best_action = self[node_index].get_best_action(self);
+        result.push(self[node_index].actions()[best_action].mv());
+        let new_node_index = self[node_index].actions()[best_action].node_index();
+        if !new_node_index.is_null() {
+            self.get_pv_internal(new_node_index, result)
         }
     }
 }

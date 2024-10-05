@@ -26,7 +26,7 @@ impl ValueGen {
             let mut previous_position = *position.board();
 
             while state == GameState::Unresolved {
-                tree.reuse_tree( &previous_position, position.board() );
+                tree.reuse_tree(&previous_position, position.board());
                 previous_position = *position.board();
 
                 let search_stats = SearchStats::new();

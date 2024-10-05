@@ -1,3 +1,4 @@
+mod bench;
 mod options;
 mod processors;
 mod search;
