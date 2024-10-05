@@ -1,8 +1,8 @@
+mod bench;
 mod options;
 mod processors;
 mod search;
 mod utils;
-mod bench;
 
 pub use options::EngineOptions;
 pub use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};

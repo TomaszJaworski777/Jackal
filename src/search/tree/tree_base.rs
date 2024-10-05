@@ -6,10 +6,7 @@ use std::{
 use crate::{search::Score, GameState};
 
 use super::tree_segment::TreeSegment;
-use super::{
-    node::NodeIndex,
-    Edge, Node,
-};
+use super::{node::NodeIndex, Edge, Node};
 use spear::Move;
 
 pub(super) const SEGMENT_COUNT: usize = 2;
@@ -18,7 +15,7 @@ pub struct Tree {
     pub(super) segments: [TreeSegment; SEGMENT_COUNT],
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
-    pub(super) tree_size_in_bytes: usize
+    pub(super) tree_size_in_bytes: usize,
 }
 
 impl Index<NodeIndex> for Tree {
@@ -45,7 +42,7 @@ impl Tree {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
-            tree_size_in_bytes: bytes
+            tree_size_in_bytes: bytes,
         };
 
         tree
@@ -99,12 +96,7 @@ impl Tree {
     }
 
     #[inline]
-    pub fn add_edge_score(
-        &self,
-        node_index: NodeIndex,
-        action_index: usize,
-        score: Score,
-    ) {
+    pub fn add_edge_score(&self, node_index: NodeIndex, action_index: usize, score: Score) {
         self[node_index].actions()[action_index].add_score(score)
     }
 

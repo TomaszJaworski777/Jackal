@@ -5,14 +5,17 @@ use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
 use super::Mcts;
 
 impl<'a> Mcts<'a> {
-    pub(super) fn process_deeper_node<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+    pub(super) fn process_deeper_node<
+        const STM_WHITE: bool,
+        const NSTM_WHITE: bool,
+        const ROOT: bool,
+    >(
         &self,
         current_node_index: NodeIndex,
         action_cpy: &Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
     ) -> Option<Score> {
-
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
         let score = if !ROOT
@@ -41,7 +44,12 @@ impl<'a> Mcts<'a> {
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Process the new action on the tree and obtain it's updated index
-            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(&current_position, new_edge_cpy.node_index(), current_node_index, best_action_index)?;
+            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
+                &current_position,
+                new_edge_cpy.node_index(),
+                current_node_index,
+                best_action_index,
+            )?;
 
             //Descend deeper into the tree
             *depth += 1;
@@ -53,10 +61,12 @@ impl<'a> Mcts<'a> {
             )?;
 
             //Backpropagate the score up the tree
-            self.tree.add_edge_score(current_node_index, best_action_index, score);
+            self.tree
+                .add_edge_score(current_node_index, best_action_index, score);
 
             //Backpropagate mates to assure our engine avoids/follows mating line
-            self.tree.backpropagate_mates(current_node_index, self.tree[new_node_index].state());
+            self.tree
+                .backpropagate_mates(current_node_index, self.tree[new_node_index].state());
 
             score
         };

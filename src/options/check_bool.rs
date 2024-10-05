@@ -9,7 +9,7 @@ impl CheckBool {
     pub fn new(value: bool) -> Self {
         Self {
             value,
-            default: value
+            default: value,
         }
     }
 
@@ -38,9 +38,6 @@ impl OptionTrait for CheckBool {
     }
 
     fn print(&self, name: &str) {
-        println!(
-            "option name {} type check default {:?}",
-            name, self.default
-        );
+        println!("option name {} type check default {:?}", name, self.default);
     }
 }

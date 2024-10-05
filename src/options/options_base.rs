@@ -1,4 +1,7 @@
-use super::{spin_float_tunable::SpinOptionFloatTunable, spin_int::SpinOptionInt, check_bool::CheckBool, OptionTrait};
+use super::{
+    check_bool::CheckBool, spin_float_tunable::SpinOptionFloatTunable, spin_int::SpinOptionInt,
+    OptionTrait,
+};
 
 macro_rules! create_option_structs {
     ($($option_name:expr => $name:ident: $type:ty, $($values:expr), +;)*) => {

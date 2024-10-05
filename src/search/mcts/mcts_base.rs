@@ -1,4 +1,8 @@
-use crate::{options::EngineOptions, search::{print::SearchDisplay, Score}, SearchLimits, SearchStats, Tree};
+use crate::{
+    options::EngineOptions,
+    search::{print::SearchDisplay, Score},
+    SearchLimits, SearchStats, Tree,
+};
 use spear::{ChessPosition, Move, Side};
 use std::sync::atomic::AtomicBool;
 

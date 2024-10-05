@@ -107,17 +107,34 @@ impl MiscCommandsProcessor {
         };
 
         let node_index = if args.len() == 3 {
-            let segment = args[1].replace("(", "").replace(",", "").trim().parse::<u32>().expect("Incorrect segment");
-            let index = args[2].replace(")", "").trim().parse::<u32>().expect("Incorrect index");
+            let segment = args[1]
+                .replace("(", "")
+                .replace(",", "")
+                .trim()
+                .parse::<u32>()
+                .expect("Incorrect segment");
+            let index = args[2]
+                .replace(")", "")
+                .trim()
+                .parse::<u32>()
+                .expect("Incorrect index");
             NodeIndex::from_parts(index, segment)
         } else {
             search_engine.tree().root_index()
         };
 
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
-            search_engine.tree().draw_tree::<true, false>(search_engine.current_position().board(), node_index, depth)
+            search_engine.tree().draw_tree::<true, false>(
+                search_engine.current_position().board(),
+                node_index,
+                depth,
+            )
         } else {
-            search_engine.tree().draw_tree::<false, true>(search_engine.current_position().board(), node_index, depth)
+            search_engine.tree().draw_tree::<false, true>(
+                search_engine.current_position().board(),
+                node_index,
+                depth,
+            )
         }
     }
 }

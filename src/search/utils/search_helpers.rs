@@ -1,6 +1,9 @@
 use spear::ChessPosition;
 
-use crate::{search::{networks::ValueNetwork, Score}, GameState};
+use crate::{
+    search::{networks::ValueNetwork, Score},
+    GameState,
+};
 
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork = unsafe {
@@ -20,9 +23,9 @@ impl SearchHelpers {
             GameState::Drawn => Score::DRAW,
             GameState::Lost(_) => Score::LOSE,
             GameState::Won(_) => Score::WIN,
-            GameState::Unresolved => {
-                Score::from(sigmoid(ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board())))
-            }
+            GameState::Unresolved => Score::from(sigmoid(
+                ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()),
+            )),
         }
     }
 

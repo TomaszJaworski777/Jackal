@@ -6,7 +6,6 @@ use jackal::{
 use spear::{ChessPosition, FEN};
 
 fn main() {
-
     //Init search engine
     let start_position = ChessPosition::from_fen(&FEN::start_position());
     let interruption_token = AtomicBool::new(false);

@@ -13,7 +13,7 @@ pub struct UciPrint;
 impl SearchDisplay for UciPrint {
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
         UciPrint
-    }   
+    }
 
     fn print_search_raport<const FINAL: bool>(
         &mut self,

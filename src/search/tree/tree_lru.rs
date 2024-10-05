@@ -7,12 +7,16 @@ use crate::{search::SearchHelpers, GameState};
 use super::{tree_base::SEGMENT_COUNT, NodeIndex, Tree};
 
 impl Tree {
-    pub fn get_node_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, position: &ChessPosition, child_index: NodeIndex, edge_index: NodeIndex, action_index: usize) -> Option<NodeIndex> {
-
+    pub fn get_node_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(
+        &self,
+        position: &ChessPosition,
+        child_index: NodeIndex,
+        edge_index: NodeIndex,
+        action_index: usize,
+    ) -> Option<NodeIndex> {
         //When there is no node assigned to the selected move edge, we spawn new node
         //and return its index
         if child_index.is_null() {
-
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
@@ -28,7 +32,6 @@ impl Tree {
         //When there is a node assigned to the selected move edge, but the assigned
         //node is in old tree segment, we want to copy it to the new tree segment
         } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
-
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
@@ -70,7 +73,9 @@ impl Tree {
         self.segments[new_segment_index].clear();
 
         //Move root to the new segment
-        let new_root_index = self.segments[new_segment_index].add(GameState::Unresolved).unwrap();
+        let new_root_index = self.segments[new_segment_index]
+            .add(GameState::Unresolved)
+            .unwrap();
         self[new_root_index].clear();
 
         self.copy_node(old_root_index, new_root_index);
@@ -83,7 +88,7 @@ impl Tree {
 
         let a_actions = &mut *self[a].actions_mut();
         let b_actions = &mut *self[b].actions_mut();
-        
+
         self[b].set_state(self[a].state());
 
         if a_actions.is_empty() {
