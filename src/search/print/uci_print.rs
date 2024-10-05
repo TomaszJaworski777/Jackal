@@ -11,7 +11,12 @@ use super::SearchDisplay;
 pub struct UciPrint;
 #[allow(unused)]
 impl SearchDisplay for UciPrint {
-    fn print_search_raport(
+    fn new() -> Self {
+        UciPrint
+    }   
+
+    fn print_search_raport<const FINAL: bool>(
+        &mut self,
         search_stats: &SearchStats,
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
@@ -48,7 +53,7 @@ impl SearchDisplay for UciPrint {
             pv_string
         )
     }
-    fn print_search_result(mv: Move, score: Score) {
+    fn print_search_result(&self, mv: Move, score: Score) {
         println!("bestmove {}", mv)
     }
 }

@@ -1,4 +1,8 @@
 use super::SearchDisplay;
 
 pub struct NoPrint;
-impl SearchDisplay for NoPrint {}
+impl SearchDisplay for NoPrint {
+    fn new() -> Self {
+        NoPrint
+    }
+}

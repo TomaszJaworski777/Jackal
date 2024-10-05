@@ -5,7 +5,7 @@ use crate::search::print::SearchDisplay;
 use super::Mcts;
 
 impl<'a> Mcts<'a> {
-    pub(super) fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
+    pub(super) fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, printer: &mut PRINTER) {
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {
@@ -57,7 +57,7 @@ impl<'a> Mcts<'a> {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
                 let (_, best_score) = self.tree[root_index].get_best_move(&self.tree);
-                PRINTER::print_search_raport(
+                printer.print_search_raport::<false>(
                     self.stats,
                     self.options,
                     self.limits,

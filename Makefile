@@ -9,9 +9,9 @@ ifeq ($(OS),Windows_NT)
 	X86_64_V3 := releases/$(EXE)-$(VER)-x86-64-v3.exe
 	X86_64_V4 := releases/$(EXE)-$(VER)-x86-64-v4.exe
 else
-	DATAGEN := $(PATH)datagen
-	TRAINER := $(PATH)trainer
-	DEV_NAME := $(PATH)$(EXE)-dev
+	DATAGEN := datagen
+	TRAINER := trainer
+	DEV_NAME := $(EXE)-dev
 	X86_64_V2 := releases/$(EXE)-$(VER)-x86-64-v2
 	X86_64_V3 := releases/$(EXE)-$(VER)-x86-64-v3
 	X86_64_V3_PEXT := releases/$(EXE)-$(VER)-x86-64-v3-pext

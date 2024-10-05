@@ -8,7 +8,7 @@ use spear::{ChessBoard, ChessPosition, FEN};
 use crate::options::EngineOptions;
 
 use super::{
-    print::{NoPrint, UciPrint},
+    print::{NoPrint, PrettyPrint, UciPrint},
     search_limits::SearchLimits,
     tree::Tree,
     Mcts, SearchStats,
@@ -102,7 +102,7 @@ impl<'a> SearchEngine<'a> {
                     if self.uci_initialized {
                         mcts.search::<UciPrint>()
                     } else {
-                        mcts.search::<UciPrint>()
+                        mcts.search::<PrettyPrint>()
                     }
                 } else {
                     mcts.search::<NoPrint>()
