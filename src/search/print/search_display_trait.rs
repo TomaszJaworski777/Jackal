@@ -8,6 +8,8 @@ use crate::{
 
 #[allow(unused)]
 pub trait SearchDisplay {
+    const REFRESH_RATE: f32;
+
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
     #[allow(clippy::too_many_arguments)]
     fn print_search_raport<const FINAL: bool>(

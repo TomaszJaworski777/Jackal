@@ -11,6 +11,8 @@ use super::SearchDisplay;
 pub struct UciPrint;
 #[allow(unused)]
 impl SearchDisplay for UciPrint {
+    const REFRESH_RATE: f32 = 1.0;
+
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
         UciPrint
     }

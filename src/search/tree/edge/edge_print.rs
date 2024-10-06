@@ -86,7 +86,7 @@ impl Edge {
                         .white()
                         .to_string()
                         .as_str(),
-                    8,
+                    9,
                     console::Alignment::Right,
                     None
                 ),

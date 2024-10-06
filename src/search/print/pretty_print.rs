@@ -19,6 +19,8 @@ pub struct PrettyPrint {
 }
 #[allow(unused)]
 impl SearchDisplay for PrettyPrint {
+    const REFRESH_RATE: f32 = 0.05;
+
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
         clear_terminal_screen();
         position.board().draw_board();
@@ -40,7 +42,7 @@ impl SearchDisplay for PrettyPrint {
 
         Self {
             start_height,
-            max_history_size: term_height - term_height.min(start_height as usize + 16),
+            max_history_size: term_height - term_height.min(start_height as usize + 19),
             history: Vec::new(),
             last_best_move: Move::NULL,
         }
@@ -111,18 +113,28 @@ impl SearchDisplay for PrettyPrint {
             "Score:".bright_black(),
             heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
         );
-        print!("                                    \r");
-        println!(
-            " {}        {}%W {}%D {}%L",
-            "WDL:".bright_black(),
-            75,
-            7,
-            13
-        );
+        const W_COLOR: (u8,u8,u8) = (0,255,0);
+        const D_COLOR: (u8,u8,u8) = (255,255,0);
+        const L_COLOR: (u8,u8,u8) = (255,0,0);
+        print!("                                                                                                             \r");
+        println!(" {}        {}", "Win:".bright_black(), color_bar(50, 0.75, W_COLOR));
+        print!("                                                                                                             \r");
+        println!(" {}       {}", "Draw:".bright_black(), color_bar(50, 0.05, D_COLOR));
+        print!("                                                                                                             \r");
+        println!(" {}       {}", "Lose:".bright_black(), color_bar(50, 0.10, L_COLOR));
         print!("                                                                                                             \r");
         let pv_string = pv_to_string::<FINAL>(pv);
+
+        if FINAL {
+            for _ in 0..5 {
+                println!("                                                                                                             ", );
+            }
+
+            term_cursor::set_pos(0, self.start_height + 13).expect("Cannot move curser to the position");
+        }
+
         println!(" {}  {}", "Best Line:".bright_black(), pv_string);
-        println!("                                                                                                             ");
+        println!("                                                                                                             ", );
         println!(" Search History:");
         let start_idx = self.history.len() - self.max_history_size.min(self.history.len());
 
@@ -172,6 +184,24 @@ fn usage_bar(length: usize, fill: f32) -> String {
     result
 }
 
+fn color_bar(length: usize, fill: f32, (r, g, b): (u8,u8,u8)) -> String {
+    let mut result = String::from("[");
+
+    for i in 0..length {
+        let percentage = i as f32 / (length - 1) as f32;
+        let char = if percentage <= fill {
+            "#".truecolor(r, g, b).to_string()
+        } else {
+            String::from(".")
+        };
+
+        result.push_str(&char);
+    }
+
+    result.push_str(&format!("] {}%", (fill * 100.0) as usize));
+    result
+}
+
 #[allow(clippy::needless_range_loop)]
 fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
     let start_pv_color = (255, 255, 255);
@@ -188,8 +218,6 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
             idx as f32 / (pv_length - 1).max(14) as f32,
         ));
     }
-
-    pv_string.push_str("                                                                    \n");
 
     if rest > 0 {
         pv_string.push_str(&lerp_color(

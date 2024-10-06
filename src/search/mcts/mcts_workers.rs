@@ -57,9 +57,9 @@ impl<'a> Mcts<'a> {
                 break;
             }
 
-            //Draws report when avg_depth increases or if there wasn't any report for 1s
+            //Draws report when avg_depth increases or if there wasn't any reports for longer than refresh rate
             if self.stats.avg_depth() > last_avg_depth
-                || last_raport_time.elapsed().as_secs_f32() > 1.0
+                || last_raport_time.elapsed().as_secs_f32() > PRINTER::REFRESH_RATE
             {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
