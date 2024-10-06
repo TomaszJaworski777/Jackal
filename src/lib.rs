@@ -1,4 +1,5 @@
 mod bench;
+mod color_config;
 mod options;
 mod processors;
 mod search;

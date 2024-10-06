@@ -4,6 +4,7 @@ use spear::{ChessPosition, Move, StringUtils};
 
 use crate::{
     clear_terminal_screen,
+    color_config::{ColorConfig, Colored},
     search::Score,
     utils::{heat_color, lerp_color},
     EngineOptions, GameState, SearchLimits, SearchStats,
@@ -19,15 +20,13 @@ pub struct PrettyPrint {
 }
 #[allow(unused)]
 impl SearchDisplay for PrettyPrint {
+    const REFRESH_RATE: f32 = 0.05;
+
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
         clear_terminal_screen();
         position.board().draw_board();
-        println!(" {}    1", "Threads:".bright_black());
-        println!(
-            " {}  {}MB",
-            "Tree Size:".bright_black(),
-            engine_options.hash()
-        );
+        println!(" {}    1", "Threads:".label());
+        println!(" {}  {}MB", "Tree Size:".label(), engine_options.hash());
 
         #[cfg(target_os = "linux")]
         let start_height = 14;
@@ -40,7 +39,7 @@ impl SearchDisplay for PrettyPrint {
 
         Self {
             start_height,
-            max_history_size: term_height - term_height.min(start_height as usize + 16),
+            max_history_size: term_height - term_height.min(start_height as usize + 19),
             history: Vec::new(),
             last_best_move: Move::NULL,
         }
@@ -60,42 +59,30 @@ impl SearchDisplay for PrettyPrint {
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
         print!("                                                \r");
-        println!(
-            " {} {}\n",
-            "Tree Usage:".bright_black(),
-            usage_bar(50, usage)
-        );
+        println!(" {} {}\n", "Tree Usage:".label(), usage_bar(50, usage));
 
         print!("                                    \r");
-        println!(
-            " {} {}",
-            "Avg. Depth:".bright_black(),
-            search_stats.avg_depth()
-        );
+        println!(" {} {}", "Avg. Depth:".label(), search_stats.avg_depth());
         print!("                                    \r");
-        println!(
-            " {}  {}\n",
-            "Max Depth:".bright_black(),
-            search_stats.max_depth()
-        );
+        println!(" {}  {}\n", "Max Depth:".label(), search_stats.max_depth());
 
         print!("                                    \r");
         println!(
             " {}      {}",
-            "Nodes:".bright_black(),
+            "Nodes:".label(),
             StringUtils::large_number_to_string(search_stats.iters() as u128)
         );
         print!("                                    \r");
         println!(
             " {}       {}",
-            "Time:".bright_black(),
+            "Time:".label(),
             StringUtils::time_to_string(search_stats.time_passed() as u128)
         );
         print!("                                    \r");
         let nps = search_stats.iters() as u64 * 1000 / search_stats.time_passed().max(1);
         println!(
             " {}        {}\n",
-            "Nps:".bright_black(),
+            "Nps:".label(),
             StringUtils::large_number_to_string(nps as u128)
         );
 
@@ -108,21 +95,41 @@ impl SearchDisplay for PrettyPrint {
         };
         println!(
             " {}      {}",
-            "Score:".bright_black(),
+            "Score:".label(),
             heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
         );
-        print!("                                    \r");
+        print!("                                                                                                             \r");
         println!(
-            " {}        {}%W {}%D {}%L",
-            "WDL:".bright_black(),
-            75,
-            7,
-            13
+            " {}        {}",
+            "Win:".label(),
+            color_bar(50, score.win_chance(), ColorConfig::WIN_COLOR)
+        );
+        print!("                                                                                                             \r");
+        println!(
+            " {}       {}",
+            "Draw:".label(),
+            color_bar(50, score.draw_chance(), ColorConfig::DRAW_COLOR)
+        );
+        print!("                                                                                                             \r");
+        println!(
+            " {}       {}",
+            "Lose:".label(),
+            color_bar(50, score.lose_chance(), ColorConfig::LOSE_COLOR)
         );
         print!("                                                                                                             \r");
         let pv_string = pv_to_string::<FINAL>(pv);
-        println!(" {}  {}", "Best Line:".bright_black(), pv_string);
-        println!("                                                                                                             ");
+
+        if FINAL {
+            for _ in 0..5 {
+                println!("                                                                                                             ", );
+            }
+
+            term_cursor::set_pos(0, self.start_height + 13)
+                .expect("Cannot move curser to the position");
+        }
+
+        println!(" {}  {}", "Best Line:".label(), pv_string);
+        println!("                                                                                                             ", );
         println!(" Search History:");
         let start_idx = self.history.len() - self.max_history_size.min(self.history.len());
 
@@ -136,7 +143,8 @@ impl SearchDisplay for PrettyPrint {
                     console::Alignment::Right,
                     None
                 )
-                .bright_black(),
+                .to_string()
+                .label(),
                 pv_line
             )
         }
@@ -150,7 +158,7 @@ impl SearchDisplay for PrettyPrint {
     }
 
     fn print_search_result(&self, mv: Move, score: Score) {
-        println!("Best Move: {}", format!("{mv}").bright_cyan())
+        println!("Best Move: {}", format!("{mv}").highlight())
     }
 }
 
@@ -161,6 +169,24 @@ fn usage_bar(length: usize, fill: f32) -> String {
         let percentage = i as f32 / (length - 1) as f32;
         let char = if percentage <= fill {
             heat_color("#", 1.0 - percentage, 0.0, 1.0)
+        } else {
+            String::from(".")
+        };
+
+        result.push_str(&char);
+    }
+
+    result.push_str(&format!("] {}%", (fill * 100.0) as usize));
+    result
+}
+
+fn color_bar(length: usize, fill: f32, (r, g, b): (u8, u8, u8)) -> String {
+    let mut result = String::from("[");
+
+    for i in 0..length {
+        let percentage = i as f32 / (length - 1) as f32;
+        let char = if percentage <= fill {
+            "#".truecolor(r, g, b).to_string()
         } else {
             String::from(".")
         };
@@ -188,8 +214,6 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
             idx as f32 / (pv_length - 1).max(14) as f32,
         ));
     }
-
-    pv_string.push_str("                                                                    \n");
 
     if rest > 0 {
         pv_string.push_str(&lerp_color(
