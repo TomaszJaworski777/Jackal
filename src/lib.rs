@@ -3,6 +3,7 @@ mod options;
 mod processors;
 mod search;
 mod utils;
+mod color_config;
 
 pub use options::EngineOptions;
 pub use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};

@@ -1,8 +1,7 @@
-use crate::{search::Score, utils::heat_color, GameState};
+use crate::{color_config::Colored, search::Score, utils::heat_color, GameState};
 
 use super::Edge;
 
-use colored::Colorize;
 use console::pad_str;
 
 impl Edge {
@@ -14,35 +13,28 @@ impl Edge {
         flip_score: bool,
     ) {
         let terminal_string = match state {
-            GameState::Drawn => "   terminal draw".white().bold().to_string(),
-            GameState::Lost(x) => format!("   terminal lose in {}", x)
-                .white()
-                .bold()
-                .to_string(),
-            GameState::Won(x) => format!("   terminal win in {}", x)
-                .white()
-                .bold()
-                .to_string(),
+            GameState::Drawn => "   terminal draw".highlight_alt(),
+            GameState::Lost(x) => format!("   terminal lose in {}", x).highlight_alt(),
+            GameState::Won(x) => format!("   terminal win in {}", x).highlight_alt(),
             _ => "".to_string(),
         };
 
         let index_text = if ROOT {
-            "root".bright_cyan().to_string()
+            "root".highlight()
         } else {
             format!(
                 "{}> {}",
                 pad_str(
                     self.node_index()
                         .to_string()
-                        .bright_cyan()
-                        .to_string()
+                        .highlight()
                         .as_str(),
                     12,
                     console::Alignment::Right,
                     None
                 ),
                 pad_str(
-                    self.mv().to_string().bright_cyan().to_string().as_str(),
+                    self.mv().to_string().highlight().as_str(),
                     5,
                     console::Alignment::Right,
                     None
@@ -82,9 +74,7 @@ impl Edge {
                 pad_str(
                     self.visits()
                         .to_string()
-                        .bold()
-                        .white()
-                        .to_string()
+                        .highlight_alt()
                         .as_str(),
                     9,
                     console::Alignment::Right,
@@ -104,7 +94,7 @@ impl Edge {
                 ),
                 terminal_string
             )
-            .bright_black()
+            .label()
         )
     }
 }

@@ -2,6 +2,8 @@ use std::process::Command;
 
 use colored::Colorize;
 
+use crate::color_config::ColorConfig;
+
 pub fn clear_terminal_screen() {
     if cfg!(target_os = "windows") {
         Command::new("cmd")
@@ -19,9 +21,6 @@ pub fn clear_terminal_screen() {
     };
 }
 
-const HEAT_RED: (u8, u8, u8) = (200, 71, 71);
-const HEAT_YELLOW: (u8, u8, u8) = (200, 160, 71);
-const HEAT_GREEN: (u8, u8, u8) = (80, 191, 71);
 pub fn heat_color(content: &str, value: f32, min_value: f32, max_value: f32) -> String {
     let difference = max_value - min_value;
     let min_value = min_value + difference * 0.1;
@@ -35,9 +34,9 @@ pub fn heat_color(content: &str, value: f32, min_value: f32, max_value: f32) -> 
     };
 
     if scalar >= 0.5 {
-        lerp_color(content, HEAT_YELLOW, HEAT_GREEN, (scalar - 0.5) * 2.0)
+        lerp_color(content, ColorConfig::DRAW_COLOR, ColorConfig::WIN_COLOR, (scalar - 0.5) * 2.0)
     } else {
-        lerp_color(content, HEAT_RED, HEAT_YELLOW, scalar * 2.0)
+        lerp_color(content, ColorConfig::LOSE_COLOR, ColorConfig::DRAW_COLOR, scalar * 2.0)
     }
 }
 
