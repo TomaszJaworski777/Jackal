@@ -47,6 +47,18 @@ impl Score {
         self.0
     }
 
+    pub fn win_chance(&self) -> f32 {
+        (1.0 - self.draw_chance()) * self.single()
+    }
+
+    pub fn draw_chance(&self) -> f32 {
+        ((self.single() + 0.2).powf(-0.25) - 0.45).clamp(0.0, 1.0)
+    }
+
+    pub fn lose_chance(&self) -> f32 {
+        (1.0 - self.draw_chance()) * (1.0 - self.single())
+    }
+
     pub fn as_cp(&self) -> i32 {
         (-400.0 * (1.0 / self.single().clamp(0.0, 1.0) - 1.0).ln()) as i32
     }

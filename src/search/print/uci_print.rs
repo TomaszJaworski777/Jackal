@@ -40,7 +40,7 @@ impl SearchDisplay for UciPrint {
         };
 
         if engine_options.show_wdl() {
-            score_text.push_str(" wdl 534 321 123");
+            score_text.push_str(&format!(" wdl {} {} {}", (score.win_chance() * 1000.0) as u32, (score.draw_chance() * 1000.0) as u32, (score.lose_chance() * 1000.0) as u32));
         }
 
         println!(

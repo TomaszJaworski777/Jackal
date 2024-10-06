@@ -111,11 +111,11 @@ impl SearchDisplay for PrettyPrint {
             heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
-        println!(" {}        {}", "Win:".label(), color_bar(50, 0.75, ColorConfig::WIN_COLOR));
+        println!(" {}        {}", "Win:".label(), color_bar(50, score.win_chance(), ColorConfig::WIN_COLOR));
         print!("                                                                                                             \r");
-        println!(" {}       {}", "Draw:".label(), color_bar(50, 0.05, ColorConfig::DRAW_COLOR));
+        println!(" {}       {}", "Draw:".label(), color_bar(50, score.draw_chance(), ColorConfig::DRAW_COLOR));
         print!("                                                                                                             \r");
-        println!(" {}       {}", "Lose:".label(), color_bar(50, 0.10, ColorConfig::LOSE_COLOR));
+        println!(" {}       {}", "Lose:".label(), color_bar(50, score.lose_chance(), ColorConfig::LOSE_COLOR));
         print!("                                                                                                             \r");
         let pv_string = pv_to_string::<FINAL>(pv);
 
