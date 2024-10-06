@@ -3,7 +3,11 @@ use console::pad_str;
 use spear::{ChessPosition, Move, StringUtils};
 
 use crate::{
-    clear_terminal_screen, color_config::{ColorConfig, Colored}, search::Score, utils::{heat_color, lerp_color}, EngineOptions, GameState, SearchLimits, SearchStats
+    clear_terminal_screen,
+    color_config::{ColorConfig, Colored},
+    search::Score,
+    utils::{heat_color, lerp_color},
+    EngineOptions, GameState, SearchLimits, SearchStats,
 };
 
 use super::SearchDisplay;
@@ -22,11 +26,7 @@ impl SearchDisplay for PrettyPrint {
         clear_terminal_screen();
         position.board().draw_board();
         println!(" {}    1", "Threads:".label());
-        println!(
-            " {}  {}MB",
-            "Tree Size:".label(),
-            engine_options.hash()
-        );
+        println!(" {}  {}MB", "Tree Size:".label(), engine_options.hash());
 
         #[cfg(target_os = "linux")]
         let start_height = 14;
@@ -59,24 +59,12 @@ impl SearchDisplay for PrettyPrint {
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
         print!("                                                \r");
-        println!(
-            " {} {}\n",
-            "Tree Usage:".label(),
-            usage_bar(50, usage)
-        );
+        println!(" {} {}\n", "Tree Usage:".label(), usage_bar(50, usage));
 
         print!("                                    \r");
-        println!(
-            " {} {}",
-            "Avg. Depth:".label(),
-            search_stats.avg_depth()
-        );
+        println!(" {} {}", "Avg. Depth:".label(), search_stats.avg_depth());
         print!("                                    \r");
-        println!(
-            " {}  {}\n",
-            "Max Depth:".label(),
-            search_stats.max_depth()
-        );
+        println!(" {}  {}\n", "Max Depth:".label(), search_stats.max_depth());
 
         print!("                                    \r");
         println!(
@@ -111,11 +99,23 @@ impl SearchDisplay for PrettyPrint {
             heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
-        println!(" {}        {}", "Win:".label(), color_bar(50, score.win_chance(), ColorConfig::WIN_COLOR));
+        println!(
+            " {}        {}",
+            "Win:".label(),
+            color_bar(50, score.win_chance(), ColorConfig::WIN_COLOR)
+        );
         print!("                                                                                                             \r");
-        println!(" {}       {}", "Draw:".label(), color_bar(50, score.draw_chance(), ColorConfig::DRAW_COLOR));
+        println!(
+            " {}       {}",
+            "Draw:".label(),
+            color_bar(50, score.draw_chance(), ColorConfig::DRAW_COLOR)
+        );
         print!("                                                                                                             \r");
-        println!(" {}       {}", "Lose:".label(), color_bar(50, score.lose_chance(), ColorConfig::LOSE_COLOR));
+        println!(
+            " {}       {}",
+            "Lose:".label(),
+            color_bar(50, score.lose_chance(), ColorConfig::LOSE_COLOR)
+        );
         print!("                                                                                                             \r");
         let pv_string = pv_to_string::<FINAL>(pv);
 
@@ -124,7 +124,8 @@ impl SearchDisplay for PrettyPrint {
                 println!("                                                                                                             ", );
             }
 
-            term_cursor::set_pos(0, self.start_height + 13).expect("Cannot move curser to the position");
+            term_cursor::set_pos(0, self.start_height + 13)
+                .expect("Cannot move curser to the position");
         }
 
         println!(" {}  {}", "Best Line:".label(), pv_string);
@@ -141,7 +142,9 @@ impl SearchDisplay for PrettyPrint {
                     7,
                     console::Alignment::Right,
                     None
-                ).to_string().label(),
+                )
+                .to_string()
+                .label(),
                 pv_line
             )
         }
@@ -177,7 +180,7 @@ fn usage_bar(length: usize, fill: f32) -> String {
     result
 }
 
-fn color_bar(length: usize, fill: f32, (r, g, b): (u8,u8,u8)) -> String {
+fn color_bar(length: usize, fill: f32, (r, g, b): (u8, u8, u8)) -> String {
     let mut result = String::from("[");
 
     for i in 0..length {

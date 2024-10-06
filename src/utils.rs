@@ -34,9 +34,19 @@ pub fn heat_color(content: &str, value: f32, min_value: f32, max_value: f32) -> 
     };
 
     if scalar >= 0.5 {
-        lerp_color(content, ColorConfig::DRAW_COLOR, ColorConfig::WIN_COLOR, (scalar - 0.5) * 2.0)
+        lerp_color(
+            content,
+            ColorConfig::DRAW_COLOR,
+            ColorConfig::WIN_COLOR,
+            (scalar - 0.5) * 2.0,
+        )
     } else {
-        lerp_color(content, ColorConfig::LOSE_COLOR, ColorConfig::DRAW_COLOR, scalar * 2.0)
+        lerp_color(
+            content,
+            ColorConfig::LOSE_COLOR,
+            ColorConfig::DRAW_COLOR,
+            scalar * 2.0,
+        )
     }
 }
 

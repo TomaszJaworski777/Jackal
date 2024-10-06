@@ -25,10 +25,7 @@ impl Edge {
             format!(
                 "{}> {}",
                 pad_str(
-                    self.node_index()
-                        .to_string()
-                        .highlight()
-                        .as_str(),
+                    self.node_index().to_string().highlight().as_str(),
                     12,
                     console::Alignment::Right,
                     None
@@ -72,10 +69,7 @@ impl Edge {
                     None
                 ),
                 pad_str(
-                    self.visits()
-                        .to_string()
-                        .highlight_alt()
-                        .as_str(),
+                    self.visits().to_string().highlight_alt().as_str(),
                     9,
                     console::Alignment::Right,
                     None
