@@ -8,7 +8,7 @@ use crate::{
 #[allow(non_upper_case_globals)]
 pub const ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/value_006a.network"
+        "../../../resources/networks/value_007.network"
     ))
 };
 
