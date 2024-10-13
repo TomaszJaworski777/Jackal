@@ -1,6 +1,7 @@
 use std::env;
 
 use policy::PolicyConvert;
+use policy::PolicyTrainer;
 use value::ValueConverter;
 use value::ValueTrainer;
 
@@ -14,6 +15,7 @@ fn main() {
             "value-conv" => value_convert(&args),
             "policy-conv" => policy_convert(&args),
             "value" => ValueTrainer::execute(),
+            "policy" => PolicyTrainer::execute(),
             _ => continue,
         }
     }
