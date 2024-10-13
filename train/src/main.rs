@@ -1,26 +1,27 @@
 use std::env;
 
-use bullet_convert::BulletConverter;
+use policy::PolicyConvert;
+use value::ValueConverter;
 use value::ValueTrainer;
 
-mod bullet_convert;
-mod bullet_convert_display;
 mod value;
+mod policy;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     for arg in &args {
         match arg.as_str() {
-            "convert" => convert(&args),
+            "value-conv" => value_convert(&args),
+            "policy-conv" => policy_convert(&args),
             "value" => ValueTrainer::execute(),
             _ => continue,
         }
     }
 }
 
-fn convert(args: &Vec<String>) {
+fn value_convert(args: &Vec<String>) {
     let mut input_path = "./value_data.bin";
-    let mut output_path = "./bullet_data.bin";
+    let mut output_path = "./conv_value_data.bin";
 
     let mut cmd = String::new();
     for arg in args {
@@ -36,5 +37,26 @@ fn convert(args: &Vec<String>) {
         }
     }
 
-    BulletConverter::convert(input_path, output_path);
+    ValueConverter::convert(input_path, output_path);
+}
+
+fn policy_convert(args: &Vec<String>) {
+    let mut input_path = "./policy_data.bin";
+    let mut output_path = "./conv_policy_data.bin";
+
+    let mut cmd = String::new();
+    for arg in args {
+        match arg.as_str() {
+            "-i" | "-o" => cmd = arg.clone(),
+            _ => {
+                match cmd.as_str() {
+                    "-i" => input_path = arg.as_str(),
+                    "-o" => output_path = arg.as_str(),
+                    _ => continue,
+                };
+            }
+        }
+    }
+
+    PolicyConvert::convert(input_path, output_path);
 }

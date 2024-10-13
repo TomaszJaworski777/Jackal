@@ -7,10 +7,10 @@ use std::{
 use bullet::format::ChessBoard;
 use spear::{ChessBoardPacked, Move, Piece, Side};
 
-use crate::bullet_convert_display::BulletConvertDisplay;
+use crate::value::ValueConvertDisplay;
 
-pub struct BulletConverter;
-impl BulletConverter {
+pub struct ValueConverter;
+impl ValueConverter {
     pub fn convert(input_path: &str, output_path: &str) {
         let input_file = File::open(input_path).expect("Cannot open input file");
         let input_meta = input_file.metadata().expect("Cannot obtain file metadata");
@@ -39,7 +39,7 @@ impl BulletConverter {
 
         while reader.read_exact(&mut buffer).is_ok() {
             if timer.elapsed().as_secs_f32() > 1.0 {
-                BulletConvertDisplay::print_report(
+                ValueConvertDisplay::print_report(
                     entries_processed,
                     entry_count,
                     white_wins,

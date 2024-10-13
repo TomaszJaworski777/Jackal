@@ -1,16 +1,11 @@
 use spear::StringUtils;
 
-pub struct BulletConvertDisplay;
-impl BulletConvertDisplay {
+pub struct PolicyConvertDisplay;
+impl PolicyConvertDisplay {
     pub fn print_report(
         current: u64,
         total: u64,
-        wins: u64,
-        draws: u64,
-        loses: u64,
         unfiltered: u64,
-        mate_scores: u64,
-        material_advantage: u64,
     ) {
         jackal::clear_terminal_screen();
         println!("Converting value data...");
@@ -21,24 +16,10 @@ impl BulletConvertDisplay {
             StringUtils::large_number_to_string(total as u128)
         );
         println!(
-            "White WDL:       ({}%/{}%/{}%)",
-            (wins as f32 * 100.0 / unfiltered.max(1) as f32) as u64,
-            (draws as f32 * 100.0 / unfiltered.max(1) as f32) as u64,
-            (loses as f32 * 100.0 / unfiltered.max(1) as f32) as u64
-        );
-        println!(
             "Unfiltered:      {}",
             StringUtils::large_number_to_string(unfiltered as u128)
         );
         println!("Filters: ");
-        println!(
-            " - Mate score:   {}",
-            StringUtils::large_number_to_string(mate_scores as u128)
-        );
-        println!(
-            " - Material advantage:   {}",
-            StringUtils::large_number_to_string(material_advantage as u128)
-        );
     }
 
     fn get_loading_bar(current: u64, total: u64, length: usize) -> String {
