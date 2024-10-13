@@ -2,6 +2,7 @@ use spear::ChessBoard;
 
 use super::NetworkLayer;
 
+#[repr(C)]
 pub struct ValueNetwork {
     l0: NetworkLayer<768, 64>,
     l1: NetworkLayer<64, 1>,

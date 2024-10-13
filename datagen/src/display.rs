@@ -6,6 +6,8 @@ use std::{
 use jackal::clear_terminal_screen;
 use spear::StringUtils;
 
+use crate::DataGenMode;
+
 pub struct Printer {
     positions: AtomicU64,
     positions_since_last_raport: AtomicU64,
@@ -13,10 +15,11 @@ pub struct Printer {
     target: u64,
     threads: u8,
     nodes: u32,
+    mode: DataGenMode,
 }
 
 impl Printer {
-    pub fn new(position_count: u64, target: u64, threads: u8, nodes: u32) -> Self {
+    pub fn new(position_count: u64, target: u64, threads: u8, nodes: u32, mode: DataGenMode) -> Self {
         Self {
             positions: AtomicU64::new(position_count),
             positions_since_last_raport: AtomicU64::new(0),
@@ -24,6 +27,7 @@ impl Printer {
             target,
             threads,
             nodes,
+            mode
         }
     }
 
@@ -55,7 +59,12 @@ impl Printer {
         let e_mins = (e_time - (e_hours * 3600)) / 60;
         let e_secs = e_time - (e_hours * 3600) - (e_mins * 60);
 
-        println!("Generating data in progress...");
+        let mode = if self.mode == DataGenMode::Value {
+            "value"
+        } else {
+            "policy"
+        };
+        println!("Generating {mode} data in progress...");
         println!("{}", Self::get_loading_bar(positions, self.target, 50));
         println!(
             "Positions:                {}/{} ({:.1} per second)",
