@@ -2,6 +2,13 @@ use spear::{ChessBoard, Piece, Side};
 
 use super::NetworkLayer;
 
+#[allow(non_upper_case_globals)]
+pub static ValueNetwork: ValueNetwork = unsafe {
+    std::mem::transmute(*include_bytes!(
+        "../../../resources/networks/value_007.network"
+    ))
+};
+
 #[repr(C)]
 pub struct ValueNetwork {
     l0: NetworkLayer<768, 64>,

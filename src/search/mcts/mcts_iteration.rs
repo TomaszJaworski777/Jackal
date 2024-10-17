@@ -6,13 +6,6 @@ use crate::search::{networks::PolicyNetwork, tree::Edge, NodeIndex, Score, Searc
 
 use super::Mcts;
 
-#[allow(non_upper_case_globals)]
-pub const PolicyNetwork: PolicyNetwork = unsafe {
-    std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/policy_001.network"
-    ))
-};
-
 impl<'a> Mcts<'a> {
     pub(super) fn process_deeper_node<
         const STM_WHITE: bool,
