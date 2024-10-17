@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bytemuck = "1.18.0"
+rand = "0.8.5"
 jackal = { path = "../" }
 spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
 bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features = ["hip"] }

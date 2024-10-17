@@ -42,8 +42,7 @@ impl PolicyGen {
                 );
 
                 let (best_move, _) = mcts.search::<NoPrint>();
-                let mut packed_position =
-                    PolicyPacked::from_board(position.board());
+                let mut packed_position = PolicyPacked::from_board(position.board());
 
                 let move_count = tree[tree.root_index()].actions().len();
                 if move_count <= PolicyPacked::MAX_MOVE_COUNT {

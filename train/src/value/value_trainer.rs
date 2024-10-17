@@ -1,5 +1,6 @@
 use bullet::{
-    inputs, loader, lr, optimiser, outputs, wdl, LocalSettings, Loss, TrainerBuilder, TrainingSchedule, TrainingSteps
+    inputs, loader, lr, optimiser, outputs, wdl, LocalSettings, Loss, TrainerBuilder,
+    TrainingSchedule, TrainingSteps,
 };
 
 pub struct ValueTrainer;
@@ -26,7 +27,11 @@ impl ValueTrainer {
                 end_superbatch: 90,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
-            lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.001 * 0.3 * 0.3 * 0.3 * 0.3, final_superbatch: 90 },
+            lr_scheduler: lr::CosineDecayLR {
+                initial_lr: 0.001,
+                final_lr: 0.001 * 0.3 * 0.3 * 0.3 * 0.3,
+                final_superbatch: 90,
+            },
             save_rate: 10,
         };
 

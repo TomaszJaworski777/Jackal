@@ -2,11 +2,7 @@ use spear::StringUtils;
 
 pub struct PolicyConvertDisplay;
 impl PolicyConvertDisplay {
-    pub fn print_report(
-        current: u64,
-        total: u64,
-        unfiltered: u64,
-    ) {
+    pub fn print_report(current: u64, total: u64, unfiltered: u64) {
         jackal::clear_terminal_screen();
         println!("Converting value data...");
         println!("{}", Self::get_loading_bar(current, total, 50));

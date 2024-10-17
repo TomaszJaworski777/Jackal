@@ -13,9 +13,9 @@ use spear::{ChessBoardPacked, PolicyPacked};
 use value_gen::ValueGen;
 
 mod display;
+mod policy_gen;
 mod utils;
 mod value_gen;
-mod policy_gen;
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum DataGenMode {

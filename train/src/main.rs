@@ -5,8 +5,8 @@ use policy::PolicyTrainer;
 use value::ValueConverter;
 use value::ValueTrainer;
 
-mod value;
 mod policy;
+mod value;
 
 fn main() {
     let args: Vec<String> = env::args().collect();

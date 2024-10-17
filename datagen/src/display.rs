@@ -19,7 +19,13 @@ pub struct Printer {
 }
 
 impl Printer {
-    pub fn new(position_count: u64, target: u64, threads: u8, nodes: u32, mode: DataGenMode) -> Self {
+    pub fn new(
+        position_count: u64,
+        target: u64,
+        threads: u8,
+        nodes: u32,
+        mode: DataGenMode,
+    ) -> Self {
         Self {
             positions: AtomicU64::new(position_count),
             positions_since_last_raport: AtomicU64::new(0),
@@ -27,7 +33,7 @@ impl Printer {
             target,
             threads,
             nodes,
-            mode
+            mode,
         }
     }
 
