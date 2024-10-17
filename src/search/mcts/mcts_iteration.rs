@@ -100,7 +100,7 @@ impl<'a> Mcts<'a> {
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = if  actions.len() == 1 { 1.0 } else { PolicyNetwork.forward(&inputs, mv, vertical_flip) };
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
                 actions.push(Edge::new(NodeIndex::from_raw((policy * MULTIPLIER) as u32), mv, 0.0));
                 max = max.max(policy);
             });
@@ -112,9 +112,10 @@ impl<'a> Mcts<'a> {
             action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
         }
 
+        let is_single_action = actions.len() == 1;
         for action in actions.iter_mut() {
             let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = policy / total;
+            let policy = if is_single_action { 1.0 } else { policy / total };
             action.update_policy(policy);
             action.set_node_index(NodeIndex::NULL);
         }
