@@ -2,6 +2,13 @@ use spear::{ChessBoard, Move, Piece, Side};
 
 use super::NetworkLayer;
 
+#[allow(non_upper_case_globals)]
+pub static PolicyNetwork: PolicyNetwork = unsafe {
+    std::mem::transmute(*include_bytes!(
+        "../../../resources/networks/policy_001.network"
+    ))
+};
+
 #[repr(C)]
 struct PolicySubNetwork {
     l0: NetworkLayer<768, 16>,

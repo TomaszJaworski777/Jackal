@@ -135,6 +135,7 @@ impl SearchDisplay for PrettyPrint {
 
         for idx in start_idx..self.history.len() {
             let (timestamp, pv_line) = &self.history[idx];
+            print!("                                                                                                                    \r");
             println!(
                 "  {} -> {}",
                 pad_str(

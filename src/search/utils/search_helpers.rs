@@ -5,13 +5,6 @@ use crate::{
     GameState,
 };
 
-#[allow(non_upper_case_globals)]
-pub const ValueNetwork: ValueNetwork = unsafe {
-    std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/value_007.network"
-    ))
-};
-
 pub struct SearchHelpers;
 impl SearchHelpers {
     #[inline]
