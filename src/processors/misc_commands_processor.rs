@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use spear::{Move, Perft, Side, FEN};
 
 use crate::{
@@ -94,6 +96,9 @@ impl MiscCommandsProcessor {
             .min_by(|&a, &b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap()
             .1;
+
+        moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
+
         for (index, &(mv, policy)) in moves.iter().enumerate() {
             let arrow = if index == moves.len() - 1 {
                 "└─>"
