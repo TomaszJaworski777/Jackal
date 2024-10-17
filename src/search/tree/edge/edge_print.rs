@@ -82,7 +82,7 @@ impl Edge {
                         highest_policy
                     )
                     .as_str(),
-                    4,
+                    7,
                     console::Alignment::Right,
                     None
                 ),

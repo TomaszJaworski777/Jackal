@@ -118,10 +118,6 @@ impl PolicyTrainer {
                     if superbatch_index % LR_DROP == 0 {
                         learning_rate *= 0.1;
                         println!("Dropping LR to {learning_rate}");
-                    } 
-    
-                    if superbatch_index == SUPERBATCHES_COUNT {
-                        break 'training;
                     }
     
                     let mut export_path = PathBuf::new();
@@ -131,6 +127,10 @@ impl PolicyTrainer {
                     export_path.push(format!("{}-{}.bin", NAME, superbatch_index));
     
                     policy.export(export_path.to_str().unwrap());
+
+                    if superbatch_index == SUPERBATCHES_COUNT {
+                        break 'training;
+                    }
                 }
 
                 let len = buffer.len();

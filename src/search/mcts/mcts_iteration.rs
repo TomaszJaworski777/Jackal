@@ -1,8 +1,17 @@
-use spear::ChessPosition;
+use core::f32;
 
-use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
+use spear::{ChessPosition, Side};
+
+use crate::search::{networks::PolicyNetwork, tree::Edge, NodeIndex, Score, SearchHelpers};
 
 use super::Mcts;
+
+#[allow(non_upper_case_globals)]
+pub const PolicyNetwork: PolicyNetwork = unsafe {
+    std::mem::transmute(*include_bytes!(
+        "../../../resources/networks/policy_001.network"
+    ))
+};
 
 impl<'a> Mcts<'a> {
     pub(super) fn process_deeper_node<
@@ -81,17 +90,40 @@ impl<'a> Mcts<'a> {
     ) {
         let mut actions = self.tree[node_idx].actions_mut();
 
+        let mut inputs: Vec<usize> = Vec::with_capacity(32);
+        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| inputs.push(idx) );
+
+        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
+            0
+        } else {
+            56
+        };
+
+        let mut max = f32::NEG_INFINITY;
+        let mut total = 0.0;
+
         //Map moves into actions and set initial policy to 1
+        const MULTIPLIER : f32 = 1000.0;
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                actions.push(Edge::new(NodeIndex::NULL, mv, 1.0))
+                let policy = if  actions.len() == 1 { 1.0 } else { PolicyNetwork.forward(&inputs, mv, vertical_flip) };
+                actions.push(Edge::new(NodeIndex::from_raw((policy * MULTIPLIER) as u32), mv, 0.0));
+                max = max.max(policy);
             });
 
-        //Update the policy to 1/action_count for uniform policy
-        let action_count = actions.len() as f32;
         for action in actions.iter_mut() {
-            action.update_policy(1.0 / action_count)
+            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
+            let policy = (policy - max).exp();
+            total += policy;
+            action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
+        }
+
+        for action in actions.iter_mut() {
+            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
+            let policy = policy / total;
+            action.update_policy(policy);
+            action.set_node_index(NodeIndex::NULL);
         }
     }
 
