@@ -1,7 +1,9 @@
+use std::cmp::Ordering;
+
 use spear::{Move, Perft, Side, FEN};
 
 use crate::{
-    search::{NodeIndex, SearchEngine},
+    search::{NodeIndex, PolicyNetwork, SearchEngine},
     utils::{clear_terminal_screen, heat_color},
 };
 
@@ -47,21 +49,41 @@ impl MiscCommandsProcessor {
     fn moves(search_engine: &SearchEngine) {
         println!("All legal moves");
         let mut moves: Vec<(Move, f32)> = Vec::new();
-        if search_engine.current_position().board().side_to_move() == Side::WHITE {
-            search_engine
-                .current_position()
-                .board()
-                .map_moves::<_, true, false>(|mv| moves.push((mv, 1.0)))
+        let board = *search_engine.current_position().board();
+        let mut inputs: Vec<usize> = Vec::with_capacity(32);
+
+        let vertical_flip = if board.side_to_move() == Side::WHITE {
+            0
         } else {
-            search_engine
-                .current_position()
-                .board()
-                .map_moves::<_, false, true>(|mv| moves.push((mv, 1.0)))
+            56
+        };
+
+        let mut max = f32::NEG_INFINITY;
+        if search_engine.current_position().board().side_to_move() == Side::WHITE {
+            PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx) );
+            board.map_moves::<_, true, false>(|mv| {
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                max = max.max(policy);
+                moves.push((mv, policy))
+            })
+        } else {
+            PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx) );
+            board.map_moves::<_, false, true>(|mv| {
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                max = max.max(policy);
+                moves.push((mv, policy))
+            })
         }
 
-        let moves_length = moves.len() as f32;
+        let mut total = 0.0;
         for (_, policy) in &mut moves {
-            *policy /= moves_length
+            *policy = (*policy - max).exp();
+            total += *policy;
+        }
+
+        let is_single_action = moves.len() == 1;
+        for (_, policy) in &mut moves {
+            *policy = if is_single_action { 1.0 } else { *policy / total };
         }
 
         let max_policy = moves
@@ -74,6 +96,9 @@ impl MiscCommandsProcessor {
             .min_by(|&a, &b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
             .unwrap()
             .1;
+
+        moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
+
         for (index, &(mv, policy)) in moves.iter().enumerate() {
             let arrow = if index == moves.len() - 1 {
                 "└─>"
