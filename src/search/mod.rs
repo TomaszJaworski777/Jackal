@@ -18,4 +18,5 @@ pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
 pub use tree::NodeIndex;
 pub use tree::Tree;
+pub use networks::PolicyNetwork;
 pub(super) use utils::SearchHelpers;
