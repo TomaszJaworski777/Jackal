@@ -8,14 +8,16 @@ use std::{
 
 use crossbeam_queue::SegQueue;
 use display::Printer;
+use policy_gen::PolicyGen;
 use spear::{ChessBoardPacked, PolicyPacked};
 use value_gen::ValueGen;
 
 mod display;
+mod policy_gen;
 mod utils;
 mod value_gen;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy)]
 pub enum DataGenMode {
     Policy,
     Value,
@@ -28,7 +30,7 @@ fn main() {
     let mut threads = 1;
     let mut iter_count = 1000;
     let mut target = 1000;
-    let mut path = "./data.bin";
+    let mut path = "./value_data.bin";
 
     let mut cmd = String::new();
     for arg in &args {
@@ -65,7 +67,7 @@ fn main() {
         .len()
         / position_size;
     let target = target * 1_000_000;
-    let printer = Printer::new(saved_positions, target, threads, iter_count);
+    let printer = Printer::new(saved_positions, target, threads, iter_count, mode);
 
     let save_queue: SegQueue<Vec<u8>> = SegQueue::new();
     let interruption_token = AtomicBool::new(false);
@@ -81,7 +83,12 @@ fn main() {
                         &interruption_token,
                     )
                 } else {
-                    //policy data gen loop
+                    PolicyGen::start_game_loop(
+                        &save_queue,
+                        iter_count,
+                        &printer,
+                        &interruption_token,
+                    )
                 }
             });
         }

@@ -1,5 +1,3 @@
-use spear::{ChessBoard, Piece, Side};
-
 use super::Accumulator;
 
 #[repr(C)]
@@ -38,31 +36,5 @@ impl<const INPUTS: usize, const OUTPUTS: usize> NetworkLayer<INPUTS, OUTPUTS> {
         }
 
         result
-    }
-
-    pub fn map_value_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: bool>(
-        &self,
-        board: &ChessBoard,
-        mut method: F,
-    ) {
-        let flip = board.side_to_move() == Side::BLACK;
-
-        for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
-            let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
-
-            let mut stm_bitboard =
-                board.get_piece_mask_for_side::<STM_WHITE>(Piece::from_raw(piece));
-            let mut nstm_bitboard =
-                board.get_piece_mask_for_side::<NSTM_WHITE>(Piece::from_raw(piece));
-
-            if flip {
-                stm_bitboard = stm_bitboard.flip();
-                nstm_bitboard = nstm_bitboard.flip();
-            }
-
-            stm_bitboard.map(|square| method(piece_index + (square.get_raw() as usize)));
-
-            nstm_bitboard.map(|square| method(384 + piece_index + (square.get_raw() as usize)));
-        }
     }
 }
