@@ -24,7 +24,7 @@ impl Index<NodeIndex> for Tree {
     #[inline]
     fn index(&self, index: NodeIndex) -> &Self::Output {
         assert!(index != NodeIndex::NULL);
-        self.segments[index.segment()].get(index)
+        &self.segments[index.segment()][index]
     }
 }
 

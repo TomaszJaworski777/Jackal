@@ -6,6 +6,7 @@ Cargo.lock
 *.pdb
 
 *.exe
+jackal-dev
 resources/sprt.txt
 *.bin
 /checkpoints
