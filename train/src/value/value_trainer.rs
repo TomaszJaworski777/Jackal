@@ -18,7 +18,7 @@ impl ValueTrainer {
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_008b".to_string(),
+            net_id: "value_009".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,

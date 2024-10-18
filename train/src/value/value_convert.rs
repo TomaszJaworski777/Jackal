@@ -67,7 +67,7 @@ impl ValueConverter {
             let result = position.get_result();
             let material_score = calculate_material(&board);
             if ((result == 1 && material_score >= 0) || (result == -1 && material_score <= 0))
-                && true
+                && false
             {
                 let material_score = if board.side_to_move() == Side::WHITE {
                     qsearch::<true, false>(&board, -30000, 30000, 0)
@@ -81,7 +81,7 @@ impl ValueConverter {
                 }
             }
 
-            if result == 0 {
+            if result == 0 && false {
                 draw += 1;
                 continue;
             }
