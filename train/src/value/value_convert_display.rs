@@ -11,6 +11,7 @@ impl ValueConvertDisplay {
         unfiltered: u64,
         mate_scores: u64,
         material_advantage: u64,
+        draw: u64,
     ) {
         jackal::clear_terminal_screen();
         println!("Converting value data...");
@@ -32,12 +33,16 @@ impl ValueConvertDisplay {
         );
         println!("Filters: ");
         println!(
-            " - Mate score:   {}",
+            " - Mate score:           {}",
             StringUtils::large_number_to_string(mate_scores as u128)
         );
         println!(
             " - Material advantage:   {}",
             StringUtils::large_number_to_string(material_advantage as u128)
+        );
+        println!(
+            " - Draws:                {}",
+            StringUtils::large_number_to_string(draw as u128)
         );
     }
 
