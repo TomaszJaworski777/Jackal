@@ -12,7 +12,7 @@ use goober::{
 use rand::{seq::SliceRandom, Rng};
 use spear::{Bitboard, ChessBoard, Move, PolicyPacked, Side, Square};
 
-const NAME: &'static str = "policy_001";
+const NAME: &'static str = "policy_002";
 
 const THREADS: usize = 4;
 const SUPERBATCHES_COUNT: usize = 60;
