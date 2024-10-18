@@ -32,11 +32,7 @@ impl PolicyConvert {
 
         while reader.read_exact(&mut buffer).is_ok() {
             if timer.elapsed().as_secs_f32() > 1.0 {
-                PolicyConvertDisplay::print_report(
-                    entries_processed,
-                    entry_count,
-                    unfiltered,
-                );
+                PolicyConvertDisplay::print_report(entries_processed, entry_count, unfiltered);
                 timer = Instant::now();
             }
 

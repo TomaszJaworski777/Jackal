@@ -49,7 +49,7 @@ impl ValueConverter {
                     unfiltered,
                     mate_scores,
                     material_advantage,
-                    draw
+                    draw,
                 );
                 timer = Instant::now();
             }

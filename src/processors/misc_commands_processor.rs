@@ -60,14 +60,14 @@ impl MiscCommandsProcessor {
 
         let mut max = f32::NEG_INFINITY;
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
-            PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx) );
+            PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
                 let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
-            PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx) );
+            PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
                 let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
                 max = max.max(policy);
@@ -83,7 +83,11 @@ impl MiscCommandsProcessor {
 
         let is_single_action = moves.len() == 1;
         for (_, policy) in &mut moves {
-            *policy = if is_single_action { 1.0 } else { *policy / total };
+            *policy = if is_single_action {
+                1.0
+            } else {
+                *policy / total
+            };
         }
 
         let max_policy = moves
