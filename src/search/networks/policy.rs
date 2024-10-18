@@ -5,7 +5,7 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/policy_001.network"
+        "../../../resources/networks/policy_002.network"
     ))
 };
 
