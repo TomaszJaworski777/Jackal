@@ -32,6 +32,7 @@ impl ValueConverter {
         let mut unfiltered = 0;
         let mut mate_scores: u64 = 0;
         let mut material_advantage = 0;
+        let mut draw = 0;
 
         let mut white_wins = 0;
         let mut white_draws = 0;
@@ -48,6 +49,7 @@ impl ValueConverter {
                     unfiltered,
                     mate_scores,
                     material_advantage,
+                    draw
                 );
                 timer = Instant::now();
             }
@@ -77,6 +79,11 @@ impl ValueConverter {
                     material_advantage += 1;
                     continue;
                 }
+            }
+
+            if result == 0 {
+                draw += 1;
+                continue;
             }
 
             //rest of the filters
