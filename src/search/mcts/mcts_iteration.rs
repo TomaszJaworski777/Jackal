@@ -84,7 +84,9 @@ impl<'a> Mcts<'a> {
         let mut actions = self.tree[node_idx].actions_mut();
 
         let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| inputs.push(idx) );
+        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
+            inputs.push(idx)
+        });
 
         let vertical_flip = if position.board().side_to_move() == Side::WHITE {
             0
@@ -96,12 +98,16 @@ impl<'a> Mcts<'a> {
         let mut total = 0.0;
 
         //Map moves into actions and set initial policy to 1
-        const MULTIPLIER : f32 = 1000.0;
+        const MULTIPLIER: f32 = 1000.0;
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
                 let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
-                actions.push(Edge::new(NodeIndex::from_raw((policy * MULTIPLIER) as u32), mv, 0.0));
+                actions.push(Edge::new(
+                    NodeIndex::from_raw((policy * MULTIPLIER) as u32),
+                    mv,
+                    0.0,
+                ));
                 max = max.max(policy);
             });
 
@@ -115,7 +121,11 @@ impl<'a> Mcts<'a> {
         let is_single_action = actions.len() == 1;
         for action in actions.iter_mut() {
             let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = if is_single_action { 1.0 } else { policy / total };
+            let policy = if is_single_action {
+                1.0
+            } else {
+                policy / total
+            };
             action.update_policy(policy);
             action.set_node_index(NodeIndex::NULL);
         }

@@ -1,7 +1,8 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader, Write},
-    path::PathBuf, time::Instant,
+    path::PathBuf,
+    time::Instant,
 };
 
 use goober::{
@@ -60,30 +61,39 @@ impl PolicyTrainer {
 
         const BUFFER_SIZE: usize = 512;
         'training: loop {
-            let training_data = File::open(training_data_path).expect("Cannot open training data file");
-            let mut training_data_reader = BufReader::with_capacity(BUFFER_SIZE * BATCH_SIZE * std::mem::size_of::<PolicyPacked>(), training_data);
+            let training_data =
+                File::open(training_data_path).expect("Cannot open training data file");
+            let mut training_data_reader = BufReader::with_capacity(
+                BUFFER_SIZE * BATCH_SIZE * std::mem::size_of::<PolicyPacked>(),
+                training_data,
+            );
             while let Ok(buffer) = training_data_reader.fill_buf() {
                 if buffer.is_empty() {
                     break;
                 }
-    
+
                 let mut superbatch: Vec<PolicyPacked> = unsafe {
-                    std::slice::from_raw_parts(
-                        buffer.as_ptr().cast(),
-                        BUFFER_SIZE * BATCH_SIZE,
-                    )
-                }.to_vec();
-    
+                    std::slice::from_raw_parts(buffer.as_ptr().cast(), BUFFER_SIZE * BATCH_SIZE)
+                }
+                .to_vec();
+
                 let mut rng = rand::thread_rng();
                 superbatch.shuffle(&mut rng);
-    
+
                 let timer = Instant::now();
-    
+
                 for (idx, batch) in superbatch.chunks(BATCH_SIZE).enumerate() {
                     let mut gradient = boxed_and_zeroed::<TrainerPolicyNet>();
                     running_error += gradient_batch(&policy, &mut gradient, batch);
                     let adjustment = 1.0 / batch.len() as f32;
-                    update(&mut policy, &gradient, adjustment, learning_rate, &mut momentum, &mut velocity);
+                    update(
+                        &mut policy,
+                        &gradient,
+                        adjustment,
+                        learning_rate,
+                        &mut momentum,
+                        &mut velocity,
+                    );
                     batch_index += 1;
                     print!(
                         "> Superbatch {}/{} Batch {}/{}   Speed {:.0}                     \r",
@@ -100,32 +110,34 @@ impl PolicyTrainer {
                     superbatch_index += 1;
                     batch_index = 0;
                     let superbatches_left = SUPERBATCHES_COUNT - superbatch_index;
-                    let time_in_seconds = timer.elapsed().as_secs_f32() * (BATCHES_PER_SUPERBATCH as f32 / BUFFER_SIZE as f32);
-                    let time_left_in_seconds = (superbatches_left as f32 * time_in_seconds).ceil() as usize;
+                    let time_in_seconds = timer.elapsed().as_secs_f32()
+                        * (BATCHES_PER_SUPERBATCH as f32 / BUFFER_SIZE as f32);
+                    let time_left_in_seconds =
+                        (superbatches_left as f32 * time_in_seconds).ceil() as usize;
                     let hh = time_left_in_seconds / 3600;
                     let mm = (time_left_in_seconds - hh * 3600) / 60;
                     let ss = time_left_in_seconds - hh * 3600 - mm * 60;
-    
+
                     println!(
                         "> Superbatch {superbatch_index}/{} Running Loss {} Estimated training time: {}h {}m {}s        ",
                         SUPERBATCHES_COUNT,
                         running_error / (BATCHES_PER_SUPERBATCH * BATCH_SIZE) as f32,
                         hh, mm, ss
                     );
-    
+
                     running_error = 0.0;
-    
+
                     if superbatch_index % LR_DROP == 0 {
                         learning_rate *= 0.1;
                         println!("Dropping LR to {learning_rate}");
                     }
-    
+
                     let mut export_path = PathBuf::new();
                     export_path.push(root_dictionary);
                     export_path.push("..");
                     export_path.push("policy_checkpoints");
                     export_path.push(format!("{}-{}.bin", NAME, superbatch_index));
-    
+
                     policy.export(export_path.to_str().unwrap());
 
                     if superbatch_index == SUPERBATCHES_COUNT {
@@ -209,7 +221,7 @@ fn update_single_grad(
 
     for move_data in &entry.moves()[..entry.move_count() as usize] {
         total_expected += move_data.visits;
-        
+
         let from_index = (move_data.mv.get_from_square().get_raw() ^ vertical_flip) as usize;
         let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize;
 

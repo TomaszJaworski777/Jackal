@@ -10,7 +10,7 @@ impl ValueTrainer {
             .optimiser(optimiser::AdamW)
             .single_perspective()
             .loss_fn(Loss::SigmoidMSE)
-            .input(inputs::Chess768)
+            .input(inputs::ChessBucketsMirrored::default())
             .output_buckets(outputs::Single)
             .feature_transformer(64)
             .activate(bullet::Activation::SCReLU)
@@ -18,7 +18,7 @@ impl ValueTrainer {
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_009".to_string(),
+            net_id: "value_009a".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
@@ -42,8 +42,7 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader =
-            loader::DirectSequentialDataLoader::new(&["./shuffled_bullet_data.bin"]);
+        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_bullet_data.bin"]);
 
         //trainer.load_from_checkpoint("checkpoints/value_008-80");
         trainer.run(&schedule, &settings, &data_loader);
