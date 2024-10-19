@@ -6,10 +6,11 @@ use goober::{
     activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
     Vector,
 };
+use jackal::PolicyNetwork;
 use rand::{seq::SliceRandom, Rng};
-use spear::{Bitboard, ChessBoard, Move, PolicyPacked, Side, Square};
+use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_003cos3";
+const NAME: &'static str = "policy_003td";
 
 const THREADS: usize = 4;
 const SUPERBATCHES_COUNT: usize = 100;
@@ -215,7 +216,15 @@ fn update_single_grad(
     error: &mut f32,
 ) {
     let mut policies = Vec::with_capacity(entry.move_count() as usize);
-    let inputs = extract_inputs(convert_to_12_bitboards(entry.get_board()));
+    let board = ChessBoard::from_policy_pack(entry);
+    let mut inputs = SparseVector::with_capacity(32);
+    
+    if board.side_to_move() == Side::WHITE {
+        PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |feat| inputs.push(feat));
+    } else {
+        PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |feat| inputs.push(feat));
+    }
+
     let vertical_flip = if entry.get_side_to_move() == Side::WHITE {
         0
     } else {
@@ -278,7 +287,7 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, 768, 16>,
+    l0: SparseConnected<activation::ReLU, {768 * 4}, 16>,
 }
 
 impl TrainerPolicySubnet {
@@ -308,22 +317,6 @@ impl TrainerPolicyNet {
         Self {
             subnets: [TrainerPolicySubnet::zeroed(); 128],
         }
-    }
-
-    fn evaluate(&self, board: &ChessBoard, mv: &Move, inputs: &SparseVector) -> f32 {
-        let flip = if board.side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
-
-        let from_subnet = &self.subnets[usize::from(mv.get_from_square().get_raw() ^ flip)];
-        let from_vec = from_subnet.out(inputs);
-
-        let to_subnet = &self.subnets[64 + usize::from(mv.get_to_square().get_raw() ^ flip)];
-        let to_vec = to_subnet.out(inputs);
-
-        from_vec.dot(&to_vec)
     }
 
     fn add_without_explicit_lifetime(&mut self, rhs: &TrainerPolicyNet) {
@@ -366,39 +359,4 @@ fn boxed_and_zeroed<T>() -> Box<T> {
         }
         Box::from_raw(ptr.cast())
     }
-}
-
-fn convert_to_12_bitboards(board: &[Bitboard; 4]) -> [Bitboard; 12] {
-    let mut result = [Bitboard::EMPTY; 12];
-    for square_index in 0..64 {
-        let square = Square::from_raw(square_index);
-        let piece_index: usize = (if board[0].get_bit(square) { 1 } else { 0 }
-            | if board[1].get_bit(square) { 2 } else { 0 }
-            | if board[2].get_bit(square) { 4 } else { 0 })
-            + if board[3].get_bit(square) { 6 } else { 0 };
-        if piece_index == 7 || piece_index == 13 {
-            continue;
-        }
-
-        if piece_index == 12 {
-            board[0].draw_bitboard();
-            board[1].draw_bitboard();
-            board[2].draw_bitboard();
-            board[3].draw_bitboard();
-            println!("{square}");
-        }
-
-        result[piece_index].set_bit(square);
-    }
-    result
-}
-
-fn extract_inputs(board: [Bitboard; 12]) -> SparseVector {
-    let mut result = SparseVector::with_capacity(32);
-    for piece_index in 0..12 {
-        for square in board[piece_index] {
-            result.push(piece_index * 64 + square.get_raw() as usize)
-        }
-    }
-    result
 }
