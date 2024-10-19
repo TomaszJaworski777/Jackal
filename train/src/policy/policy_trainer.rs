@@ -1,23 +1,22 @@
 use std::{
-    fs::File,
-    io::{BufRead, BufReader, Write},
-    path::PathBuf,
-    time::Instant,
+    f32::consts::PI, fs::File, io::{BufRead, BufReader, Write}, path::PathBuf, time::Instant
 };
 
 use goober::{
     activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
     Vector,
 };
+use jackal::PolicyNetwork;
 use rand::{seq::SliceRandom, Rng};
-use spear::{Bitboard, ChessBoard, Move, PolicyPacked, Side, Square};
+use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_002";
+const NAME: &'static str = "policy_003td";
 
 const THREADS: usize = 4;
-const SUPERBATCHES_COUNT: usize = 60;
+const SUPERBATCHES_COUNT: usize = 100;
 const START_LR: f32 = 0.001;
-const LR_DROP: usize = 25;
+const END_LR: f32 = 0.000001;
+const WARMUP_BATCHES: usize = 200;
 
 const BATCH_SIZE: usize = 16_384;
 const BATCHES_PER_SUPERBATCH: usize = 1024;
@@ -42,13 +41,15 @@ impl PolicyTrainer {
         let mut policy = TrainerPolicyNet::rand_init();
         let throughput = SUPERBATCHES_COUNT * BATCHES_PER_SUPERBATCH * BATCH_SIZE;
 
-        println!("Network Name: {}", NAME);
-        println!("Thread Count: {}", THREADS);
-        println!("Loaded Positions: {}", entry_count);
-        println!("Superbatches: {}", SUPERBATCHES_COUNT);
-        println!("LR Drop: {}", LR_DROP);
-        println!("Start LR: {}", START_LR);
-        println!("Epochs {:.2}\n", throughput as f64 / entry_count as f64);
+        println!("Network Name:          {}", NAME);
+        println!("Thread Count:          {}", THREADS);
+        println!("Loaded Positions:      {}", entry_count);
+        println!("Superbatches:          {}", SUPERBATCHES_COUNT);
+        println!("Batch size:            {}", BATCH_SIZE);
+        println!("Batches in superbatch: {}", BATCHES_PER_SUPERBATCH);
+        println!("Start LR:              {}", START_LR);
+        println!("End LR:                {}", END_LR);
+        println!("Epochs                 {:.2}\n", throughput as f64 / entry_count as f64);
 
         let mut momentum = boxed_and_zeroed::<TrainerPolicyNet>();
         let mut velocity = boxed_and_zeroed::<TrainerPolicyNet>();
@@ -86,11 +87,18 @@ impl PolicyTrainer {
                     let mut gradient = boxed_and_zeroed::<TrainerPolicyNet>();
                     running_error += gradient_batch(&policy, &mut gradient, batch);
                     let adjustment = 1.0 / batch.len() as f32;
+
+                    let used_lr = if superbatch_index == 0 && batch_index < WARMUP_BATCHES {
+                        START_LR / ( WARMUP_BATCHES - batch_index ) as f32
+                    } else {
+                        learning_rate
+                    };
+
                     update(
                         &mut policy,
                         &gradient,
                         adjustment,
-                        learning_rate,
+                        used_lr,
                         &mut momentum,
                         &mut velocity,
                     );
@@ -127,10 +135,10 @@ impl PolicyTrainer {
 
                     running_error = 0.0;
 
-                    if superbatch_index % LR_DROP == 0 {
-                        learning_rate *= 0.1;
-                        println!("Dropping LR to {learning_rate}");
-                    }
+                    let training_percentage = superbatch_index as f32 / SUPERBATCHES_COUNT as f32;
+                    let cosine_decay = 1.0 - (1.0 + (PI * training_percentage).cos()) / 2.0;
+                    learning_rate = START_LR + (END_LR - START_LR) * cosine_decay;
+                    println!("Dropping LR to {learning_rate}");
 
                     let mut export_path = PathBuf::new();
                     export_path.push(root_dictionary);
@@ -208,7 +216,15 @@ fn update_single_grad(
     error: &mut f32,
 ) {
     let mut policies = Vec::with_capacity(entry.move_count() as usize);
-    let inputs = extract_inputs(convert_to_12_bitboards(entry.get_board()));
+    let board = ChessBoard::from_policy_pack(entry);
+    let mut inputs = SparseVector::with_capacity(32);
+    
+    if board.side_to_move() == Side::WHITE {
+        PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |feat| inputs.push(feat));
+    } else {
+        PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |feat| inputs.push(feat));
+    }
+
     let vertical_flip = if entry.get_side_to_move() == Side::WHITE {
         0
     } else {
@@ -271,7 +287,7 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, 768, 16>,
+    l0: SparseConnected<activation::ReLU, {768 * 4}, 16>,
 }
 
 impl TrainerPolicySubnet {
@@ -301,22 +317,6 @@ impl TrainerPolicyNet {
         Self {
             subnets: [TrainerPolicySubnet::zeroed(); 128],
         }
-    }
-
-    fn evaluate(&self, board: &ChessBoard, mv: &Move, inputs: &SparseVector) -> f32 {
-        let flip = if board.side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
-
-        let from_subnet = &self.subnets[usize::from(mv.get_from_square().get_raw() ^ flip)];
-        let from_vec = from_subnet.out(inputs);
-
-        let to_subnet = &self.subnets[64 + usize::from(mv.get_to_square().get_raw() ^ flip)];
-        let to_vec = to_subnet.out(inputs);
-
-        from_vec.dot(&to_vec)
     }
 
     fn add_without_explicit_lifetime(&mut self, rhs: &TrainerPolicyNet) {
@@ -359,39 +359,4 @@ fn boxed_and_zeroed<T>() -> Box<T> {
         }
         Box::from_raw(ptr.cast())
     }
-}
-
-fn convert_to_12_bitboards(board: &[Bitboard; 4]) -> [Bitboard; 12] {
-    let mut result = [Bitboard::EMPTY; 12];
-    for square_index in 0..64 {
-        let square = Square::from_raw(square_index);
-        let piece_index: usize = (if board[0].get_bit(square) { 1 } else { 0 }
-            | if board[1].get_bit(square) { 2 } else { 0 }
-            | if board[2].get_bit(square) { 4 } else { 0 })
-            + if board[3].get_bit(square) { 6 } else { 0 };
-        if piece_index == 7 || piece_index == 13 {
-            continue;
-        }
-
-        if piece_index == 12 {
-            board[0].draw_bitboard();
-            board[1].draw_bitboard();
-            board[2].draw_bitboard();
-            board[3].draw_bitboard();
-            println!("{square}");
-        }
-
-        result[piece_index].set_bit(square);
-    }
-    result
-}
-
-fn extract_inputs(board: [Bitboard; 12]) -> SparseVector {
-    let mut result = SparseVector::with_capacity(32);
-    for piece_index in 0..12 {
-        for square in board[piece_index] {
-            result.push(piece_index * 64 + square.get_raw() as usize)
-        }
-    }
-    result
 }
