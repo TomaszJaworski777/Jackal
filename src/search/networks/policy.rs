@@ -1,11 +1,11 @@
-use spear::{Bitboard, ChessBoard, Move, Piece, Side, Square};
+use spear::{ChessBoard, Move, Piece, Side};
 
 use super::NetworkLayer;
 
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/policy_003t.network"
+        "../../../resources/networks/policy_003cos2.network"
     ))
 };
 
@@ -34,18 +34,16 @@ impl PolicySubNetwork {
 
 #[repr(C)]
 pub struct PolicyNetwork {
-    subnets: [[PolicySubNetwork; 2]; 128],
+    subnets: [PolicySubNetwork; 128],
 }
 
 impl PolicyNetwork {
-    pub fn forward(&self, inputs: &Vec<usize>, mv: Move, vertical_flip: u8, threats: Bitboard) -> f32 {
+    pub fn forward(&self, inputs: &Vec<usize>, mv: Move, vertical_flip: u8) -> f32 {
         let from_index = (mv.get_from_square().get_raw() ^ vertical_flip) as usize;
         let to_index = (mv.get_to_square().get_raw() ^ vertical_flip) as usize;
 
-        let from_square = Square::from_raw(mv.get_from_square().get_raw() ^ vertical_flip);
-        let threat_index = usize::from(threats.get_bit(from_square));
-        let from = self.subnets[from_index][threat_index].forward(inputs);
-        let to = self.subnets[to_index + 64][0].forward(inputs);
+        let from = self.subnets[from_index].forward(inputs);
+        let to = self.subnets[to_index + 64].forward(inputs);
 
         dot(from, to)
     }

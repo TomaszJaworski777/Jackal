@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use spear::{Bitboard, Move, Perft, Side, FEN};
+use spear::{Move, Perft, Side, FEN};
 
 use crate::{
     search::{NodeIndex, PolicyNetwork, SearchEngine},
@@ -46,20 +46,15 @@ impl MiscCommandsProcessor {
     }
 
     //Prints all legal moves together with thier policy
-    #[allow(unused_assignments)]
     fn moves(search_engine: &SearchEngine) {
         println!("All legal moves");
         let mut moves: Vec<(Move, f32)> = Vec::new();
         let board = *search_engine.current_position().board();
         let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        
-        let mut threats = Bitboard::EMPTY;
 
         let vertical_flip = if board.side_to_move() == Side::WHITE {
-            threats = board.generate_attack_map::<true, false>();
             0
         } else {
-            threats = board.generate_attack_map::<false, true>().flip();
             56
         };
 
@@ -67,14 +62,14 @@ impl MiscCommandsProcessor {
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip, threats);
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
             PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip, threats);
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
