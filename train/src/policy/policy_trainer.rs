@@ -3,13 +3,12 @@ use std::{
 };
 
 use goober::{
-    activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
-    Vector,
+    activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector, Vector
 };
 use rand::{seq::SliceRandom, Rng};
-use spear::{Bitboard, ChessBoard, Move, PolicyPacked, Side, Square};
+use spear::{Bitboard, ChessBoard, PolicyPacked, Side, Square};
 
-const NAME: &'static str = "policy_003cos3";
+const NAME: &'static str = "policy_003t";
 
 const THREADS: usize = 4;
 const SUPERBATCHES_COUNT: usize = 100;
@@ -167,14 +166,16 @@ fn update(
     momentum: &mut TrainerPolicyNet,
     velocity: &mut TrainerPolicyNet,
 ) {
-    for (i, subnet) in policy.subnets.iter_mut().enumerate() {
-        subnet.adam(
-            &gradient.subnets[i],
-            &mut momentum.subnets[i],
-            &mut velocity.subnets[i],
-            adjustment,
-            learning_rate,
-        );
+    for (i, subnet_pair) in policy.subnets.iter_mut().enumerate() {
+        for (j, subnet) in subnet_pair.iter_mut().enumerate() {
+            subnet.adam(
+                &gradient.subnets[i][j],
+                &mut momentum.subnets[i][j],
+                &mut velocity.subnets[i][j],
+                adjustment,
+                learning_rate,
+            );
+        }
     }
 }
 
@@ -222,6 +223,13 @@ fn update_single_grad(
         56
     };
 
+    let board = ChessBoard::from_policy_pack(entry);
+    let threats = if board.side_to_move() == Side::WHITE {
+        board.generate_attack_map::<true, false>()
+    } else {
+        board.generate_attack_map::<false, true>().flip()
+    };
+
     let mut max = f32::NEG_INFINITY;
     let mut total = 0.0;
     let mut total_expected = 0;
@@ -232,8 +240,11 @@ fn update_single_grad(
         let from_index = (move_data.mv.get_from_square().get_raw() ^ vertical_flip) as usize;
         let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize;
 
-        let from_out = policy.subnets[from_index].out_with_layers(&inputs);
-        let to_out = policy.subnets[64 + to_index].out_with_layers(&inputs);
+        let from_square = Square::from_raw(move_data.mv.get_from_square().get_raw() ^ vertical_flip);
+        let threat_index = usize::from(threats.get_bit(from_square));
+        let from_out = policy.subnets[from_index][threat_index].out_with_layers(&inputs);
+
+        let to_out = policy.subnets[64 + to_index][0].out_with_layers(&inputs);
         let policy_value = from_out.output_layer().dot(&to_out.output_layer());
 
         max = max.max(policy_value);
@@ -244,31 +255,32 @@ fn update_single_grad(
             to_out,
             policy_value,
             move_data.visits as f32,
+            threat_index,
         ));
     }
 
-    for (_, _, _, _, policy_value, expected_policy) in policies.iter_mut() {
+    for (_, _, _, _, policy_value, expected_policy, _) in policies.iter_mut() {
         *policy_value = (*policy_value - max).exp();
         total += *policy_value;
         *expected_policy /= total_expected as f32;
     }
 
-    for (from_index, to_index, from_out, to_out, policy_value, expected_value) in policies {
+    for (from_index, to_index, from_out, to_out, policy_value, expected_value, threat_index) in policies {
         let policy_value = policy_value / total;
         let error_factor = policy_value - expected_value;
 
         *error -= expected_value * policy_value.ln();
 
-        policy.subnets[from_index].backprop(
+        policy.subnets[from_index][threat_index].backprop(
             &inputs,
-            &mut grad.subnets[from_index],
+            &mut grad.subnets[from_index][threat_index],
             error_factor * to_out.output_layer(),
             &from_out,
         );
 
-        policy.subnets[64 + to_index].backprop(
+        policy.subnets[64 + to_index][0].backprop(
             &inputs,
-            &mut grad.subnets[64 + to_index],
+            &mut grad.subnets[64 + to_index][0],
             error_factor * from_out.output_layer(),
             &to_out,
         );
@@ -299,36 +311,22 @@ impl TrainerPolicySubnet {
 }
 
 struct TrainerPolicyNet {
-    pub subnets: [TrainerPolicySubnet; 128],
+    pub subnets: [[TrainerPolicySubnet; 2]; 128],
 }
 
 #[allow(unused)]
 impl TrainerPolicyNet {
     pub const fn zeroed() -> Self {
         Self {
-            subnets: [TrainerPolicySubnet::zeroed(); 128],
+            subnets: [[TrainerPolicySubnet::zeroed(); 2]; 128],
         }
     }
 
-    fn evaluate(&self, board: &ChessBoard, mv: &Move, inputs: &SparseVector) -> f32 {
-        let flip = if board.side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
-
-        let from_subnet = &self.subnets[usize::from(mv.get_from_square().get_raw() ^ flip)];
-        let from_vec = from_subnet.out(inputs);
-
-        let to_subnet = &self.subnets[64 + usize::from(mv.get_to_square().get_raw() ^ flip)];
-        let to_vec = to_subnet.out(inputs);
-
-        from_vec.dot(&to_vec)
-    }
-
     fn add_without_explicit_lifetime(&mut self, rhs: &TrainerPolicyNet) {
-        for (i, j) in self.subnets.iter_mut().zip(rhs.subnets.iter()) {
-            *i += j;
+        for (i_pair, j_pair) in self.subnets.iter_mut().zip(rhs.subnets.iter()) {
+            for (i, j) in i_pair.iter_mut().zip(j_pair.iter()) {
+                *i += j;
+            }
         }
     }
 
@@ -347,10 +345,10 @@ impl TrainerPolicyNet {
         let mut policy = boxed_and_zeroed::<TrainerPolicyNet>();
 
         let mut rng = rand::thread_rng();
-        for subnet in policy.subnets.iter_mut() {
-            *subnet = TrainerPolicySubnet::from_fn(|| {
-                (rng.gen_range(0..u32::MAX) as f32 / u32::MAX as f32) * 0.2
-            });
+        for subnet_pair in policy.subnets.iter_mut() {
+            for subnet in subnet_pair.iter_mut() {
+                *subnet = TrainerPolicySubnet::from_fn(|| (rng.gen_range(0..u32::MAX) as f32 / u32::MAX as f32) * 0.2);
+            }
         }
 
         policy
@@ -378,14 +376,6 @@ fn convert_to_12_bitboards(board: &[Bitboard; 4]) -> [Bitboard; 12] {
             + if board[3].get_bit(square) { 6 } else { 0 };
         if piece_index == 7 || piece_index == 13 {
             continue;
-        }
-
-        if piece_index == 12 {
-            board[0].draw_bitboard();
-            board[1].draw_bitboard();
-            board[2].draw_bitboard();
-            board[3].draw_bitboard();
-            println!("{square}");
         }
 
         result[piece_index].set_bit(square);

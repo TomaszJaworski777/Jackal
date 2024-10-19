@@ -88,9 +88,12 @@ impl<'a> Mcts<'a> {
             inputs.push(idx)
         });
 
+        let mut threats = position.board().generate_attack_map::<STM_WHITE, NSTM_WHITE>();
+
         let vertical_flip = if position.board().side_to_move() == Side::WHITE {
             0
         } else {
+            threats = threats.flip();
             56
         };
 
@@ -102,7 +105,7 @@ impl<'a> Mcts<'a> {
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip, threats);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
