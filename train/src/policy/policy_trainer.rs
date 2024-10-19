@@ -1,8 +1,5 @@
 use std::{
-    fs::File,
-    io::{BufRead, BufReader, Write},
-    path::PathBuf,
-    time::Instant,
+    f32::consts::PI, fs::File, io::{BufRead, BufReader, Write}, path::PathBuf, time::Instant
 };
 
 use goober::{
@@ -12,12 +9,13 @@ use goober::{
 use rand::{seq::SliceRandom, Rng};
 use spear::{Bitboard, ChessBoard, Move, PolicyPacked, Side, Square};
 
-const NAME: &'static str = "policy_002";
+const NAME: &'static str = "policy_003cos3";
 
 const THREADS: usize = 4;
-const SUPERBATCHES_COUNT: usize = 60;
+const SUPERBATCHES_COUNT: usize = 100;
 const START_LR: f32 = 0.001;
-const LR_DROP: usize = 25;
+const END_LR: f32 = 0.000001;
+const WARMUP_BATCHES: usize = 200;
 
 const BATCH_SIZE: usize = 16_384;
 const BATCHES_PER_SUPERBATCH: usize = 1024;
@@ -42,13 +40,15 @@ impl PolicyTrainer {
         let mut policy = TrainerPolicyNet::rand_init();
         let throughput = SUPERBATCHES_COUNT * BATCHES_PER_SUPERBATCH * BATCH_SIZE;
 
-        println!("Network Name: {}", NAME);
-        println!("Thread Count: {}", THREADS);
-        println!("Loaded Positions: {}", entry_count);
-        println!("Superbatches: {}", SUPERBATCHES_COUNT);
-        println!("LR Drop: {}", LR_DROP);
-        println!("Start LR: {}", START_LR);
-        println!("Epochs {:.2}\n", throughput as f64 / entry_count as f64);
+        println!("Network Name:          {}", NAME);
+        println!("Thread Count:          {}", THREADS);
+        println!("Loaded Positions:      {}", entry_count);
+        println!("Superbatches:          {}", SUPERBATCHES_COUNT);
+        println!("Batch size:            {}", BATCH_SIZE);
+        println!("Batches in superbatch: {}", BATCHES_PER_SUPERBATCH);
+        println!("Start LR:              {}", START_LR);
+        println!("End LR:                {}", END_LR);
+        println!("Epochs                 {:.2}\n", throughput as f64 / entry_count as f64);
 
         let mut momentum = boxed_and_zeroed::<TrainerPolicyNet>();
         let mut velocity = boxed_and_zeroed::<TrainerPolicyNet>();
@@ -86,11 +86,18 @@ impl PolicyTrainer {
                     let mut gradient = boxed_and_zeroed::<TrainerPolicyNet>();
                     running_error += gradient_batch(&policy, &mut gradient, batch);
                     let adjustment = 1.0 / batch.len() as f32;
+
+                    let used_lr = if superbatch_index == 0 && batch_index < WARMUP_BATCHES {
+                        START_LR / ( WARMUP_BATCHES - batch_index ) as f32
+                    } else {
+                        learning_rate
+                    };
+
                     update(
                         &mut policy,
                         &gradient,
                         adjustment,
-                        learning_rate,
+                        used_lr,
                         &mut momentum,
                         &mut velocity,
                     );
@@ -127,10 +134,10 @@ impl PolicyTrainer {
 
                     running_error = 0.0;
 
-                    if superbatch_index % LR_DROP == 0 {
-                        learning_rate *= 0.1;
-                        println!("Dropping LR to {learning_rate}");
-                    }
+                    let training_percentage = superbatch_index as f32 / SUPERBATCHES_COUNT as f32;
+                    let cosine_decay = 1.0 - (1.0 + (PI * training_percentage).cos()) / 2.0;
+                    learning_rate = START_LR + (END_LR - START_LR) * cosine_decay;
+                    println!("Dropping LR to {learning_rate}");
 
                     let mut export_path = PathBuf::new();
                     export_path.push(root_dictionary);
