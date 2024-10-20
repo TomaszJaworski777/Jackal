@@ -84,11 +84,14 @@ impl<'a> Mcts<'a> {
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
-        let cpuct = if ROOT { 
+        let mut cpuct = if ROOT { 
             self.options.root_cpuct_value() 
         } else { 
             self.options.cpuct_value() 
         };
+
+        let scale = self.options.cpuct_visits_scale() * 128.0;
+        cpuct *= 1.0 + ((parent_visits as f32 + scale) / scale).ln();
 
         let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
         self.tree[node_idx].get_best_action_by_key(|action| {
