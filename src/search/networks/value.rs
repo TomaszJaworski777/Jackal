@@ -5,14 +5,14 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v50cos64td002.network"
+        "../../../resources/networks/v50cos256td002.network"
     ))
 };
 
 #[repr(C)]
 pub struct ValueNetwork {
-    l1: NetworkLayer<{ 768 * 4 }, 64>,
-    l2: NetworkLayer<64, 1>,
+    l1: NetworkLayer<{ 768 * 4 }, 256>,
+    l2: NetworkLayer<256, 1>,
 }
 
 impl ValueNetwork {
