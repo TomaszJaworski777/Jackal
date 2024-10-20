@@ -38,7 +38,6 @@ impl<'a> Mcts<'a> {
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy.visits(),
-                self.options.cpuct_value(),
             );
             let new_edge_cpy = self
                 .tree
@@ -82,9 +81,14 @@ impl<'a> Mcts<'a> {
         &self,
         node_idx: NodeIndex,
         parent_visits: u32,
-        cpuct: f32,
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
+
+        let cpuct = if ROOT { 
+            self.options.root_cpuct_value() 
+        } else { 
+            self.options.cpuct_value() 
+        };
 
         let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
         self.tree[node_idx].get_best_action_by_key(|action| {
