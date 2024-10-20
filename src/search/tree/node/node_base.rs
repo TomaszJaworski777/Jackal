@@ -3,11 +3,10 @@ use std::sync::{
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-use spear::Move;
+use spear::{ChessPosition, Move, Side};
 
 use crate::{
-    search::{tree::Edge, Score},
-    GameState, Tree,
+    search::{tree::Edge, NodeIndex, Score}, EngineOptions, GameState, PolicyNetwork, Tree
 };
 
 pub struct Node {
@@ -112,5 +111,115 @@ impl Node {
         }
 
         best_action_index
+    }
+
+    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+        &self,
+        position: &ChessPosition,
+        options: &EngineOptions
+    ) {
+        let mut actions = self.actions_mut();
+
+        let mut inputs: Vec<usize> = Vec::with_capacity(32);
+        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
+            inputs.push(idx)
+        });
+
+        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
+            0
+        } else {
+            56
+        };
+
+        let pst = if ROOT {
+            options.root_pst()
+        } else {
+            1.0
+        };
+
+        let mut max = f32::NEG_INFINITY;
+        let mut total = 0.0;
+
+        const MULTIPLIER: f32 = 1000.0;
+        position
+            .board()
+            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
+                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                actions.push(Edge::new(
+                    NodeIndex::from_raw((policy * MULTIPLIER) as u32),
+                    mv,
+                    0.0,
+                ));
+                max = max.max(policy);
+            });
+
+        for action in actions.iter_mut() {
+            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
+            let policy = ((policy - max) / pst).exp();
+            total += policy;
+            action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
+        }
+
+        let is_single_action = actions.len() == 1;
+        for action in actions.iter_mut() {
+            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
+            let policy = if is_single_action {
+                1.0
+            } else {
+                policy / total
+            };
+            action.update_policy(policy);
+            action.set_node_index(NodeIndex::NULL);
+        }
+    }
+
+    pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+        &self,
+        position: &ChessPosition,
+        options: &EngineOptions
+    ) {
+        let mut actions = self.actions_mut();
+
+        let mut inputs: Vec<usize> = Vec::with_capacity(32);
+        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
+            inputs.push(idx)
+        });
+
+        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
+            0
+        } else {
+            56
+        };
+
+        let pst = if ROOT {
+            options.root_pst()
+        } else {
+            1.0
+        };
+
+        let mut policies = Vec::new();
+        let mut max: f32 = f32::NEG_INFINITY;
+        let mut total = 0.0;
+
+        for action in actions.iter_mut() {
+            let policy = PolicyNetwork.forward(&inputs, action.mv(), vertical_flip);
+            policies.push(policy);
+            max = max.max(policy);
+        }
+        
+        let is_single_action = actions.len() == 1;
+        for policy in policies.iter_mut() {
+            if is_single_action {
+                *policy = 1.0;
+                total = 1.0;
+            } else {
+                *policy = ((*policy - max) / pst).exp();
+                total += *policy;
+            }
+        }
+
+        for (i, action) in actions.iter_mut().enumerate() {
+            action.update_policy(policies[i] / total);
+        }
     }
 }
