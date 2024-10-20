@@ -18,21 +18,19 @@ impl ValueTrainer {
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_009td".to_string(),
+            net_id: "value_010ft2".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 50,
+                end_superbatch: 1,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
-            lr_scheduler: lr::CosineDecayLR {
-                initial_lr: 0.001,
-                final_lr: 0.001 * 0.3 * 0.3 * 0.3,
-                final_superbatch: 50,
+            lr_scheduler: lr::ConstantLR {
+                value: 0.0000001,
             },
-            save_rate: 10,
+            save_rate: 1,
         };
 
         let settings = LocalSettings {
@@ -42,9 +40,9 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_bullet_data.bin"]);
+        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_finetune_data.bin"]);
 
-        //trainer.load_from_checkpoint("checkpoints/value_008-80");
+        trainer.load_from_checkpoint("checkpoints/value_010-50");
         trainer.run(&schedule, &settings, &data_loader);
     }
 }

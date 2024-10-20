@@ -11,7 +11,7 @@ use crate::value::ValueConvertDisplay;
 
 pub struct ValueConverter;
 impl ValueConverter {
-    pub fn convert(input_path: &str, output_path: &str) {
+    pub fn convert(input_path: &str, output_path: &str, fine_tune: bool) {
         let input_file = File::open(input_path).expect("Cannot open input file");
         let input_meta = input_file.metadata().expect("Cannot obtain file metadata");
         let mut reader = BufReader::new(input_file);
@@ -67,7 +67,7 @@ impl ValueConverter {
             let result = position.get_result();
             let material_score = calculate_material(&board);
             if ((result == 1 && material_score >= 0) || (result == -1 && material_score <= 0))
-                && false
+                && fine_tune
             {
                 let material_score = if board.side_to_move() == Side::WHITE {
                     qsearch::<true, false>(&board, -30000, 30000, 0)
@@ -81,7 +81,7 @@ impl ValueConverter {
                 }
             }
 
-            if result == 0 && false {
+            if result == 0 && fine_tune {
                 draw += 1;
                 continue;
             }
