@@ -1,8 +1,8 @@
 use core::f32;
 
-use spear::{ChessPosition, Side};
+use spear::ChessPosition;
 
-use crate::search::{networks::PolicyNetwork, tree::Edge, NodeIndex, Score, SearchHelpers};
+use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
 
 use super::Mcts;
 
@@ -31,7 +31,7 @@ impl<'a> Mcts<'a> {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                self.expand::<STM_WHITE, NSTM_WHITE, false>(current_node_index, current_position)
+                self.tree[current_node_index].expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
@@ -74,61 +74,6 @@ impl<'a> Mcts<'a> {
         };
 
         Some(score.reversed())
-    }
-
-    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
-        &self,
-        node_idx: NodeIndex,
-        position: &ChessPosition,
-    ) {
-        let mut actions = self.tree[node_idx].actions_mut();
-
-        let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
-            inputs.push(idx)
-        });
-
-        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
-
-        let mut max = f32::NEG_INFINITY;
-        let mut total = 0.0;
-
-        //Map moves into actions and set initial policy to 1
-        const MULTIPLIER: f32 = 1000.0;
-        position
-            .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
-                actions.push(Edge::new(
-                    NodeIndex::from_raw((policy * MULTIPLIER) as u32),
-                    mv,
-                    0.0,
-                ));
-                max = max.max(policy);
-            });
-
-        for action in actions.iter_mut() {
-            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = (policy - max).exp();
-            total += policy;
-            action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
-        }
-
-        let is_single_action = actions.len() == 1;
-        for action in actions.iter_mut() {
-            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = if is_single_action {
-                1.0
-            } else {
-                policy / total
-            };
-            action.update_policy(policy);
-            action.set_node_index(NodeIndex::NULL);
-        }
     }
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child

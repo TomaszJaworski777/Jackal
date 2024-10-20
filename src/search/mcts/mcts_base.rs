@@ -39,12 +39,18 @@ impl<'a> Mcts<'a> {
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
+        let side_to_move = self.root_position.board().side_to_move();
         if !self.tree[root_index].has_children() {
-            let side_to_move = self.root_position.board().side_to_move();
             if side_to_move == Side::WHITE {
-                self.expand::<true, false, true>(root_index, &self.root_position)
+                self.tree[root_index].expand::<true, false, true>(&self.root_position, self.options)
             } else {
-                self.expand::<false, true, true>(root_index, &self.root_position)
+                self.tree[root_index].expand::<false, true, true>(&self.root_position, self.options)
+            }
+        } else {
+            if side_to_move == Side::WHITE {
+                self.tree[root_index].recalculate_policy::<true, false, true>(&self.root_position, self.options)
+            } else {
+                self.tree[root_index].recalculate_policy::<false, true, true>(&self.root_position, self.options)
             }
         }
 

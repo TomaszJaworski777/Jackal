@@ -54,5 +54,6 @@ create_option_structs!(
     "Hash"         => hash:          SpinOptionInt,          32, 1, 131072;
     "MoveOverhead" => move_overhead: SpinOptionInt,          10, 0, 500;
     "UCI_ShowWDL"  => show_wdl:      CheckBool,              false;
-    "CpuctValue"   => cpuct_value:   SpinOptionFloatTunable, 1.41, 0.1, 5.0, 1.0, 0.0;
+    "CpuctValue"   => cpuct_value:   SpinOptionFloatTunable, 1.41, 0.1, 5.0, 0.04, 0.0;
+    "RootPST"      => root_pst:      SpinOptionFloatTunable, 3.5, 0.1, 10.0, 0.04, 0.0;
 );
