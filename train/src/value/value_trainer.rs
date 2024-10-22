@@ -12,25 +12,25 @@ impl ValueTrainer {
             .loss_fn(Loss::SigmoidMSE)
             .input(ThreatsDefencesMirroredInputs)
             .output_buckets(outputs::Single)
-            .feature_transformer(256)
+            .feature_transformer(512)
             .activate(bullet::Activation::SCReLU)
             .add_layer(1)
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_010big2".to_string(),
+            net_id: "value_011_512_long".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 70,
+                end_superbatch: 300,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::CosineDecayLR {
                 initial_lr: 0.001,
                 final_lr: 0.001 * 0.3 * 0.3 * 0.3,
-                final_superbatch: 70,
+                final_superbatch: 300,
             },
             save_rate: 10,
         };
