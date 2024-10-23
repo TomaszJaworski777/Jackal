@@ -6,11 +6,11 @@ use goober::{
     activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
     Vector,
 };
-use jackal::PolicyNetwork;
+use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
 use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_003td";
+const NAME: &'static str = "policy_004TSEE";
 
 const THREADS: usize = 4;
 const SUPERBATCHES_COUNT: usize = 100;
@@ -218,7 +218,7 @@ fn update_single_grad(
     let mut policies = Vec::with_capacity(entry.move_count() as usize);
     let board = ChessBoard::from_policy_pack(entry);
     let mut inputs = SparseVector::with_capacity(32);
-    
+
     if board.side_to_move() == Side::WHITE {
         PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |feat| inputs.push(feat));
     } else {
@@ -238,11 +238,18 @@ fn update_single_grad(
     for move_data in &entry.moves()[..entry.move_count() as usize] {
         total_expected += move_data.visits;
 
+        let see_index = if board.side_to_move() == Side::WHITE {
+            usize::from(SEE::static_exchange_evaluation::<true, false>(&board, move_data.mv, -108))
+        } else {
+            usize::from(SEE::static_exchange_evaluation::<false, true>(&board, move_data.mv, -108))
+        };
+
         let from_index = (move_data.mv.get_from_square().get_raw() ^ vertical_flip) as usize;
-        let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize;
+        let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
 
         let from_out = policy.subnets[from_index].out_with_layers(&inputs);
-        let to_out = policy.subnets[64 + to_index].out_with_layers(&inputs);
+        let to_out = policy.subnets[to_index].out_with_layers(&inputs);
+
         let policy_value = from_out.output_layer().dot(&to_out.output_layer());
 
         max = max.max(policy_value);
@@ -275,9 +282,9 @@ fn update_single_grad(
             &from_out,
         );
 
-        policy.subnets[64 + to_index].backprop(
+        policy.subnets[to_index].backprop(
             &inputs,
-            &mut grad.subnets[64 + to_index],
+            &mut grad.subnets[to_index],
             error_factor * from_out.output_layer(),
             &to_out,
         );
@@ -287,7 +294,7 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, {768 * 4}, 16>,
+    l0: SparseConnected<activation::ReLU, 768, 16>,
 }
 
 impl TrainerPolicySubnet {
@@ -308,14 +315,14 @@ impl TrainerPolicySubnet {
 }
 
 struct TrainerPolicyNet {
-    pub subnets: [TrainerPolicySubnet; 128],
+    pub subnets: [TrainerPolicySubnet; 192],
 }
 
 #[allow(unused)]
 impl TrainerPolicyNet {
     pub const fn zeroed() -> Self {
         Self {
-            subnets: [TrainerPolicySubnet::zeroed(); 128],
+            subnets: [TrainerPolicySubnet::zeroed(); 192],
         }
     }
 

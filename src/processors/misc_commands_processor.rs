@@ -62,14 +62,14 @@ impl MiscCommandsProcessor {
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip);
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
             PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip);
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
