@@ -93,7 +93,7 @@ impl<'a> Mcts<'a> {
         let scale = self.options.cpuct_visits_scale() * 128.0;
         cpuct *= 1.0 + ((parent_visits as f32 + scale) / scale).ln();
 
-        let explore_value = cpuct * (parent_visits.max(1) as f32).sqrt();
+        let explore_value = cpuct * (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
             let score = if visits == 0 {
