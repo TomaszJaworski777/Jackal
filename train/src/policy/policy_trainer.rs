@@ -3,16 +3,16 @@ use std::{
 };
 
 use goober::{
-    activation, layer::SparseConnected, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
+    activation, layer::{DenseConnected, SparseConnected}, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
     Vector,
 };
 use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
 use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_004TSEE";
+const NAME: &'static str = "policy_004-20x20see";
 
-const THREADS: usize = 4;
+const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 100;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.000001;
@@ -294,13 +294,15 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, 768, 16>,
+    l0: SparseConnected<activation::ReLU, 768, 20>,
+    l1: DenseConnected<activation::ReLU, 20, 20>,
 }
 
 impl TrainerPolicySubnet {
     pub const fn zeroed() -> Self {
         Self {
             l0: SparseConnected::zeroed(),
+            l1: DenseConnected::zeroed(),
         }
     }
 
@@ -308,8 +310,12 @@ impl TrainerPolicySubnet {
         let weights = Matrix::from_fn(|_, _| f());
         let biases = Vector::from_fn(|_| f());
 
+        let weights1 = Matrix::from_fn(|_, _| f());
+        let biases1 = Vector::from_fn(|_| f());
+
         Self {
             l0: SparseConnected::from_raw(weights, biases),
+            l1: DenseConnected::from_raw(weights1, biases1),
         }
     }
 }
