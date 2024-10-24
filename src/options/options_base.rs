@@ -54,8 +54,9 @@ create_option_structs!(
     "Hash"             => hash:               SpinOptionInt,          32, 1, 131072;
     "MoveOverhead"     => move_overhead:      SpinOptionInt,          10, 0, 500;
     "UCI_ShowWDL"      => show_wdl:           CheckBool,              false;
-    "RootCpuctValue"   => root_cpuct_value:   SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.04, 0.0;
-    "CpuctValue"       => cpuct_value:        SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.04, 0.0;
-    "CpuctVisitsScale" => cpuct_visits_scale: SpinOptionFloatTunable, 64.0, 1.0, 512.0, 0.4, 0.0;
-    "RootPST"          => root_pst:           SpinOptionFloatTunable, 3.5, 0.1, 10.0, 0.04, 0.0;
+    "RootCpuctValue"   => root_cpuct_value:   SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
+    "CpuctValue"       => cpuct_value:        SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;
+    "CpuctVisitsScale" => cpuct_visits_scale: SpinOptionFloatTunable, 64.0, 1.0, 512.0, 3.15, 0.002;
+    "RootPST"          => root_pst:           SpinOptionFloatTunable, 3.5, 0.1, 10.0, 0.4, 0.002;
+    "ExplorationTau"   => exploration_tau:    SpinOptionFloatTunable, 0.58, 0.0, 1.0, 0.04, 0.002;
 );
