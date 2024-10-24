@@ -1,17 +1,20 @@
 use spear::{ChessBoard, Move, Piece, Side};
 
+use crate::SEE;
+
 use super::NetworkLayer;
 
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/p100cos16td.network"
+        "../../../resources/networks/p100cos20x20see002.network"
     ))
 };
 
 #[repr(C)]
 struct PolicySubNetwork {
-    l0: NetworkLayer<{768 * 4}, 16>,
+    l0: NetworkLayer<768, 20>,
+    l1: NetworkLayer<20, 20>,
 }
 
 impl PolicySubNetwork {
@@ -28,22 +31,26 @@ impl PolicySubNetwork {
             }
         }
 
-        l0_out.values().to_vec()
+        let out = self.l1.forward_relu(&l0_out);
+
+        out.values().to_vec()
     }
 }
 
 #[repr(C)]
 pub struct PolicyNetwork {
-    subnets: [PolicySubNetwork; 128],
+    subnets: [PolicySubNetwork; 192],
 }
 
 impl PolicyNetwork {
-    pub fn forward(&self, inputs: &Vec<usize>, mv: Move, vertical_flip: u8) -> f32 {
+    pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, vertical_flip: u8) -> f32 {
+        let see_index = usize::from(SEE::static_exchange_evaluation::<true, false>(board, mv, -108));
+
         let from_index = (mv.get_from_square().get_raw() ^ vertical_flip) as usize;
-        let to_index = (mv.get_to_square().get_raw() ^ vertical_flip) as usize;
+        let to_index = (mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
 
         let from = self.subnets[from_index].forward(inputs);
-        let to = self.subnets[to_index + 64].forward(inputs);
+        let to = self.subnets[to_index].forward(inputs);
 
         dot(from, to)
     }
@@ -53,14 +60,6 @@ impl PolicyNetwork {
         mut method: F,
     ) {
         let flip = board.side_to_move() == Side::BLACK;
-
-        let mut threats = board.generate_attack_map::<STM_WHITE, NSTM_WHITE>();
-        let mut defences = board.generate_attack_map::<NSTM_WHITE, STM_WHITE>();
-    
-        if flip {
-            threats = threats.flip();
-            defences = defences.flip();
-        }
     
         for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
             let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
@@ -76,30 +75,12 @@ impl PolicyNetwork {
             }
     
             stm_bitboard.map(|square| {
-                let mut feat = piece_index + (square.get_raw() as usize);
-    
-                if threats.get_bit(square) {
-                    feat += 768;
-                }
-    
-                if defences.get_bit(square) {
-                    feat += 768 * 2;
-                }
-    
+                let feat = piece_index + (square.get_raw() as usize);
                 method(feat)
             });
     
             nstm_bitboard.map(|square| {
-                let mut feat = 384 + piece_index + (square.get_raw() as usize);
-    
-                if threats.get_bit(square) {
-                    feat += 768;
-                }
-    
-                if defences.get_bit(square) {
-                    feat += 768 * 2;
-                }
-    
+                let feat = 384 + piece_index + (square.get_raw() as usize);
                 method(feat)
             });
         }

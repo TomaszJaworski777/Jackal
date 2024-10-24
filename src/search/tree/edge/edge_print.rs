@@ -64,7 +64,7 @@ impl Edge {
                 index_text,
                 pad_str(
                     heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0).as_str(),
-                    5,
+                    6,
                     console::Alignment::Right,
                     None
                 ),

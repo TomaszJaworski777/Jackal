@@ -144,7 +144,7 @@ impl Node {
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward(&inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
@@ -202,7 +202,7 @@ impl Node {
         let mut total = 0.0;
 
         for action in actions.iter_mut() {
-            let policy = PolicyNetwork.forward(&inputs, action.mv(), vertical_flip);
+            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip);
             policies.push(policy);
             max = max.max(policy);
         }
