@@ -59,5 +59,5 @@ create_option_structs!(
     "CpuctVisitsScale" => cpuct_visits_scale: SpinOptionFloatTunable, 64.0, 1.0, 512.0, 3.15, 0.002;
     "RootPST"          => root_pst:           SpinOptionFloatTunable, 3.5, 0.1, 10.0, 0.4, 0.002;
     "ExplorationTau"   => exploration_tau:    SpinOptionFloatTunable, 0.58, 0.0, 1.0, 0.04, 0.002;
-    "HashPercentage"   => hash_percentage:    SpinOptionFloatTunable, 0.02, 0.001, 0.5, 0.005, 0.002;
+    "HashPercentage"   => hash_percentage:    SpinOptionFloatTunable, 0.011, 0.001, 0.5, 0.005, 0.002;
 );
