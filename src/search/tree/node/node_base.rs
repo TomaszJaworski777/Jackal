@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicU16, Ordering},
+    atomic::{AtomicU16, AtomicU64, Ordering},
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
@@ -12,6 +12,7 @@ use crate::{
 pub struct Node {
     actions: RwLock<Vec<Edge>>,
     state: AtomicU16,
+    key: AtomicU64
 }
 
 impl Default for Node {
@@ -25,17 +26,19 @@ impl Node {
         Self {
             actions: RwLock::new(Vec::new()),
             state: AtomicU16::new(u16::from(state)),
+            key: AtomicU64::new(0)
         }
     }
 
     pub fn clear(&self) {
-        self.replace(GameState::Unresolved);
+        self.replace(GameState::Unresolved, 0);
     }
 
     #[inline]
-    pub fn replace(&self, state: GameState) {
+    pub fn replace(&self, state: GameState, key: u64) {
         *self.actions_mut() = Vec::new();
-        self.state.store(u16::from(state), Ordering::Relaxed)
+        self.state.store(u16::from(state), Ordering::Relaxed);
+        self.key.store(key, Ordering::Relaxed);
     }
 
     #[inline]
@@ -46,6 +49,14 @@ impl Node {
     #[inline]
     pub fn set_state(&self, state: GameState) {
         self.state.store(u16::from(state), Ordering::Relaxed)
+    }
+
+    pub fn key(&self) -> u64 {
+        self.key.load(Ordering::Relaxed)
+    }
+
+    pub fn set_key(&self, key: u64) {
+        self.key.store(key, Ordering::Relaxed)
     }
 
     #[inline]

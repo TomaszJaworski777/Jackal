@@ -22,7 +22,7 @@ impl Tree {
 
             //Create new node in the current segment
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
-            let new_index = self.current_segment().add(state)?;
+            let new_index = self.current_segment().add(state, position.board().get_key().get_raw())?;
 
             //Assign new node index to the edge
             actions[action_index].set_node_index(new_index);
@@ -36,7 +36,7 @@ impl Tree {
             let actions = self[edge_index].actions_mut();
 
             //Obtain new node index from the current segment
-            let new_index = self.current_segment().add(GameState::Unresolved)?;
+            let new_index = self.current_segment().add(GameState::Unresolved, 0)?;
 
             //Copy the node from old location to the new one and check it's index
             //in the edge
@@ -74,7 +74,7 @@ impl Tree {
 
         //Move root to the new segment
         let new_root_index = self.segments[new_segment_index]
-            .add(GameState::Unresolved)
+            .add(GameState::Unresolved, 0)
             .unwrap();
         self[new_root_index].clear();
 
@@ -90,6 +90,7 @@ impl Tree {
         let b_actions = &mut *self[b].actions_mut();
 
         self[b].set_state(self[a].state());
+        self[b].set_key(self[a].key());
 
         if a_actions.is_empty() {
             return;

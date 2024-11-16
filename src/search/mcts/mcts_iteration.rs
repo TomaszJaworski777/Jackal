@@ -26,6 +26,8 @@ impl<'a> Mcts<'a> {
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
                 self.tree[current_node_index].state(),
+                self.tree[current_node_index].key(),
+                self.tree
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.

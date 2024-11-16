@@ -40,7 +40,8 @@ impl UciProcessor {
 
         if command == "Hash" {
             let hash_size = search_engine.engine_options().hash();
-            search_engine.tree_mut().resize_tree(hash_size)
+            let hash_percentage = search_engine.engine_options().hash_percentage();
+            search_engine.tree_mut().resize_tree(hash_size, hash_percentage)
         }
     }
 
