@@ -67,7 +67,7 @@ impl Bench {
         let mut total_time = 1;
 
         let options = search_engine.engine_options();
-        let mut tree = Tree::new(options.hash());
+        let mut tree = Tree::new(options.hash(), options.hash_percentage());
 
         for fen in Bench::FENS {
             let position = ChessPosition::from_fen(&FEN::from_str(fen));

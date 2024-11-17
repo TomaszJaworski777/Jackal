@@ -5,7 +5,7 @@ use std::{
 
 use crate::{search::Score, GameState};
 
-use super::tree_segment::TreeSegment;
+use super::{hash_table::HashTable, tree_segment::TreeSegment};
 use super::{node::NodeIndex, Edge, Node};
 use spear::Move;
 
@@ -16,6 +16,7 @@ pub struct Tree {
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
     pub(super) tree_size_in_bytes: usize,
+    hash_table: HashTable
 }
 
 impl Index<NodeIndex> for Tree {
@@ -29,9 +30,14 @@ impl Index<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn new(size_in_mb: i32) -> Self {
+    pub fn new(size_in_mb: i32, hash_percentage: f32) -> Self {
         let bytes = (size_in_mb as usize) * 1024 * 1024;
-        let tree_size = bytes / (48 + 12 * 16);
+
+        let hash_bytes = (bytes as f32 * hash_percentage) as usize;
+        let hash_table = HashTable::new(hash_bytes);
+
+        let tree_bytes = bytes - hash_bytes;
+        let tree_size = tree_bytes / (56 + 20 * 16);
         let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
@@ -42,16 +48,21 @@ impl Tree {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
-            tree_size_in_bytes: bytes,
+            tree_size_in_bytes: tree_bytes,
+            hash_table
         }
     }
 
-    pub fn resize_tree(&mut self, size_in_mb: i32) {
-        *self = Self::new(size_in_mb)
+    pub fn resize_tree(&mut self, size_in_mb: i32, hash_percentage: f32) {
+        *self = Self::new(size_in_mb, hash_percentage)
     }
 
     #[inline]
     pub fn clear(&mut self) {
+        self.hash_table.clear();
+
+        let root_key = self[self.root_index()].key();
+
         for segment in &self.segments {
             segment.clear();
         }
@@ -59,7 +70,7 @@ impl Tree {
         self.current_segment.store(0, Ordering::Relaxed);
         self.root_edge = Edge::default();
 
-        _ = self.current_segment().add(GameState::Unresolved);
+        _ = self.current_segment().add(GameState::Unresolved, root_key);
     }
 
     #[inline]
@@ -75,6 +86,10 @@ impl Tree {
     #[inline]
     pub fn current_segment(&self) -> &TreeSegment {
         &self.segments[self.current_segment.load(Ordering::Relaxed)]
+    }
+
+    pub fn hash_table(&self) -> &HashTable {
+        &self.hash_table
     }
 
     #[inline]

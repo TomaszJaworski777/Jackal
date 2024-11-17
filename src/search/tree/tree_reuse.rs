@@ -9,7 +9,7 @@ impl Tree {
         //When tree is empty then we don't need to check for possible reuse, we can just return,
         //but before that we add a root node to make sure that tree is valid
         if self.total_usage() == 0.0 {
-            _ = self.current_segment().add(GameState::Unresolved);
+            _ = self.current_segment().add(GameState::Unresolved, current_board.get_key().get_raw());
             return;
         }
 
@@ -47,7 +47,7 @@ impl Tree {
         //Otherwise we clear the tree and reinit the root node
         } else {
             self.clear();
-            _ = self.current_segment().add(GameState::Unresolved);
+            _ = self.current_segment().add(GameState::Unresolved, current_board.get_key().get_raw());
         }
     }
 
