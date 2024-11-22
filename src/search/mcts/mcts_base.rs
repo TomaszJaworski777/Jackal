@@ -56,9 +56,9 @@ impl<'a> Mcts<'a> {
 
         //Start mcts search loop
         if self.root_position.board().side_to_move() == Side::WHITE {
-            self.main_loop::<PRINTER, true, false>(&mut printer)
+            self.search_loop::<PRINTER, true, false>(&mut printer)
         } else {
-            self.main_loop::<PRINTER, false, true>(&mut printer)
+            self.search_loop::<PRINTER, false, true>(&mut printer)
         }
 
         //At the end of the search print the last search update raport and then print

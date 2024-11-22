@@ -143,6 +143,7 @@ impl Tree {
 
     pub fn get_pv(&self) -> Vec<Move> {
         let mut result = Vec::new();
+        return result;
         self.get_pv_internal(self.root_index(), &mut result);
         result
     }
@@ -153,9 +154,15 @@ impl Tree {
         }
 
         //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self[node_index].get_best_action(self);
-        result.push(self[node_index].actions()[best_action].mv());
-        let new_node_index = self[node_index].actions()[best_action].node_index();
+        let best_action_idx = self[node_index].get_best_action(self);
+        if best_action_idx == usize::MAX || self[node_index].actions().len() < best_action_idx {
+            return;
+        }
+
+        let best_action = self.get_edge_clone(node_index, best_action_idx);
+        result.push(best_action.mv());
+        
+        let new_node_index = best_action.node_index();
         if !new_node_index.is_null() {
             self.get_pv_internal(new_node_index, result)
         }
