@@ -27,7 +27,7 @@ impl Tree {
             );
             if let Some((edge_idx, action_idx, depth)) = result {
                 node_depth = depth;
-                let edge = self.get_edge_clone(edge_idx, action_idx);
+                let edge = self.get_edge_clone(edge_idx, action_idx, 1);
                 edge.print::<true>(
                     edge.policy(),
                     edge.policy(),

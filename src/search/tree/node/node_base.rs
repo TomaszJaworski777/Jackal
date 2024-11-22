@@ -125,7 +125,7 @@ impl Node {
 
     pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, mut method: F) -> usize {
         let mut best_action_index = usize::MAX;
-        let mut best_score = f32::MIN;
+        let mut best_score = f32::NEG_INFINITY;
 
         for (index, action) in self.actions().iter().enumerate() {
             let score = method(action);

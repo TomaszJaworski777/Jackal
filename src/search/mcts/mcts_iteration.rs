@@ -43,7 +43,7 @@ impl<'a> Mcts<'a> {
             );
             let new_edge_cpy = self
                 .tree
-                .get_edge_clone(current_node_index, best_action_index);
+                .get_edge_clone(current_node_index, best_action_index, 2);
             current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
 
             //Process the new action on the tree and obtain it's updated index

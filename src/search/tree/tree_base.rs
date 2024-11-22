@@ -104,7 +104,10 @@ impl Tree {
     }
 
     #[inline]
-    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize) -> Edge {
+    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize, source: u8) -> Edge {
+        if self[node_index].actions().len() <= action_index {
+            panic!("{source}")
+        }
         self[node_index].actions()[action_index].clone()
     }
 
@@ -143,27 +146,22 @@ impl Tree {
 
     pub fn get_pv(&self) -> Vec<Move> {
         let mut result = Vec::new();
-        return result;
         self.get_pv_internal(self.root_index(), &mut result);
         result
     }
 
     fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
-        if !self[node_index].has_children() {
-            return;
-        }
-
         //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
         let best_action_idx = self[node_index].get_best_action(self);
-        if best_action_idx == usize::MAX || self[node_index].actions().len() < best_action_idx {
+        if best_action_idx == usize::MAX {
             return;
         }
 
-        let best_action = self.get_edge_clone(node_index, best_action_idx);
+        let best_action = self.get_edge_clone(node_index, best_action_idx, 0);
         result.push(best_action.mv());
         
         let new_node_index = best_action.node_index();
-        if !new_node_index.is_null() {
+        if !new_node_index.is_null() && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed) {
             self.get_pv_internal(new_node_index, result)
         }
     }
