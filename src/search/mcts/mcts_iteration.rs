@@ -113,13 +113,16 @@ impl<'a> Mcts<'a> {
 
             //virtual loss
             let idx = action.node_index();
-            if !idx.is_null() && self.tree[idx].threads() > 0 {
+            if !idx.is_null() {
                 let thrds = f64::from(self.tree[idx].threads());
                 let v = f64::from(visits);
 
-                //score adjusted by the amount of thread visits
-                let s = f64::from(score) * v / (v + thrds);
-                score = s as f32;
+                if thrds > 0.0 {
+
+                    //score adjusted by the amount of thread visits
+                    let s = f64::from(score) * v / (v + thrds);
+                    score = s as f32;
+                }
             }
 
             score + (explore_value * action.policy() / (visits as f32 + 1.0))

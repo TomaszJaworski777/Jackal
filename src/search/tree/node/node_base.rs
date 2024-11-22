@@ -85,7 +85,7 @@ impl Node {
 
     #[inline]
     pub fn has_children(&self) -> bool {
-        self.actions().len() > 0
+        !self.actions().is_empty()
     }
 
     #[inline]
@@ -127,7 +127,7 @@ impl Node {
         let mut best_action_index = usize::MAX;
         let mut best_score = f32::MIN;
 
-        for (index, action) in self.actions_mut().iter().enumerate() {
+        for (index, action) in self.actions().iter().enumerate() {
             let score = method(action);
             if score >= best_score {
                 best_action_index = index;
