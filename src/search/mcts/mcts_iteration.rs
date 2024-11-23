@@ -40,6 +40,7 @@ impl<'a> Mcts<'a> {
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy.visits(),
+                action_cpy.score()
             );
             let new_edge_cpy = self
                 .tree
@@ -89,7 +90,8 @@ impl<'a> Mcts<'a> {
     fn select_action<const ROOT: bool>(
         &self,
         node_idx: NodeIndex,
-        parent_visits: u32
+        parent_visits: u32,
+        parent_score: Score
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
@@ -105,8 +107,8 @@ impl<'a> Mcts<'a> {
         let explore_value = cpuct * (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
-            let mut score = if visits == 0 {
-                0.5
+            let score = if visits == 0 {
+                1.0 - f32::from(parent_score)
             } else {
                 f32::from(action.score())
             };
