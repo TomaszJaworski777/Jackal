@@ -39,8 +39,7 @@ impl<'a> Mcts<'a> {
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
-                action_cpy.visits(),
-                action_cpy.score()
+                action_cpy,
             );
             let new_edge_cpy = self
                 .tree
@@ -90,16 +89,23 @@ impl<'a> Mcts<'a> {
     fn select_action<const ROOT: bool>(
         &self,
         node_idx: NodeIndex,
-        parent_visits: u32,
-        parent_score: Score
+        parent: &Edge,
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
+
+        let parent_visits = parent.visits();
 
         let mut cpuct = if ROOT { 
             self.options.root_cpuct_value() 
         } else { 
             self.options.cpuct_value() 
         };
+
+        //Variance scaling
+        if parent_visits > 1 {
+            let frac = parent.variance().sqrt() / self.options.cpuct_variance_scale();
+            cpuct *= 1.0 + self.options.cpuct_variance_weight() * (frac - 1.0);
+        }
 
         let scale = self.options.cpuct_visits_scale() * 128.0;
         cpuct *= 1.0 + ((parent_visits as f32 + scale) / scale).ln();
@@ -108,12 +114,12 @@ impl<'a> Mcts<'a> {
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
             let mut score = if visits == 0 {
-                1.0 - f32::from(parent_score)
+                1.0 - f32::from(parent.score())
             } else {
                 f32::from(action.score())
             };
 
-            //virtual loss
+            //Virtual loss
             let idx = action.node_index();
             if !idx.is_null() {
                 let thrds = f64::from(self.tree[idx].threads());
@@ -121,7 +127,7 @@ impl<'a> Mcts<'a> {
 
                 if thrds > 0.0 {
 
-                    //score adjusted by the amount of thread visits
+                    //Score adjusted by the amount of thread visits
                     let s = f64::from(score) * v / (v + thrds);
                     score = s as f32;
                 }
