@@ -26,7 +26,8 @@ impl SearchDisplay for PrettyPrint {
         clear_terminal_screen();
         position.board().draw_board();
         println!(" {}    1", "Threads:".label());
-        println!(" {}  {}MB", "Tree Size:".label(), engine_options.hash());
+        let tree_size = engine_options.hash() as f32 * (1.0 - engine_options.hash_percentage());
+        println!(" {}  {:.2}MB", "Tree Size:".label(), tree_size);
 
         #[cfg(target_os = "linux")]
         let start_height = 14;

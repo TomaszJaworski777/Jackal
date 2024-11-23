@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicU16, Ordering},
+    atomic::{AtomicU16, AtomicU64, Ordering},
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
@@ -12,6 +12,8 @@ use crate::{
 pub struct Node {
     actions: RwLock<Vec<Edge>>,
     state: AtomicU16,
+    key: AtomicU64,
+    threads: AtomicU16
 }
 
 impl Default for Node {
@@ -25,17 +27,20 @@ impl Node {
         Self {
             actions: RwLock::new(Vec::new()),
             state: AtomicU16::new(u16::from(state)),
+            key: AtomicU64::new(0), 
+            threads: AtomicU16::new(0)
         }
     }
 
     pub fn clear(&self) {
-        self.replace(GameState::Unresolved);
+        self.replace(GameState::Unresolved, 0);
     }
 
     #[inline]
-    pub fn replace(&self, state: GameState) {
+    pub fn replace(&self, state: GameState, key: u64) {
         *self.actions_mut() = Vec::new();
-        self.state.store(u16::from(state), Ordering::Relaxed)
+        self.state.store(u16::from(state), Ordering::Relaxed);
+        self.key.store(key, Ordering::Relaxed);
     }
 
     #[inline]
@@ -48,6 +53,14 @@ impl Node {
         self.state.store(u16::from(state), Ordering::Relaxed)
     }
 
+    pub fn key(&self) -> u64 {
+        self.key.load(Ordering::Relaxed)
+    }
+
+    pub fn set_key(&self, key: u64) {
+        self.key.store(key, Ordering::Relaxed)
+    }
+
     #[inline]
     pub fn actions(&self) -> RwLockReadGuard<Vec<Edge>> {
         self.actions.read().unwrap()
@@ -58,13 +71,25 @@ impl Node {
         self.actions.write().unwrap()
     }
 
-    #[inline]
-    pub fn has_children(&self) -> bool {
-        self.actions().len() > 0
+    pub fn threads(&self) -> u16 {
+        self.threads.load(Ordering::Relaxed)
+    }
+
+    pub fn inc_threads(&self) -> u16 {
+        self.threads.fetch_add(1,Ordering::Relaxed)
+    }
+
+    pub fn dec_threads(&self) -> u16 {
+        self.threads.fetch_sub(1, Ordering::Relaxed)
     }
 
     #[inline]
-    pub fn is_termial(&self) -> bool {
+    pub fn has_children(&self) -> bool {
+        !self.actions().is_empty()
+    }
+
+    #[inline]
+    pub fn is_terminal(&self) -> bool {
         self.state() != GameState::Unresolved
     }
 
@@ -100,7 +125,7 @@ impl Node {
 
     pub fn get_best_action_by_key<F: FnMut(&Edge) -> f32>(&self, mut method: F) -> usize {
         let mut best_action_index = usize::MAX;
-        let mut best_score = f32::MIN;
+        let mut best_score = f32::NEG_INFINITY;
 
         for (index, action) in self.actions().iter().enumerate() {
             let score = method(action);

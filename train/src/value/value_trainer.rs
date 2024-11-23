@@ -12,25 +12,25 @@ impl ValueTrainer {
             .loss_fn(Loss::SigmoidMSE)
             .input(ThreatsDefencesMirroredInputs)
             .output_buckets(outputs::Single)
-            .feature_transformer(512)
+            .feature_transformer(1024)
             .activate(bullet::Activation::SCReLU)
             .add_layer(1)
             .build();
 
         let schedule = TrainingSchedule {
-            net_id: "value_011_512_long".to_string(),
+            net_id: "value_012_1024_long".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 300,
+                end_superbatch: 450,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::CosineDecayLR {
                 initial_lr: 0.001,
                 final_lr: 0.001 * 0.3 * 0.3 * 0.3,
-                final_superbatch: 300,
+                final_superbatch: 450,
             },
             save_rate: 10,
         };
@@ -42,9 +42,9 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_bullet_data.bin"]);
+        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_value_data.bin"]);
 
-        //trainer.load_from_checkpoint("checkpoints/value_010-50");
+        //trainer.load_from_checkpoint("checkpoints/value_012_1024_long-300");
         trainer.run(&schedule, &settings, &data_loader);
     }
 }
