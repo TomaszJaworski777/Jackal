@@ -7,7 +7,7 @@ use crate::{
     color_config::{ColorConfig, Colored},
     search::Score,
     utils::{heat_color, lerp_color},
-    EngineOptions, GameState, SearchLimits, SearchStats,
+    EngineOptions, GameState, SearchLimits, SearchStats, Tree,
 };
 
 use super::SearchDisplay;
@@ -22,12 +22,11 @@ pub struct PrettyPrint {
 impl SearchDisplay for PrettyPrint {
     const REFRESH_RATE: f32 = 0.05;
 
-    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
+    fn new(position: &ChessPosition, engine_options: &EngineOptions, tree: &Tree) -> Self {
         clear_terminal_screen();
         position.board().draw_board();
-        println!(" {}    1", "Threads:".label());
-        let tree_size = engine_options.hash() as f32 * (1.0 - engine_options.hash_percentage());
-        println!(" {}  {:.2}MB", "Tree Size:".label(), tree_size);
+        println!(" {}    {}", "Threads:".label(), engine_options.threads());
+        println!(" {}  {}B", "Tree Size:".label(), bytes_to_string(tree.tree_size_in_bytes as u128));
 
         #[cfg(target_os = "linux")]
         let start_height = 14;
@@ -227,4 +226,13 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
     }
 
     pv_string
+}
+
+fn bytes_to_string(number: u128) -> String {
+    match number {
+        0..=1023 => format!("{number}"),
+        1024..=1_048_575 => format!("{:.2}K", number as f64 / 1024.0),
+        1_048_576..=1_073_741_823 => format!("{:.2}M", number as f64 / 1_048_576.0),
+        1_073_741_824.. => format!("{:.2}G", number as f64 / 1_073_741_824.0),
+    }
 }

@@ -35,7 +35,7 @@ impl<'a> Mcts<'a> {
     }
 
     pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, Score) {
-        let mut printer = PRINTER::new(&self.root_position, self.options);
+        let mut printer = PRINTER::new(&self.root_position, self.options, &self.tree);
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();

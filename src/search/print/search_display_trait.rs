@@ -1,4 +1,4 @@
-use crate::{search::Score, GameState};
+use crate::{search::Score, GameState, Tree};
 use spear::{ChessPosition, Move};
 
 use crate::{
@@ -10,7 +10,7 @@ use crate::{
 pub trait SearchDisplay: Send + Sync {
     const REFRESH_RATE: f32;
 
-    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
+    fn new(position: &ChessPosition, engine_options: &EngineOptions, tree: &Tree) -> Self;
     #[allow(clippy::too_many_arguments)]
     fn print_search_raport<const FINAL: bool>(
         &mut self,

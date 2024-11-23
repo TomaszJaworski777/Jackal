@@ -1,4 +1,4 @@
-use crate::{search::Score, GameState};
+use crate::{search::Score, GameState, Tree};
 use spear::{ChessPosition, Move};
 
 use crate::{
@@ -13,7 +13,7 @@ pub struct UciPrint;
 impl SearchDisplay for UciPrint {
     const REFRESH_RATE: f32 = 1.0;
 
-    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
+    fn new(position: &ChessPosition, engine_options: &EngineOptions, _tree: &Tree) -> Self {
         UciPrint
     }
 

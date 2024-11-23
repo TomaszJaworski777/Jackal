@@ -15,7 +15,7 @@ pub struct Tree {
     pub(super) segments: [TreeSegment; SEGMENT_COUNT],
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
-    pub(super) tree_size_in_bytes: usize,
+    pub tree_size_in_bytes: usize,
     hash_table: HashTable
 }
 
