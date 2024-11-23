@@ -107,7 +107,7 @@ impl<'a> Mcts<'a> {
         let explore_value = cpuct * (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
-            let score = if visits == 0 {
+            let mut score = if visits == 0 {
                 1.0 - f32::from(parent_score)
             } else {
                 f32::from(action.score())
