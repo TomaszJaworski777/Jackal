@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[allow(unused)]
-pub trait SearchDisplay {
+pub trait SearchDisplay: Send + Sync {
     const REFRESH_RATE: f32;
 
     fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self;
