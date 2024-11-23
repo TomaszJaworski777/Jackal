@@ -20,6 +20,11 @@ impl Tree {
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
+            let most_recent_index = actions[action_index].node_index();
+            if !most_recent_index.is_null() {
+                return Some(most_recent_index);
+            }
+
             //Create new node in the current segment
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
             let new_index = self.current_segment().add(state, position.board().get_key().get_raw())?;
@@ -34,6 +39,11 @@ impl Tree {
         } else if child_index.segment() != self.current_segment.load(Ordering::Relaxed) {
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
+
+            let most_recent_index = actions[action_index].node_index();
+            if most_recent_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+                return Some(most_recent_index);
+            }
 
             //Obtain new node index from the current segment
             let new_index = self.current_segment().add(GameState::Unresolved, 0)?;
