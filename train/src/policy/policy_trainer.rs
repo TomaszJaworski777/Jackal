@@ -10,7 +10,7 @@ use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
 use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_004-20x20see";
+const NAME: &'static str = "policy_005-20x20see";
 
 const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 100;
@@ -20,7 +20,7 @@ const WARMUP_BATCHES: usize = 200;
 
 const BATCH_SIZE: usize = 16_384;
 const BATCHES_PER_SUPERBATCH: usize = 1024;
-const TRAINING_DATA_PATH: &'static str = "conv_policy_data.bin";
+const TRAINING_DATA_PATH: &'static str = "policy_data.bin";
 
 pub struct PolicyTrainer;
 impl PolicyTrainer {
