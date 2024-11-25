@@ -1,22 +1,22 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU16, Ordering};
 
 use crate::search::{eval_score::AtomicScore, Score};
 
 pub struct HashTableEntry {
-    key: AtomicU32,
+    key: AtomicU16,
     score: AtomicScore
 }
 
 impl HashTableEntry {
     pub fn new() -> Self {
         Self { 
-            key: AtomicU32::new(0), 
+            key: AtomicU16::new(0), 
             score: AtomicScore::default() 
         }
     }
 
     pub fn replace(&self, key: u64, score: Score) {
-        self.key.store((key >> 32) as u32, Ordering::Relaxed);
+        self.key.store(key as u16, Ordering::Relaxed);
         self.score.store(score);
     }
 }
@@ -54,10 +54,9 @@ impl HashTable {
     }
 
     pub fn probe(&self, key: u64) -> Option<Score> {
-        let key_start = key & u32::MAX as u64; 
-        let idx = (key_start.wrapping_mul(self.entries.len() as u64) >> 32) as usize;
+        let idx = (u128::from(key).wrapping_mul(self.entries.len() as u128) >> 64) as usize;
         let entry = &self.entries[idx];
-        if entry.key.load(Ordering::Relaxed) != (key >> 32) as u32 {
+        if entry.key.load(Ordering::Relaxed) != key as u16 {
             return None;
         }
 
@@ -65,8 +64,7 @@ impl HashTable {
     }
 
     pub fn store(&self, key: u64, score: Score) {
-        let key_start = key & u32::MAX as u64; 
-        let idx = (key_start.wrapping_mul(self.entries.len() as u64) >> 32) as usize;
+        let idx = (u128::from(key).wrapping_mul(self.entries.len() as u128) >> 64) as usize;
         self.entries[idx].replace(key, score);
     }
 }
