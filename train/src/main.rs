@@ -1,6 +1,7 @@
 use std::env;
 
 use policy::PolicyConvert;
+use policy::PolicyShuffle;
 use policy::PolicyTrainer;
 use value::ValueConverter;
 use value::ValueTrainer;
@@ -16,6 +17,7 @@ fn main() {
             "policy-conv" => policy_convert(&args),
             "value" => ValueTrainer::execute(),
             "policy" => PolicyTrainer::execute(),
+            "policy-shuffle" => policy_shuffle(&args),
             _ => continue,
         }
     }
@@ -63,4 +65,25 @@ fn policy_convert(args: &Vec<String>) {
     }
 
     PolicyConvert::convert(input_path, output_path);
+}
+
+fn policy_shuffle(args: &Vec<String>) {
+    let mut input_path = "./policy_data.bin";
+    let mut output_path = "./conv_policy_data.bin";
+
+    let mut cmd = String::new();
+    for arg in args {
+        match arg.as_str() {
+            "-i" | "-o" => cmd = arg.clone(),
+            _ => {
+                match cmd.as_str() {
+                    "-i" => input_path = arg.as_str(),
+                    "-o" => output_path = arg.as_str(),
+                    _ => continue,
+                };
+            }
+        }
+    }
+
+    PolicyShuffle::execute(input_path, output_path);
 }
