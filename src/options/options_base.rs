@@ -54,6 +54,7 @@ create_option_structs!(
     "Hash"                => hash:                  SpinOptionInt,          32, 1, 131072;
     "Threads"             => threads:               SpinOptionInt,          1, 1, 1024;
     "MoveOverhead"        => move_overhead:         SpinOptionInt,          10, 0, 500;
+    "MultiPV"             => multi_pv:              SpinOptionInt,          1, 1, 256;
     "UCI_ShowWDL"         => show_wdl:              CheckBool,              false;
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;

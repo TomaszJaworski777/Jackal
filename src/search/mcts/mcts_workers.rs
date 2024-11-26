@@ -89,15 +89,12 @@ impl<'a> Mcts<'a> {
             {
                 last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
                 last_raport_time = Instant::now();
-                let (_, best_score) = self.tree[root_index].get_best_move(self.tree);
                 printer.print_search_raport::<false>(
                     self.stats,
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    best_score,
-                    self.tree[self.tree.root_index()].state(),
-                    &self.tree.get_pv(),
+                    &self.tree.get_pvs(self.options.multi_pv())
                 )
             }
         }
