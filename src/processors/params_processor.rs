@@ -33,7 +33,7 @@ impl ParamsProcessor {
 
                         if option_name == "Hash" {
                             let hash_size = search_engine.engine_options().hash();
-                            let hash_percentage = search_engine.engine_options().hash_percentage();
+                            let hash_percentage = search_engine.engine_options().hash_percentage() / 10.0;
                             search_engine.tree_mut().resize_tree(hash_size, hash_percentage)
                         }
 

@@ -13,7 +13,7 @@ impl ValueGen {
         interruption_token: &AtomicBool,
     ) {
         let options = EngineOptions::new();
-        let mut tree = Tree::new(options.hash(), options.hash_percentage());
+        let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);
 
