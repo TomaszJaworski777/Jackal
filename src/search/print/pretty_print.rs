@@ -16,7 +16,7 @@ pub struct PrettyPrint {
     start_height: i32,
     max_history_size: usize,
     history: Vec<(u128, String)>,
-    last_best_move: Move,
+    last_best_move: Move
 }
 #[allow(unused)]
 impl SearchDisplay for PrettyPrint {
@@ -52,10 +52,10 @@ impl SearchDisplay for PrettyPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        score: Score,
-        state: GameState,
-        pv: &[Move],
+        pvs: &Vec<(Score, GameState, Vec<Move>)>
     ) {
+        let (score, state, pv) = &pvs[0];
+
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
         print!("                                                \r");
@@ -96,7 +96,7 @@ impl SearchDisplay for PrettyPrint {
         println!(
             " {}      {}",
             "Score:".label(),
-            heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
+            heat_color(score_cp_string.as_str(), f32::from(*score), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
         println!(

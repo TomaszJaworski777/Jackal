@@ -18,9 +18,7 @@ pub trait SearchDisplay: Send + Sync {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        score: Score,
-        state: GameState,
-        pv: &[Move],
+        pvs: &Vec<(Score, GameState, Vec<Move>)>
     ) {
     }
     fn print_search_result(&self, mv: Move, score: Score) {}

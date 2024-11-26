@@ -70,9 +70,7 @@ impl<'a> Mcts<'a> {
             self.options,
             self.limits,
             self.tree.total_usage(),
-            best_score,
-            self.tree[self.tree.root_index()].state(),
-            &self.tree.get_pv(),
+            &self.tree.get_pvs(self.options.multi_pv())
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)

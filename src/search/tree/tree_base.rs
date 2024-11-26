@@ -144,10 +144,44 @@ impl Tree {
         }
     }
 
-    pub fn get_pv(&self) -> Vec<Move> {
+    pub fn get_pvs(&self, multi_pv: i32) -> Vec<(Score, GameState, Vec<Move>)> {
+        let mut results = Vec::new();
+
+        for pv_idx in 0..multi_pv {
+            results.push(self.get_pv_by_index(pv_idx as usize));
+        }
+
+        results
+    }
+
+    pub fn get_pv_by_index(&self, idx: usize) -> (Score, GameState, Vec<Move>) {
         let mut result = Vec::new();
-        self.get_pv_internal(self.root_index(), &mut result);
-        result
+        let mut moves = self[self.root_index()].actions().clone();
+
+        if moves.len() <= idx {
+            return (Score::default(), GameState::Unresolved, result);
+        }
+
+        moves.sort_by(|a, b| {
+            if a.score().single() > b.score().single() {
+                return std::cmp::Ordering::Less;
+            }
+
+            std::cmp::Ordering::Greater
+        });
+
+        if moves[idx].visits() == 0 {
+            return (Score::default(), GameState::Unresolved, result);
+        }
+
+        result.push(moves[idx].mv());
+        if moves[idx].node_index().is_null() {
+            return (moves[idx].score(), GameState::Unresolved, result);
+        }
+
+        let node_idx = moves[idx].node_index();
+        self.get_pv_internal(node_idx, &mut result);
+        (moves[idx].score(), self[node_idx].state(), result)
     }
 
     fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
