@@ -56,6 +56,8 @@ create_option_structs!(
     "MoveOverhead"        => move_overhead:         SpinOptionInt,          10, 0, 500;
     "MultiPV"             => multi_pv:              SpinOptionInt,          1, 1, 256;
     "UCI_ShowWDL"         => show_wdl:              CheckBool,              false;
+    "UCI_AnalyseMode"     => analyse_mode:          CheckBool,              false;
+    
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;
     "CpuctVisitsScale"    => cpuct_visits_scale:    SpinOptionFloatTunable, 64.0, 1.0, 512.0, 3.15, 0.002;

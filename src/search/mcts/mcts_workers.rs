@@ -64,7 +64,7 @@ impl<'a> Mcts<'a> {
             self.stats.add_iteration(depth);
 
             //Interrupt search when root becomes terminal node, so when there is a force mate on board
-            if self.tree[root_index].is_terminal() {
+            if self.tree[root_index].is_terminal() && !self.options.analyse_mode() {
                 self.interruption_token.store(true, Ordering::Relaxed)
             }
 
