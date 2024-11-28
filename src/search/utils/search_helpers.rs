@@ -22,9 +22,9 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     score
                 } else {
-                    let score = Score::from(sigmoid(
+                    let score = Score::new(sigmoid(
                         ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()),
-                    ));
+                    ), 0.0);
 
                     tree.hash_table().store(key, score);
 

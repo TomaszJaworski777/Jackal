@@ -97,12 +97,13 @@ impl Edge {
 
     #[inline]
     pub fn add_score(&self, score: Score) {
-        let score = f64::from(score);
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
-        let new_score =
-            (f64::from(self.score()) * previous_visits + score) / (previous_visits + 1.0);
-        self.score.store(Score::from(new_score));
-        let new_squared_score = (self.squared_score() * previous_visits + score.powi(2)) / (previous_visits + 1.0);
+
+        let new_win_chance = (f64::from(self.score().win_chance()) * previous_visits + f64::from(score.win_chance())) / (previous_visits + 1.0);
+        let new_draw_chance = (f64::from(self.score().draw_chance()) * previous_visits + f64::from(score.draw_chance())) / (previous_visits + 1.0);
+        self.score.store(Score::new(new_win_chance as f32, new_draw_chance as f32));
+
+        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single()).powi(2)) / (previous_visits + 1.0);
         self.squared_score.store((new_squared_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed);
     }
 

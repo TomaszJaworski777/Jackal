@@ -115,10 +115,10 @@ impl Node {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => f32::from(action.score()),
+                    GameState::Unresolved => action.score().single(),
                 }
             } else {
-                f32::from(action.score())
+                action.score().single()
             }
         })
     }
