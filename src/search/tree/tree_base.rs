@@ -163,7 +163,33 @@ impl Tree {
         }
 
         moves.sort_by(|a, b| {
-            if a.score().single() > b.score().single() {
+            let a_score = if a.visits() == 0 {
+                f32::NEG_INFINITY
+            } else if !a.node_index().is_null() {
+                match self[a.node_index()].state() {
+                    GameState::Lost(n) => 1.0 + f32::from(n),
+                    GameState::Won(n) => f32::from(n) - 256.0,
+                    GameState::Drawn => 0.5,
+                    GameState::Unresolved => a.score().single(),
+                }
+            } else {
+                a.score().single()
+            };
+
+            let b_score = if b.visits() == 0 {
+                f32::NEG_INFINITY
+            } else if !b.node_index().is_null() {
+                match self[b.node_index()].state() {
+                    GameState::Lost(n) => 1.0 + f32::from(n),
+                    GameState::Won(n) => f32::from(n) - 256.0,
+                    GameState::Drawn => 0.5,
+                    GameState::Unresolved => b.score().single(),
+                }
+            } else {
+                b.score().single()
+            };
+
+            if a_score > b_score {
                 return std::cmp::Ordering::Less;
             }
 
