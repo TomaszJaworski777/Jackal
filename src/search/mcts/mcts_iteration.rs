@@ -114,10 +114,10 @@ impl<'a> Mcts<'a> {
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
             let mut score = if visits == 0 {
-                1.0 - f32::from(parent.score())
+                parent.score().reversed()
             } else {
-                f32::from(action.score())
-            };
+                action.score()
+            }.single();
 
             //Virtual loss
             let idx = action.node_index();
