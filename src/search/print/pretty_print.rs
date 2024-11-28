@@ -54,7 +54,13 @@ impl SearchDisplay for PrettyPrint {
         usage: f32,
         pvs: &Vec<(Score, GameState, Vec<Move>)>
     ) {
-        let (score, state, pv) = &pvs[0];
+        let (mut score, state, pv) = &pvs[0];
+        score = match *state {
+            GameState::Drawn => Score::DRAW,
+            GameState::Won(x) => Score::LOSE,
+            GameState::Lost(x) => Score::WIN,
+            _ => score,
+        };
 
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
@@ -88,15 +94,21 @@ impl SearchDisplay for PrettyPrint {
 
         print!("                                    \r");
         let score_cp = score.as_cp_f32();
-        let score_cp_string = if score_cp >= 0.0 {
-            format!("+{:.2}", score_cp)
-        } else {
-            format!("{:.2}", score_cp)
+        let mut score_cp_string = match *state {
+            GameState::Drawn => "+0.0".to_string(),
+            GameState::Won(x) => format!("-M{}", ((x+1) as f32 / 2.0).ceil() as u32),
+            GameState::Lost(x) => format!("+M{}", ((x+1) as f32 / 2.0).ceil() as u32),
+            _ => if score_cp >= 0.0 {
+                format!("+{:.2}", score_cp)
+            } else {
+                format!("{:.2}", score_cp)
+            },
         };
+
         println!(
             " {}      {}",
             "Score:".label(),
-            heat_color(score_cp_string.as_str(), f32::from(*score), 0.0, 1.0)
+            heat_color(score_cp_string.as_str(), score.single(), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
         println!(
@@ -186,7 +198,7 @@ fn color_bar(length: usize, fill: f32, (r, g, b): (u8, u8, u8)) -> String {
 
     for i in 0..length {
         let percentage = i as f32 / (length - 1) as f32;
-        let char = if percentage <= fill {
+        let char = if percentage <= fill && fill > 0.0 {
             "#".truecolor(r, g, b).to_string()
         } else {
             String::from(".")

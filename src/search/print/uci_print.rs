@@ -26,7 +26,13 @@ impl SearchDisplay for UciPrint {
         pvs: &Vec<(Score, GameState, Vec<Move>)>
     ) {
         for multi_pv_idx in 0..pvs.len() {
-            let (score, state, pv) = &pvs[multi_pv_idx];
+            let (mut score, state, pv) = &pvs[multi_pv_idx];
+            score = match *state {
+                GameState::Drawn => Score::DRAW,
+                GameState::Won(x) => Score::LOSE,
+                GameState::Lost(x) => Score::WIN,
+                _ => score,
+            };
 
             if pv.is_empty() {
                 return;
