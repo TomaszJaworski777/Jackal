@@ -37,7 +37,7 @@ impl Tree {
         let hash_table = HashTable::new(hash_bytes);
 
         let tree_bytes = bytes - hash_bytes;
-        let tree_size = tree_bytes / (56 + 20 * 20);
+        let tree_size = tree_bytes / (56 + 20 * 24);
         let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
