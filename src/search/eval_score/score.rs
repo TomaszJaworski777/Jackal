@@ -3,7 +3,7 @@ pub struct Score(f32, f32);
 
 impl Score {
     pub const WIN: Self = Self(1.0, 0.0);
-    pub const DRAW: Self = Self(0.5, 0.0); //change that
+    pub const DRAW: Self = Self(0.0, 1.0);
     pub const LOSE: Self = Self(0.0, 0.0);
 
     pub fn new(win_chance: f32, draw_chance: f32) -> Self {
@@ -11,7 +11,7 @@ impl Score {
     }
 
     pub fn single(&self) -> f32 {
-        self.0 //+ self.1 / 2.0
+        self.0 + self.1 / 2.0
     }
 
     pub fn win_chance(&self) -> f32 {
@@ -35,6 +35,6 @@ impl Score {
     }
 
     pub fn reversed(&self) -> Self {
-        Self(1.0 - self.0, 1.0 - self.1)
+        Self(1.0 - self.0, self.1)
     }
 }

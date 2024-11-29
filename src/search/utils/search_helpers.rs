@@ -22,9 +22,8 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     score
                 } else {
-                    let score = Score::new(sigmoid(
-                        ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()),
-                    ), 0.0);
+                    let (win_chance, draw_chance, _) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
+                    let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);
 
@@ -59,9 +58,4 @@ impl SearchHelpers {
 
         GameState::Unresolved
     }
-}
-
-#[inline]
-fn sigmoid(input: f32) -> f32 {
-    1.0 / (1.0 + (-input).exp())
 }
