@@ -5,7 +5,7 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v600cos1024td005wdl.network"
+        "../../../resources/networks/v445cos1024td005wdl.network"
     ))
 };
 

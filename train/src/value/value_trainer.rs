@@ -17,11 +17,11 @@ impl ValueTrainer {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 1,
+                end_superbatch: 600,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::ExponentialDecayLR {
-                initial_lr: 0.000000000000001,
+                initial_lr: 0.001,
                 final_lr: 0.000005,
                 final_superbatch: 600,
             },

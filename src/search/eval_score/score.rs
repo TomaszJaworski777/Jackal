@@ -35,6 +35,6 @@ impl Score {
     }
 
     pub fn reversed(&self) -> Self {
-        Self(1.0 - self.0, self.1)
+        Self(self.lose_chance(), self.1)
     }
 }

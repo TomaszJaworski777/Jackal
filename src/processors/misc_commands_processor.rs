@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use spear::{Move, Perft, Side, FEN};
 
 use crate::{
-    search::{NodeIndex, PolicyNetwork, SearchEngine},
+    search::{NodeIndex, PolicyNetwork, Score, SearchEngine, ValueNetwork},
     utils::{clear_terminal_screen, heat_color},
 };
 
@@ -23,6 +23,7 @@ impl MiscCommandsProcessor {
             "draw" | "d" => search_engine.current_position().board().draw_board(),
             "moves" => Self::moves(search_engine),
             "tree" => Self::draw_tree(args, search_engine),
+            "eval" | "e" => Self::eval(search_engine),
             _ => return false,
         }
 
@@ -164,5 +165,19 @@ impl MiscCommandsProcessor {
                 depth,
             )
         }
+    }
+
+    fn eval(search_engine: &SearchEngine) {
+        let position = &search_engine.current_position();
+        let (w, d, _) = if position.board().side_to_move() == Side::WHITE {
+            ValueNetwork.forward::<true, false>(position.board())
+        } else {
+            ValueNetwork.forward::<false, true>(position.board())
+        };
+        let score = Score::new(w, d);
+
+        position.board().draw_board();
+        println!("Score: {} ({:.2})", score.single(), score.as_cp_f32());
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
 }

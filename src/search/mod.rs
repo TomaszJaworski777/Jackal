@@ -13,6 +13,7 @@ pub use eval_score::Score;
 pub use game_state::GameState;
 pub use mcts::Mcts;
 pub use networks::PolicyNetwork;
+pub use networks::ValueNetwork;
 pub use print::NoPrint;
 pub use search_engine::SearchEngine;
 pub use search_limits::SearchLimits;
