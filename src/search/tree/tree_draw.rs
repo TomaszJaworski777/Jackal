@@ -11,13 +11,14 @@ impl Tree {
         board: &ChessBoard,
         node_idx: NodeIndex,
         depth: u32,
+        draw_contempt: f32
     ) {
         self.print_usage_text();
         let mut node_depth = 0;
         let is_root = node_idx == self.root_index();
         if is_root {
             let edge = self.root_edge();
-            edge.print::<true>(edge.policy(), edge.policy(), self[node_idx].state(), true);
+            edge.print::<true>(edge.policy(), edge.policy(), self[node_idx].state(), true, draw_contempt);
         } else {
             let result = self.find_position_by_key::<_, NSTM_WHITE, STM_WHITE>(
                 board,
@@ -33,12 +34,13 @@ impl Tree {
                     edge.policy(),
                     self[node_idx].state(),
                     node_depth % 2 == 0,
+                    draw_contempt
                 );
             } else {
                 return;
             }
         }
-        self.draw_tree_internal(node_idx, depth - 1, &String::new(), node_depth % 2 == 1)
+        self.draw_tree_internal(node_idx, depth - 1, &String::new(), node_depth % 2 == 1, draw_contempt)
     }
 
     fn print_usage_text(&self) {
@@ -124,6 +126,7 @@ impl Tree {
         depth: u32,
         prefix: &String,
         flip_score: bool,
+        draw_contempt: f32
     ) {
         if self.total_usage() == 0.0 {
             return;
@@ -160,7 +163,7 @@ impl Tree {
                 self[action.node_index()].state()
             };
             print!("{}{} ", prefix, if is_last { "└─>" } else { "├─>" });
-            action.print::<false>(min_policy, max_policy, state, flip_score);
+            action.print::<false>(min_policy, max_policy, state, flip_score, draw_contempt);
             if !action.node_index().is_null()
                 && self[action.node_index()].has_children()
                 && depth > 0
@@ -171,6 +174,7 @@ impl Tree {
                     depth - 1,
                     &format!("{}{}", prefix, prefix_add),
                     !flip_score,
+                    draw_contempt
                 )
             }
         }

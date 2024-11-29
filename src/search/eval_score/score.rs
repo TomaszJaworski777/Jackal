@@ -10,12 +10,8 @@ impl Score {
         Self(win_chance, draw_chance)
     }
 
-    pub fn single_us(&self) -> f32 {
-        self.0 * (1.0 - self.1) + self.1 / 2.0
-    }
-
-    pub fn single_them(&self) -> f32 {
-        self.0 + self.1 / 2.0
+    pub fn single(&self, draw_contempt: f32) -> f32 {
+        self.0 + self.1 * (0.5 - draw_contempt)
     }
 
     pub fn win_chance(&self) -> f32 {
@@ -30,20 +26,20 @@ impl Score {
         1.0 - self.0 - self.1
     }
 
-    pub fn as_cp_us(&self) -> i32 {
-        (-400.0 * (1.0 / self.single_us().clamp(0.0, 1.0) - 1.0).ln()) as i32
+    pub fn as_cp_with_contempt(&self, draw_contempt: f32) -> i32 {
+        (-400.0 * (1.0 / self.single(draw_contempt).clamp(0.0, 1.0) - 1.0).ln()) as i32
     }
 
-    pub fn as_cp_f32_us(&self) -> f32 {
-        self.as_cp_us() as f32 / 100.0
+    pub fn as_cp_f32_with_contempt(&self, draw_contempt: f32) -> f32 {
+        self.as_cp_with_contempt(draw_contempt) as f32 / 100.0
     }
 
-    pub fn as_cp_them(&self) -> i32 {
-        (-400.0 * (1.0 / self.single_them().clamp(0.0, 1.0) - 1.0).ln()) as i32
+    pub fn as_cp(&self) -> i32 {
+        (-400.0 * (1.0 / self.single(0.0).clamp(0.0, 1.0) - 1.0).ln()) as i32
     }
 
-    pub fn as_cp_f32_them(&self) -> f32 {
-        self.as_cp_them() as f32 / 100.0
+    pub fn as_cp_f32(&self) -> f32 {
+        self.as_cp() as f32 / 100.0
     }
 
     pub fn reversed(&self) -> Self {

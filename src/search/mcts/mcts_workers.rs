@@ -54,8 +54,9 @@ impl<'a> Mcts<'a> {
                 &mut depth,
             );
 
+            let draw_contempt = self.options.draw_contempt();
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score);
+                self.tree.root_edge().add_score(score, draw_contempt);
             } else {
                 return;
             }
@@ -94,7 +95,7 @@ impl<'a> Mcts<'a> {
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    &self.tree.get_pvs(self.options.multi_pv())
+                    &self.tree.get_pvs(self.options.multi_pv(), draw_contempt)
                 )
             }
         }
@@ -114,7 +115,7 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score);
+                self.tree.root_edge().add_score(score, self.options.draw_contempt());
             } else {
                 return;
             }

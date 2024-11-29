@@ -63,14 +63,15 @@ impl<'a> Mcts<'a> {
 
         //At the end of the search print the last search update raport and then print
         //end of search message containing search result
-        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree);
+        let draw_contempt = self.options.draw_contempt();
+        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_contempt);
         self.stats.update_time_passed();
         printer.print_search_raport::<true>(
             self.stats,
             self.options,
             self.limits,
             self.tree.total_usage(),
-            &self.tree.get_pvs(self.options.multi_pv())
+            &self.tree.get_pvs(self.options.multi_pv(), draw_contempt)
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)

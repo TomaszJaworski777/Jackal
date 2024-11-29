@@ -43,11 +43,12 @@ impl SearchDisplay for UciPrint {
                 pv_string.push_str(format!("{} ", mv).as_str())
             }
 
+            let draw_contempt = engine_options.draw_contempt();
             let mut score_text = match *state {
                 GameState::Drawn => "score cp 0".to_string(),
                 GameState::Won(x) => format!("score mate -{}", ((x+1) as f32 / 2.0).ceil() as u32),
                 GameState::Lost(x) => format!("score mate {}", ((x+1) as f32 / 2.0).ceil() as u32),
-                _ => format!("score cp {}", score.as_cp_us()),
+                _ => format!("score cp {}", score.as_cp_with_contempt(draw_contempt)),
             };
     
             if engine_options.show_wdl() {

@@ -74,7 +74,7 @@ impl<'a> Mcts<'a> {
 
             //Backpropagate the score up the tree
             self.tree
-                .add_edge_score(current_node_index, best_action_index, score);
+                .add_edge_score(current_node_index, best_action_index, score, self.options.draw_contempt());
 
             //Backpropagate mates to assure our engine avoids/follows mating line
             self.tree
@@ -103,9 +103,15 @@ impl<'a> Mcts<'a> {
             self.options.cpuct_value() 
         };
 
+        let contempt = if US {
+            self.options.draw_contempt()
+        } else {
+            0.0
+        };
+
         //Variance scaling
         if parent_visits > 1 {
-            let frac = parent.variance().sqrt() / self.options.cpuct_variance_scale();
+            let frac = parent.variance(contempt).sqrt() / self.options.cpuct_variance_scale();
             cpuct *= 1.0 + self.options.cpuct_variance_weight() * (frac - 1.0);
         }
 
@@ -115,6 +121,7 @@ impl<'a> Mcts<'a> {
         let explore_value = cpuct * (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
+
             let mut score = if visits == 0 {
                 parent.score().reversed()
             } else {
@@ -136,12 +143,7 @@ impl<'a> Mcts<'a> {
                 }
             }
 
-            let score = if US {
-                score.single_us()
-            } else {
-                score.single_them()
-            };
-
+            let score = score.single(contempt);
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }

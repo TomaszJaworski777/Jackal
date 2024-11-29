@@ -11,6 +11,7 @@ impl Edge {
         highest_policy: f32,
         state: GameState,
         flip_score: bool,
+        draw_contempt: f32,
     ) {
         let terminal_string = match state {
             GameState::Drawn => "   terminal draw".highlight_alt(),
@@ -45,12 +46,18 @@ impl Edge {
             self.score()
         };
 
+        let contempt = if flip_score {
+            0.0
+        } else {
+            draw_contempt
+        };
+
         let score = if self.visits() == 0 {
             Score::DRAW
         } else {
             score
         };
-        let score_cp = score.as_cp_f32_us();
+        let score_cp = score.as_cp_f32_with_contempt(contempt);
         let score_cp_string = if score_cp >= 0.0 {
             format!("+{:.2}", score_cp)
         } else {
@@ -63,7 +70,7 @@ impl Edge {
                 "{}   {} score   {} visits   {} policy{}",
                 index_text,
                 pad_str(
-                    heat_color(score_cp_string.as_str(), score.single_us(), 0.0, 1.0).as_str(),
+                    heat_color(score_cp_string.as_str(), score.single(contempt), 0.0, 1.0).as_str(),
                     6,
                     console::Alignment::Right,
                     None
