@@ -11,6 +11,8 @@ impl<'a> Mcts<'a> {
         const STM_WHITE: bool,
         const NSTM_WHITE: bool,
         const ROOT: bool,
+        const US: bool,
+        const NOT_US: bool
     >(
         &self,
         current_node_index: NodeIndex,
@@ -37,7 +39,7 @@ impl<'a> Mcts<'a> {
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.select_action::<ROOT>(
+            let best_action_index = self.select_action::<ROOT, US>(
                 current_node_index,
                 action_cpy,
             );
@@ -59,7 +61,7 @@ impl<'a> Mcts<'a> {
 
             //Descend deeper into the tree
             *depth += 1;
-            let opt_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
+            let opt_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false, NOT_US, US>(
                 new_node_index,
                 &new_edge_cpy,
                 current_position,
@@ -86,7 +88,7 @@ impl<'a> Mcts<'a> {
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    fn select_action<const ROOT: bool>(
+    fn select_action<const ROOT: bool, const US: bool>(
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
@@ -117,7 +119,7 @@ impl<'a> Mcts<'a> {
                 parent.score().reversed()
             } else {
                 action.score()
-            }.single();
+            };
 
             //Virtual loss
             let idx = action.node_index();
@@ -128,10 +130,17 @@ impl<'a> Mcts<'a> {
                 if thrds > 0.0 {
 
                     //Score adjusted by the amount of thread visits
-                    let s = f64::from(score) * v / (v + thrds);
-                    score = s as f32;
+                    let w = f64::from(score.win_chance()) * v / (v + thrds);
+                    let d = f64::from(score.win_chance()) * v / (v + thrds);
+                    score = Score::new(w as f32, d as f32);
                 }
             }
+
+            let score = if US {
+                score.single_us()
+            } else {
+                score.single_them()
+            };
 
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })

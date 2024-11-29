@@ -170,10 +170,10 @@ impl Tree {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => a.score().single(),
+                    GameState::Unresolved => a.score().single_us(),
                 }
             } else {
-                a.score().single()
+                a.score().single_us()
             };
 
             let b_score = if b.visits() == 0 {
@@ -183,10 +183,10 @@ impl Tree {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => b.score().single(),
+                    GameState::Unresolved => b.score().single_us(),
                 }
             } else {
-                b.score().single()
+                b.score().single_us()
             };
 
             if a_score > b_score {

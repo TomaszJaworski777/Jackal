@@ -177,7 +177,12 @@ impl MiscCommandsProcessor {
         let score = Score::new(w, d);
 
         position.board().draw_board();
-        println!("Score: {} ({:.2})", score.single(), score.as_cp_f32());
-        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
+        println!("For me");
+        println!("Score: {} ({:.2})", score.single_us(), score.as_cp_f32_us());
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
+
+        println!("For them");
+        println!("Score: {} ({:.2})", score.single_them(), score.as_cp_f32_them());
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
 }

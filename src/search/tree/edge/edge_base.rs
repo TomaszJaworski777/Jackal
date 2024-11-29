@@ -92,7 +92,7 @@ impl Edge {
     }
 
     pub fn variance(&self) -> f32 {
-        (self.squared_score() - (self.score().single() as f64).powi(2)).max(0.0) as f32
+        (self.squared_score() - (self.score().single_us() as f64).powi(2)).max(0.0) as f32
     }
 
     #[inline]
@@ -103,7 +103,7 @@ impl Edge {
         let new_draw_chance = (f64::from(self.score().draw_chance()) * previous_visits + f64::from(score.draw_chance())) / (previous_visits + 1.0);
         self.score.store(Score::new(new_win_chance as f32, new_draw_chance as f32));
 
-        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single()).powi(2)) / (previous_visits + 1.0);
+        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single_us()).powi(2)) / (previous_visits + 1.0);
         self.squared_score.store((new_squared_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed);
     }
 

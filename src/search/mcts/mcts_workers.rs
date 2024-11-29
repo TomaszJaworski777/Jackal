@@ -47,7 +47,7 @@ impl<'a> Mcts<'a> {
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,
@@ -106,7 +106,7 @@ impl<'a> Mcts<'a> {
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,

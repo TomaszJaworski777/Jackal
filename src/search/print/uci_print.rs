@@ -47,7 +47,7 @@ impl SearchDisplay for UciPrint {
                 GameState::Drawn => "score cp 0".to_string(),
                 GameState::Won(x) => format!("score mate -{}", ((x+1) as f32 / 2.0).ceil() as u32),
                 GameState::Lost(x) => format!("score mate {}", ((x+1) as f32 / 2.0).ceil() as u32),
-                _ => format!("score cp {}", score.as_cp()),
+                _ => format!("score cp {}", score.as_cp_us()),
             };
     
             if engine_options.show_wdl() {
