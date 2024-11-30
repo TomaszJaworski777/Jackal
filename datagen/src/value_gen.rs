@@ -12,7 +12,8 @@ impl ValueGen {
         printer: &Printer,
         interruption_token: &AtomicBool,
     ) {
-        let options = EngineOptions::new();
+        let mut options = EngineOptions::new();
+        options.set("DrawContempt", "10");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);
@@ -43,7 +44,7 @@ impl ValueGen {
 
                 let (best_move, best_score) = mcts.search::<NoPrint>();
                 let packed_position =
-                    ChessBoardPacked::from_board(position.board(), best_score.single_us());
+                    ChessBoardPacked::from_board(position.board(), best_score.single(options.draw_contempt()));
 
                 let is_game_end = if position.board().side_to_move() == Side::WHITE {
                     Self::process_move::<true, false>(&mut position, best_move, &mut state)
