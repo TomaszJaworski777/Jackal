@@ -5,21 +5,21 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v440cos1024td004.network"
+        "../../../resources/networks/v600cos1024td005wdl.network"
     ))
 };
 
 #[repr(C)]
 pub struct ValueNetwork {
     l1: NetworkLayer<{ 768 * 4 }, 1024>,
-    l2: NetworkLayer<1024, 1>,
+    l2: NetworkLayer<1024, 3>,
 }
 
 impl ValueNetwork {
     pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         board: &ChessBoard,
-    ) -> f32 {
+    ) -> (f32,f32,f32) {
         let mut l1_out = *self.l1.biases();
 
         Self::map_value_inputs::<_, STM_WHITE, NSTM_WHITE>(board, |weight_index| {
@@ -33,7 +33,20 @@ impl ValueNetwork {
         });
 
         let out = self.l2.forward(&l1_out);
-        out.values()[0]
+
+        let mut win_chance = out.values()[2];
+        let mut draw_chance = out.values()[1];
+        let mut loss_chance = out.values()[0];
+
+        let max = win_chance.max(draw_chance).max(loss_chance);
+
+        win_chance = (win_chance - max).exp();
+        draw_chance = (draw_chance - max).exp();
+        loss_chance = (loss_chance - max).exp();
+
+        let sum = win_chance + draw_chance + loss_chance;
+
+        (win_chance / sum, draw_chance / sum, loss_chance / sum)
     }
 
     fn map_value_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: bool>(

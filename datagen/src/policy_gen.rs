@@ -12,7 +12,8 @@ impl PolicyGen {
         printer: &Printer,
         interruption_token: &AtomicBool,
     ) {
-        let options = EngineOptions::new();
+        let mut options = EngineOptions::new();
+        options.set("DrawContempt", "10");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new();
         limits.add_iters(iter_count);

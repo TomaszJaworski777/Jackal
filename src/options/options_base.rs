@@ -1,6 +1,5 @@
 use super::{
-    check_bool::CheckBool, spin_float_tunable::SpinOptionFloatTunable, spin_int::SpinOptionInt,
-    OptionTrait,
+    check_bool::CheckBool, spin_float::SpinOptionFloat, spin_float_tunable::SpinOptionFloatTunable, spin_int::SpinOptionInt, OptionTrait
 };
 
 macro_rules! create_option_structs {
@@ -57,6 +56,7 @@ create_option_structs!(
     "MultiPV"             => multi_pv:              SpinOptionInt,          1, 1, 256;
     "UCI_ShowWDL"         => show_wdl:              CheckBool,              false;
     "UCI_AnalyseMode"     => analyse_mode:          CheckBool,              false;
+    "DrawContempt"        => draw_contempt:         SpinOptionFloat,        0.1, -0.5, 0.5;
     
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;

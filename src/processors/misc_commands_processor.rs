@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use spear::{Move, Perft, Side, FEN};
 
 use crate::{
-    search::{NodeIndex, PolicyNetwork, SearchEngine},
+    search::{NodeIndex, PolicyNetwork, Score, SearchEngine, ValueNetwork},
     utils::{clear_terminal_screen, heat_color},
 };
 
@@ -23,6 +23,7 @@ impl MiscCommandsProcessor {
             "draw" | "d" => search_engine.current_position().board().draw_board(),
             "moves" => Self::moves(search_engine),
             "tree" => Self::draw_tree(args, search_engine),
+            "eval" | "e" => Self::eval(search_engine),
             _ => return false,
         }
 
@@ -151,18 +152,42 @@ impl MiscCommandsProcessor {
             search_engine.tree().root_index()
         };
 
+        let draw_contempt = search_engine.engine_options().draw_contempt();
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             search_engine.tree().draw_tree::<true, false>(
                 search_engine.current_position().board(),
                 node_index,
                 depth,
+                draw_contempt
             )
         } else {
             search_engine.tree().draw_tree::<false, true>(
                 search_engine.current_position().board(),
                 node_index,
                 depth,
+                draw_contempt
             )
         }
+    }
+
+    fn eval(search_engine: &SearchEngine) {
+        let position: &spear::ChessPosition = &search_engine.current_position();
+        let (w, d, _) = if position.board().side_to_move() == Side::WHITE {
+            ValueNetwork.forward::<true, false>(position.board())
+        } else {
+            ValueNetwork.forward::<false, true>(position.board())
+        };
+        let score = Score::new(w, d);
+
+        let draw_contempt = search_engine.engine_options().draw_contempt();
+
+        position.board().draw_board();
+        println!("For me");
+        println!("Score: {} ({:.2})", score.single(draw_contempt), score.as_cp_f32_with_contempt(draw_contempt));
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
+
+        println!("For them");
+        println!("Score: {} ({:.2})", score.single(0.0), score.as_cp_f32());
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
 }

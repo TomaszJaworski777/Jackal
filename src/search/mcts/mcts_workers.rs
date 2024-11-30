@@ -47,15 +47,16 @@ impl<'a> Mcts<'a> {
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,
                 &mut depth,
             );
 
+            let draw_contempt = self.options.draw_contempt();
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score);
+                self.tree.root_edge().add_score(score, draw_contempt);
             } else {
                 return;
             }
@@ -94,7 +95,7 @@ impl<'a> Mcts<'a> {
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    &self.tree.get_pvs(self.options.multi_pv())
+                    &self.tree.get_pvs(self.options.multi_pv(), draw_contempt)
                 )
             }
         }
@@ -106,7 +107,7 @@ impl<'a> Mcts<'a> {
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true>(
+            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,
@@ -114,7 +115,7 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score);
+                self.tree.root_edge().add_score(score, self.options.draw_contempt());
             } else {
                 return;
             }

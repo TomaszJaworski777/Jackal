@@ -1,51 +1,66 @@
 use bullet::{
-    format::{chess::BoardIter, ChessBoard}, inputs, loader, lr, optimiser, outputs, wdl, LocalSettings, Loss, TrainerBuilder, TrainingSchedule, TrainingSteps
+    format::{chess::BoardIter, ChessBoard}, inputs::{self, InputType}, loader, lr, operations, optimiser::{self, AdamWOptimiser, AdamWParams}, outputs, wdl, Activation, ExecutionContext, Graph, GraphBuilder, LocalSettings, Node, QuantTarget, Shape, Trainer, TrainingSchedule, TrainingSteps
 };
 use spear::{Bitboard, Piece, Square};
+
+const HIDDEN_SIZE: usize = 1536;
 
 pub struct ValueTrainer;
 impl ValueTrainer {
     pub fn execute() {
-        let mut trainer = TrainerBuilder::default()
-            .optimiser(optimiser::AdamW)
-            .single_perspective()
-            .loss_fn(Loss::SigmoidMSE)
-            .input(ThreatsDefencesMirroredInputs)
-            .output_buckets(outputs::Single)
-            .feature_transformer(1024)
-            .activate(bullet::Activation::SCReLU)
-            .add_layer(1)
-            .build();
+        let mut trainer = make_trainer(HIDDEN_SIZE);
 
-        let schedule = TrainingSchedule {
-            net_id: "value_012_1024_long".to_string(),
+        let schedule: TrainingSchedule<lr::ExponentialDecayLR, wdl::ConstantWDL> = TrainingSchedule {
+            net_id: "value_013_1536_wdl".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 450,
+                end_superbatch: 400,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
-            lr_scheduler: lr::CosineDecayLR {
+            lr_scheduler: lr::ExponentialDecayLR {
                 initial_lr: 0.001,
-                final_lr: 0.001 * 0.3 * 0.3 * 0.3,
-                final_superbatch: 450,
+                final_lr: 0.00001,
+                final_superbatch: 400,
             },
-            save_rate: 10,
+            save_rate: 5,
         };
-
+    
+        let optimiser_params = optimiser::AdamWParams {
+            decay: 0.01,
+            beta1: 0.9,
+            beta2: 0.999,
+            min_weight: -0.99,
+            max_weight: 0.99,
+        };
+    
+        trainer.set_optimiser_params(optimiser_params);
+    
         let settings = LocalSettings {
-            threads: 4,
+            threads: 8,
             test_set: None,
             output_directory: "checkpoints",
             batch_queue_size: 512,
         };
-
+    
         let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_value_data.bin"]);
 
-        //trainer.load_from_checkpoint("checkpoints/value_012_1024_long-300");
+        //trainer.load_from_checkpoint("checkpoints/value_013_1024_wdl-600");
         trainer.run(&schedule, &settings, &data_loader);
+    
+        for fen in [
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+            "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+        ] {
+            let (w, d, l) = trainer.eval_wdl(fen);
+            println!("FEN: {fen}");
+            println!("EVAL: [{},{},{}]", w, d, l);
+        }
     }
 }
 
@@ -131,4 +146,56 @@ impl Iterator for ThreatsDefencesMirroredInputsIter {
             (input, input)
         })
     }
+}
+
+fn make_trainer(l1: usize) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInputs, outputs::Single> {
+    let num_inputs = ThreatsDefencesMirroredInputs.size();
+
+    let (mut graph, output_node) = build_network(num_inputs, l1);
+
+    let sizes = [num_inputs, l1];
+
+    for (i, &size) in sizes.iter().enumerate() {
+        graph
+            .get_weights_mut(&format!("l{i}w"))
+            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true);
+
+        graph
+            .get_weights_mut(&format!("l{i}b"))
+            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true);
+    }
+
+    Trainer::new(
+        graph,
+        output_node,
+        AdamWParams::default(),
+        ThreatsDefencesMirroredInputs,
+        outputs::Single,
+        vec![
+            ("l0w".to_string(), QuantTarget::Float),
+            ("l0b".to_string(), QuantTarget::Float),
+            ("l1w".to_string(), QuantTarget::Float),
+            ("l1b".to_string(), QuantTarget::Float),
+        ],
+        false
+    )
+}
+
+fn build_network(inputs: usize, l1: usize) -> (Graph, Node) {
+    let mut builder = GraphBuilder::default();
+
+    let stm = builder.create_input("stm", Shape::new(inputs, 1));
+    let targets = builder.create_input("targets", Shape::new(3, 1));
+
+    let l0w = builder.create_weights("l0w", Shape::new(l1, inputs));
+    let l0b = builder.create_weights("l0b", Shape::new(l1, 1));
+    let l1w = builder.create_weights("l1w", Shape::new(3, l1));
+    let l1b = builder.create_weights("l1b", Shape::new(3, 1));
+
+    let l1 = operations::affine(&mut builder, l0w, stm, l0b);
+    let l1 = operations::activate(&mut builder, l1, Activation::SCReLU);
+    let l2 = operations::affine(&mut builder, l1w, l1, l1b);
+
+    operations::softmax_crossentropy_loss(&mut builder, l2, targets);
+    (builder.build(ExecutionContext::default()), l2)
 }

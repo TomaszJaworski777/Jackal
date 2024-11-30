@@ -11,6 +11,8 @@ impl<'a> Mcts<'a> {
         const STM_WHITE: bool,
         const NSTM_WHITE: bool,
         const ROOT: bool,
+        const US: bool,
+        const NOT_US: bool
     >(
         &self,
         current_node_index: NodeIndex,
@@ -37,7 +39,7 @@ impl<'a> Mcts<'a> {
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.select_action::<ROOT>(
+            let best_action_index = self.select_action::<ROOT, US>(
                 current_node_index,
                 action_cpy,
             );
@@ -59,7 +61,7 @@ impl<'a> Mcts<'a> {
 
             //Descend deeper into the tree
             *depth += 1;
-            let opt_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false>(
+            let opt_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false, NOT_US, US>(
                 new_node_index,
                 &new_edge_cpy,
                 current_position,
@@ -72,7 +74,7 @@ impl<'a> Mcts<'a> {
 
             //Backpropagate the score up the tree
             self.tree
-                .add_edge_score(current_node_index, best_action_index, score);
+                .add_edge_score(current_node_index, best_action_index, score, self.options.draw_contempt());
 
             //Backpropagate mates to assure our engine avoids/follows mating line
             self.tree
@@ -86,7 +88,7 @@ impl<'a> Mcts<'a> {
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    fn select_action<const ROOT: bool>(
+    fn select_action<const ROOT: bool, const US: bool>(
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
@@ -101,9 +103,15 @@ impl<'a> Mcts<'a> {
             self.options.cpuct_value() 
         };
 
+        let contempt = if US {
+            self.options.draw_contempt()
+        } else {
+            0.0
+        };
+
         //Variance scaling
         if parent_visits > 1 {
-            let frac = parent.variance().sqrt() / self.options.cpuct_variance_scale();
+            let frac = parent.variance(contempt).sqrt() / self.options.cpuct_variance_scale();
             cpuct *= 1.0 + self.options.cpuct_variance_weight() * (frac - 1.0);
         }
 
@@ -113,10 +121,11 @@ impl<'a> Mcts<'a> {
         let explore_value = cpuct * (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
+
             let mut score = if visits == 0 {
-                1.0 - f32::from(parent.score())
+                parent.score().reversed()
             } else {
-                f32::from(action.score())
+                action.score()
             };
 
             //Virtual loss
@@ -128,11 +137,13 @@ impl<'a> Mcts<'a> {
                 if thrds > 0.0 {
 
                     //Score adjusted by the amount of thread visits
-                    let s = f64::from(score) * v / (v + thrds);
-                    score = s as f32;
+                    let w = f64::from(score.win_chance()) * v / (v + thrds);
+                    let d = f64::from(score.win_chance()) * v / (v + thrds);
+                    score = Score::new(w as f32, d as f32);
                 }
             }
 
+            let score = score.single(contempt);
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }
