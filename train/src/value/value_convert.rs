@@ -75,7 +75,7 @@ impl ValueConverter {
                     -qsearch::<false, true>(&board, -30000, 30000, 0)
                 };
 
-                if (result == 1 && material_score >= 0) || (result == -1 && material_score <= 0) {
+                if (result == 1 && material_score > -200) || (result == -1 && material_score < 200) {
                     material_advantage += 1;
                     continue;
                 }
