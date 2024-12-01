@@ -21,8 +21,8 @@ impl ValueTrainer {
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::CosineDecayLR {
-                initial_lr: 0.00000001,
-                final_lr: 0.0000000001,
+                initial_lr: 0.000000015,
+                final_lr: 0.00000000015,
                 final_superbatch: 25,
             },
             save_rate: 5,
