@@ -10,10 +10,10 @@ use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
 use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_005-20x20see";
+const NAME: &'static str = "policy_006-20x20see_300";
 
 const THREADS: usize = 6;
-const SUPERBATCHES_COUNT: usize = 100;
+const SUPERBATCHES_COUNT: usize = 300;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.000001;
 const WARMUP_BATCHES: usize = 200;

@@ -69,7 +69,7 @@ fn policy_convert(args: &Vec<String>) {
 
 fn policy_shuffle(args: &Vec<String>) {
     let mut input_path = "./policy_data.bin";
-    let mut output_path = "./conv_policy_data.bin";
+    let mut output_path = "./shuffled_policy_data.bin";
 
     let mut cmd = String::new();
     for arg in args {
