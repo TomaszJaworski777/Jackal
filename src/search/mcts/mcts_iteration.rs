@@ -38,10 +38,18 @@ impl<'a> Mcts<'a> {
                 self.tree[current_node_index].expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
             }
 
+            //Calculate asymetrical draw contempt
+            let contempt = if US {
+                self.options.draw_contempt()
+            } else {
+                0.0
+            };
+
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.select_action::<ROOT, US>(
+            let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy,
+                contempt
             );
             let new_edge_cpy = self
                 .tree
@@ -74,7 +82,7 @@ impl<'a> Mcts<'a> {
 
             //Backpropagate the score up the tree
             self.tree
-                .add_edge_score(current_node_index, best_action_index, score, self.options.draw_contempt());
+                .add_edge_score(current_node_index, best_action_index, score);
 
             //Backpropagate mates to assure our engine avoids/follows mating line
             self.tree
@@ -88,10 +96,11 @@ impl<'a> Mcts<'a> {
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    fn select_action<const ROOT: bool, const US: bool>(
+    fn select_action<const ROOT: bool>(
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
+        contempt: f32
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
@@ -101,12 +110,6 @@ impl<'a> Mcts<'a> {
             self.options.root_cpuct_value() 
         } else { 
             self.options.cpuct_value() 
-        };
-
-        let contempt = if US {
-            self.options.draw_contempt()
-        } else {
-            0.0
         };
 
         //Variance scaling

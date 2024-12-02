@@ -56,7 +56,7 @@ impl<'a> Mcts<'a> {
 
             let draw_contempt = self.options.draw_contempt();
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score, draw_contempt);
+                self.tree.root_edge().add_score(score);
             } else {
                 return;
             }
@@ -115,7 +115,7 @@ impl<'a> Mcts<'a> {
             );
 
             if let Some(score) = result {
-                self.tree.root_edge().add_score(score, self.options.draw_contempt());
+                self.tree.root_edge().add_score(score);
             } else {
                 return;
             }

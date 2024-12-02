@@ -62,8 +62,6 @@ impl SearchDisplay for PrettyPrint {
             _ => score,
         };
 
-        let draw_contempt = engine_options.draw_contempt();
-
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
         print!("                                                \r");
@@ -95,7 +93,7 @@ impl SearchDisplay for PrettyPrint {
         );
 
         print!("                                    \r");
-        let score_cp = score.as_cp_f32_with_contempt(draw_contempt);
+        let score_cp = score.as_cp_f32_with_contempt(0.0);
         let mut score_cp_string = match *state {
             GameState::Drawn => "+0.0".to_string(),
             GameState::Won(x) => format!("-M{}", ((x+1) as f32 / 2.0).ceil() as u32),
@@ -110,7 +108,7 @@ impl SearchDisplay for PrettyPrint {
         println!(
             " {}      {}",
             "Score:".label(),
-            heat_color(score_cp_string.as_str(), score.single(draw_contempt), 0.0, 1.0)
+            heat_color(score_cp_string.as_str(), score.single(0.0), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
         println!(
