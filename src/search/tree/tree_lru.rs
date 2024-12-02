@@ -101,6 +101,7 @@ impl Tree {
 
         self[b].set_state(self[a].state());
         self[b].set_key(self[a].key());
+        self[b].set_gini_impurity(self[a].gini_impurity());
 
         if a_actions.is_empty() {
             return;
