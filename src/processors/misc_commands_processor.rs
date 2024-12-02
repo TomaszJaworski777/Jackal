@@ -152,20 +152,17 @@ impl MiscCommandsProcessor {
             search_engine.tree().root_index()
         };
 
-        let draw_contempt = search_engine.engine_options().draw_contempt();
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             search_engine.tree().draw_tree::<true, false>(
                 search_engine.current_position().board(),
                 node_index,
-                depth,
-                draw_contempt
+                depth
             )
         } else {
             search_engine.tree().draw_tree::<false, true>(
                 search_engine.current_position().board(),
                 node_index,
-                depth,
-                draw_contempt
+                depth
             )
         }
     }

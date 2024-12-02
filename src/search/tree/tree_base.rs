@@ -112,8 +112,8 @@ impl Tree {
     }
 
     #[inline]
-    pub fn add_edge_score(&self, node_index: NodeIndex, action_index: usize, score: Score, draw_contempt: f32) {
-        self[node_index].actions()[action_index].add_score(score, draw_contempt)
+    pub fn add_edge_score(&self, node_index: NodeIndex, action_index: usize, score: Score) {
+        self[node_index].actions()[action_index].add_score(score)
     }
 
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
