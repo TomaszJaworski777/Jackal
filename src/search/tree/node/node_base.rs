@@ -1,5 +1,5 @@
 use std::sync::{
-    atomic::{AtomicU16, AtomicU64, Ordering},
+    atomic::{AtomicU16, AtomicU32, AtomicU64, Ordering},
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
@@ -13,7 +13,8 @@ pub struct Node {
     actions: RwLock<Vec<Edge>>,
     state: AtomicU16,
     key: AtomicU64,
-    threads: AtomicU16
+    threads: AtomicU16,
+    gini_impurity: AtomicU32
 }
 
 impl Default for Node {
@@ -28,7 +29,8 @@ impl Node {
             actions: RwLock::new(Vec::new()),
             state: AtomicU16::new(u16::from(state)),
             key: AtomicU64::new(0), 
-            threads: AtomicU16::new(0)
+            threads: AtomicU16::new(0),
+            gini_impurity: AtomicU32::new(0)
         }
     }
 
@@ -41,6 +43,7 @@ impl Node {
         *self.actions_mut() = Vec::new();
         self.state.store(u16::from(state), Ordering::Relaxed);
         self.key.store(key, Ordering::Relaxed);
+        self.set_gini_impurity(0.0);
     }
 
     #[inline]
@@ -81,6 +84,14 @@ impl Node {
 
     pub fn dec_threads(&self) -> u16 {
         self.threads.fetch_sub(1, Ordering::Relaxed)
+    }
+
+    pub fn gini_impurity(&self) -> f32 {
+        f32::from_bits(self.gini_impurity.load(Ordering::Relaxed))
+    }
+
+    pub fn set_gini_impurity(&self, gini_impurity: f32) {
+        self.gini_impurity.store(f32::to_bits(gini_impurity), Ordering::Relaxed);
     }
 
     #[inline]
@@ -185,6 +196,7 @@ impl Node {
             action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
         }
 
+        let mut policy_squares = 0.0;
         let is_single_action = actions.len() == 1;
         for action in actions.iter_mut() {
             let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
@@ -195,7 +207,11 @@ impl Node {
             };
             action.update_policy(policy);
             action.set_node_index(NodeIndex::NULL);
+            policy_squares += policy * policy;
         }
+
+        let gini_impurity = (1.0 - policy_squares).clamp(0.0, 1.0);
+        self.set_gini_impurity(gini_impurity);
     }
 
     pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
