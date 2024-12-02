@@ -10,7 +10,7 @@ use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
 use spear::{ChessBoard, PolicyPacked, Side};
 
-const NAME: &'static str = "policy_006-20x20see_300";
+const NAME: &'static str = "policy_006-32x32see_300";
 
 const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 300;
@@ -294,8 +294,8 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, 768, 20>,
-    l1: DenseConnected<activation::ReLU, 20, 20>,
+    l0: SparseConnected<activation::ReLU, 768, 32>,
+    l1: DenseConnected<activation::ReLU, 32, 32>,
 }
 
 impl TrainerPolicySubnet {
