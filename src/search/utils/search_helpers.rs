@@ -2,7 +2,7 @@ use spear::ChessPosition;
 
 use crate::{
     search::{networks::ValueNetwork, Score},
-    GameState,
+    GameState, Tree,
 };
 
 pub struct SearchHelpers;
@@ -11,14 +11,25 @@ impl SearchHelpers {
     pub fn get_node_score<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         current_position: &mut ChessPosition,
         state: GameState,
+        key: u64,
+        tree: &Tree
     ) -> Score {
         match state {
             GameState::Drawn => Score::DRAW,
             GameState::Lost(_) => Score::LOSE,
             GameState::Won(_) => Score::WIN,
-            GameState::Unresolved => Score::from(sigmoid(
-                ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board()),
-            )),
+            GameState::Unresolved => {
+                if let Some(score) = tree.hash_table().probe(key) {
+                    score
+                } else {
+                    let (win_chance, draw_chance, _) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
+                    let score = Score::new(win_chance, draw_chance);
+
+                    tree.hash_table().store(key, score);
+
+                    score
+                }
+            },
         }
     }
 
@@ -47,9 +58,4 @@ impl SearchHelpers {
 
         GameState::Unresolved
     }
-}
-
-#[inline]
-fn sigmoid(input: f32) -> f32 {
-    1.0 / (1.0 + (-input).exp())
 }

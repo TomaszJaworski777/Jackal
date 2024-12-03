@@ -20,9 +20,14 @@ impl Tree {
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
+            let most_recent_index = actions[action_index].node_index();
+            if !most_recent_index.is_null() {
+                return Some(most_recent_index);
+            }
+
             //Create new node in the current segment
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
-            let new_index = self.current_segment().add(state)?;
+            let new_index = self.current_segment().add(state, position.board().get_key().get_raw())?;
 
             //Assign new node index to the edge
             actions[action_index].set_node_index(new_index);
@@ -35,8 +40,13 @@ impl Tree {
             //Create mutable lock for actions to assure that they are not read or wrote during this process
             let actions = self[edge_index].actions_mut();
 
+            let most_recent_index = actions[action_index].node_index();
+            if most_recent_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+                return Some(most_recent_index);
+            }
+
             //Obtain new node index from the current segment
-            let new_index = self.current_segment().add(GameState::Unresolved)?;
+            let new_index = self.current_segment().add(GameState::Unresolved, 0)?;
 
             //Copy the node from old location to the new one and check it's index
             //in the edge
@@ -74,7 +84,7 @@ impl Tree {
 
         //Move root to the new segment
         let new_root_index = self.segments[new_segment_index]
-            .add(GameState::Unresolved)
+            .add(GameState::Unresolved, 0)
             .unwrap();
         self[new_root_index].clear();
 
@@ -90,6 +100,8 @@ impl Tree {
         let b_actions = &mut *self[b].actions_mut();
 
         self[b].set_state(self[a].state());
+        self[b].set_key(self[a].key());
+        self[b].set_gini_impurity(self[a].gini_impurity());
 
         if a_actions.is_empty() {
             return;

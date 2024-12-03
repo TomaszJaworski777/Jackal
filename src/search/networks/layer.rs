@@ -37,4 +37,15 @@ impl<const INPUTS: usize, const OUTPUTS: usize> NetworkLayer<INPUTS, OUTPUTS> {
 
         result
     }
+
+    pub fn forward_relu(&self, inputs: &Accumulator<INPUTS>) -> Accumulator<OUTPUTS> {
+        let mut result = self.biases;
+
+        for (neuron, weights) in inputs.values().iter().zip(self.weights.iter()) {
+            let activated = neuron.max(0.0);
+            result.madd(activated, weights);
+        }
+
+        result
+    }
 }

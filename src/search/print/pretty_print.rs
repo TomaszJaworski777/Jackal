@@ -7,7 +7,7 @@ use crate::{
     color_config::{ColorConfig, Colored},
     search::Score,
     utils::{heat_color, lerp_color},
-    EngineOptions, GameState, SearchLimits, SearchStats,
+    EngineOptions, GameState, SearchLimits, SearchStats, Tree,
 };
 
 use super::SearchDisplay;
@@ -16,17 +16,17 @@ pub struct PrettyPrint {
     start_height: i32,
     max_history_size: usize,
     history: Vec<(u128, String)>,
-    last_best_move: Move,
+    last_best_move: Move
 }
 #[allow(unused)]
 impl SearchDisplay for PrettyPrint {
     const REFRESH_RATE: f32 = 0.05;
 
-    fn new(position: &ChessPosition, engine_options: &EngineOptions) -> Self {
+    fn new(position: &ChessPosition, engine_options: &EngineOptions, tree: &Tree) -> Self {
         clear_terminal_screen();
         position.board().draw_board();
-        println!(" {}    1", "Threads:".label());
-        println!(" {}  {}MB", "Tree Size:".label(), engine_options.hash());
+        println!(" {}    {}", "Threads:".label(), engine_options.threads());
+        println!(" {}  {}B", "Tree Size:".label(), bytes_to_string(tree.tree_size_in_bytes as u128));
 
         #[cfg(target_os = "linux")]
         let start_height = 14;
@@ -52,10 +52,16 @@ impl SearchDisplay for PrettyPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        score: Score,
-        state: GameState,
-        pv: &[Move],
+        pvs: &Vec<(Score, GameState, Vec<Move>)>
     ) {
+        let (mut score, state, pv) = &pvs[0];
+        score = match *state {
+            GameState::Drawn => Score::DRAW,
+            GameState::Won(x) => Score::LOSE,
+            GameState::Lost(x) => Score::WIN,
+            _ => score,
+        };
+
         term_cursor::set_pos(0, self.start_height).expect("Cannot move curser to the position");
 
         print!("                                                \r");
@@ -87,16 +93,22 @@ impl SearchDisplay for PrettyPrint {
         );
 
         print!("                                    \r");
-        let score_cp = score.as_cp_f32();
-        let score_cp_string = if score_cp >= 0.0 {
-            format!("+{:.2}", score_cp)
-        } else {
-            format!("{:.2}", score_cp)
+        let score_cp = score.as_cp_f32_with_contempt(0.0);
+        let mut score_cp_string = match *state {
+            GameState::Drawn => "+0.0".to_string(),
+            GameState::Won(x) => format!("-M{}", ((x+1) as f32 / 2.0).ceil() as u32),
+            GameState::Lost(x) => format!("+M{}", ((x+1) as f32 / 2.0).ceil() as u32),
+            _ => if score_cp >= 0.0 {
+                format!("+{:.2}", score_cp)
+            } else {
+                format!("{:.2}", score_cp)
+            },
         };
+
         println!(
             " {}      {}",
             "Score:".label(),
-            heat_color(score_cp_string.as_str(), f32::from(score), 0.0, 1.0)
+            heat_color(score_cp_string.as_str(), score.single(0.0), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
         println!(
@@ -186,7 +198,7 @@ fn color_bar(length: usize, fill: f32, (r, g, b): (u8, u8, u8)) -> String {
 
     for i in 0..length {
         let percentage = i as f32 / (length - 1) as f32;
-        let char = if percentage <= fill {
+        let char = if percentage <= fill && fill > 0.0 {
             "#".truecolor(r, g, b).to_string()
         } else {
             String::from(".")
@@ -226,4 +238,13 @@ fn pv_to_string<const FINAL: bool>(pv: &[Move]) -> String {
     }
 
     pv_string
+}
+
+fn bytes_to_string(number: u128) -> String {
+    match number {
+        0..=1023 => format!("{number}"),
+        1024..=1_048_575 => format!("{:.2}K", number as f64 / 1024.0),
+        1_048_576..=1_073_741_823 => format!("{:.2}M", number as f64 / 1_048_576.0),
+        1_073_741_824.. => format!("{:.2}G", number as f64 / 1_073_741_824.0),
+    }
 }

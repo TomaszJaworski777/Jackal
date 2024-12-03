@@ -10,7 +10,7 @@ impl Tree {
         &self,
         board: &ChessBoard,
         node_idx: NodeIndex,
-        depth: u32,
+        depth: u32
     ) {
         self.print_usage_text();
         let mut node_depth = 0;
@@ -27,12 +27,12 @@ impl Tree {
             );
             if let Some((edge_idx, action_idx, depth)) = result {
                 node_depth = depth;
-                let edge = self.get_edge_clone(edge_idx, action_idx);
+                let edge = self.get_edge_clone(edge_idx, action_idx, 1);
                 edge.print::<true>(
                     edge.policy(),
                     edge.policy(),
                     self[node_idx].state(),
-                    node_depth % 2 == 0,
+                    node_depth % 2 == 0
                 );
             } else {
                 return;
@@ -123,7 +123,7 @@ impl Tree {
         node_index: NodeIndex,
         depth: u32,
         prefix: &String,
-        flip_score: bool,
+        flip_score: bool
     ) {
         if self.total_usage() == 0.0 {
             return;
@@ -170,7 +170,7 @@ impl Tree {
                     action.node_index(),
                     depth - 1,
                     &format!("{}{}", prefix, prefix_add),
-                    !flip_score,
+                    !flip_score
                 )
             }
         }

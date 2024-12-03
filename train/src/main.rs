@@ -24,11 +24,13 @@ fn main() {
 fn value_convert(args: &Vec<String>) {
     let mut input_path = "./value_data.bin";
     let mut output_path = "./conv_value_data.bin";
+    let mut fine_tune = false;
 
     let mut cmd = String::new();
     for arg in args {
         match arg.as_str() {
             "-i" | "-o" => cmd = arg.clone(),
+            "finetune" => fine_tune = true,
             _ => {
                 match cmd.as_str() {
                     "-i" => input_path = arg.as_str(),
@@ -39,7 +41,7 @@ fn value_convert(args: &Vec<String>) {
         }
     }
 
-    ValueConverter::convert(input_path, output_path);
+    ValueConverter::convert(input_path, output_path, fine_tune);
 }
 
 fn policy_convert(args: &Vec<String>) {

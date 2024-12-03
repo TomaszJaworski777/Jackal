@@ -41,14 +41,14 @@ impl TreeSegment {
         self.len() >= self.nodes.len()
     }
 
-    pub fn add(&self, state: GameState) -> Option<NodeIndex> {
+    pub fn add(&self, state: GameState, key: u64) -> Option<NodeIndex> {
         let new_index = self.length.fetch_add(1, Ordering::Relaxed);
 
         if new_index >= self.nodes.len() {
             return None;
         }
 
-        self.nodes[new_index].replace(state);
+        self.nodes[new_index].replace(state, key);
         Some(NodeIndex::from_parts(new_index as u32, self.segment))
     }
 

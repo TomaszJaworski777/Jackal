@@ -10,7 +10,7 @@ fn main() {
     let start_position = ChessPosition::from_fen(&FEN::start_position());
     let interruption_token = AtomicBool::new(false);
     let mut options = EngineOptions::new();
-    let mut tree = Tree::new(options.hash());
+    let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
     let mut command_queue: Vec<String> = Vec::new();
     let mut search_engine = SearchEngine::new(
         start_position,

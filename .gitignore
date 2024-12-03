@@ -11,3 +11,5 @@ resources/sprt.txt
 *.bin
 /checkpoints
 /.vs
+/resources/books
+*.pgn

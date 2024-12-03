@@ -35,38 +35,43 @@ impl<'a> Mcts<'a> {
     }
 
     pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, Score) {
-        let mut printer = PRINTER::new(&self.root_position, self.options);
+        let mut printer = PRINTER::new(&self.root_position, self.options, &self.tree);
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
+        let side_to_move = self.root_position.board().side_to_move();
         if !self.tree[root_index].has_children() {
-            let side_to_move = self.root_position.board().side_to_move();
             if side_to_move == Side::WHITE {
-                self.expand::<true, false, true>(root_index, &self.root_position)
+                self.tree[root_index].expand::<true, false, true>(&self.root_position, self.options)
             } else {
-                self.expand::<false, true, true>(root_index, &self.root_position)
+                self.tree[root_index].expand::<false, true, true>(&self.root_position, self.options)
+            }
+        } else {
+            if side_to_move == Side::WHITE {
+                self.tree[root_index].recalculate_policy::<true, false, true>(&self.root_position, self.options)
+            } else {
+                self.tree[root_index].recalculate_policy::<false, true, true>(&self.root_position, self.options)
             }
         }
 
         //Start mcts search loop
         if self.root_position.board().side_to_move() == Side::WHITE {
-            self.main_loop::<PRINTER, true, false>(&mut printer)
+            self.search_loop::<PRINTER, true, false>(&mut printer)
         } else {
-            self.main_loop::<PRINTER, false, true>(&mut printer)
+            self.search_loop::<PRINTER, false, true>(&mut printer)
         }
 
         //At the end of the search print the last search update raport and then print
         //end of search message containing search result
-        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree);
+        let draw_contempt = self.options.draw_contempt();
+        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_contempt);
         self.stats.update_time_passed();
         printer.print_search_raport::<true>(
             self.stats,
             self.options,
             self.limits,
             self.tree.total_usage(),
-            best_score,
-            self.tree[self.tree.root_index()].state(),
-            &self.tree.get_pv(),
+            &self.tree.get_pvs(self.options.multi_pv(), draw_contempt)
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)

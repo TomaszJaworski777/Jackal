@@ -5,7 +5,7 @@ use std::{
 
 use crate::{search::Score, GameState};
 
-use super::tree_segment::TreeSegment;
+use super::{hash_table::HashTable, tree_segment::TreeSegment};
 use super::{node::NodeIndex, Edge, Node};
 use spear::Move;
 
@@ -15,7 +15,8 @@ pub struct Tree {
     pub(super) segments: [TreeSegment; SEGMENT_COUNT],
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
-    pub(super) tree_size_in_bytes: usize,
+    pub tree_size_in_bytes: usize,
+    hash_table: HashTable
 }
 
 impl Index<NodeIndex> for Tree {
@@ -29,9 +30,14 @@ impl Index<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn new(size_in_mb: i32) -> Self {
+    pub fn new(size_in_mb: i32, hash_percentage: f32) -> Self {
         let bytes = (size_in_mb as usize) * 1024 * 1024;
-        let tree_size = bytes / (48 + 12 * 16);
+
+        let hash_bytes = (bytes as f32 * hash_percentage) as usize;
+        let hash_table = HashTable::new(hash_bytes);
+
+        let tree_bytes = bytes - hash_bytes;
+        let tree_size = tree_bytes / (56 + 20 * 24);
         let segment_size = (tree_size / SEGMENT_COUNT).min(0x7FFFFFFE);
         let segments = [
             TreeSegment::new(segment_size, 0),
@@ -42,16 +48,21 @@ impl Tree {
             segments,
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
-            tree_size_in_bytes: bytes,
+            tree_size_in_bytes: tree_bytes,
+            hash_table
         }
     }
 
-    pub fn resize_tree(&mut self, size_in_mb: i32) {
-        *self = Self::new(size_in_mb)
+    pub fn resize_tree(&mut self, size_in_mb: i32, hash_percentage: f32) {
+        *self = Self::new(size_in_mb, hash_percentage)
     }
 
     #[inline]
     pub fn clear(&mut self) {
+        self.hash_table.clear();
+
+        let root_key = self[self.root_index()].key();
+
         for segment in &self.segments {
             segment.clear();
         }
@@ -59,7 +70,7 @@ impl Tree {
         self.current_segment.store(0, Ordering::Relaxed);
         self.root_edge = Edge::default();
 
-        _ = self.current_segment().add(GameState::Unresolved);
+        _ = self.current_segment().add(GameState::Unresolved, root_key);
     }
 
     #[inline]
@@ -77,6 +88,10 @@ impl Tree {
         &self.segments[self.current_segment.load(Ordering::Relaxed)]
     }
 
+    pub fn hash_table(&self) -> &HashTable {
+        &self.hash_table
+    }
+
     #[inline]
     pub fn total_usage(&self) -> f32 {
         let mut total = 0.0;
@@ -89,7 +104,10 @@ impl Tree {
     }
 
     #[inline]
-    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize) -> Edge {
+    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize, source: u8) -> Edge {
+        if self[node_index].actions().len() <= action_index {
+            panic!("{source}")
+        }
         self[node_index].actions()[action_index].clone()
     }
 
@@ -126,23 +144,98 @@ impl Tree {
         }
     }
 
-    pub fn get_pv(&self) -> Vec<Move> {
-        let mut result = Vec::new();
-        self.get_pv_internal(self.root_index(), &mut result);
-        result
+    pub fn get_pvs(&self, multi_pv: i32, draw_contempt: f32) -> Vec<(Score, GameState, Vec<Move>)> {
+        let mut results = Vec::new();
+
+        for pv_idx in 0..multi_pv {
+            results.push(self.get_pv_by_index::<true, false>(pv_idx as usize, draw_contempt));
+        }
+
+        results
     }
 
-    fn get_pv_internal(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
-        if !self[node_index].has_children() {
+    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(&self, idx: usize, draw_contempt: f32) -> (Score, GameState, Vec<Move>) {
+        let mut result = Vec::new();
+        let mut moves = self[self.root_index()].actions().clone();
+
+        if moves.len() <= idx {
+            return (Score::default(), GameState::Unresolved, result);
+        }
+
+        let contempt = if US {
+            draw_contempt
+        } else {
+            0.0
+        };
+
+        moves.sort_by(|a, b| {
+            let a_score = if a.visits() == 0 {
+                f32::NEG_INFINITY
+            } else if !a.node_index().is_null() {
+                match self[a.node_index()].state() {
+                    GameState::Lost(n) => 1.0 + f32::from(n),
+                    GameState::Won(n) => f32::from(n) - 256.0,
+                    GameState::Drawn => 0.5,
+                    GameState::Unresolved => a.score().single(contempt),
+                }
+            } else {
+                a.score().single(draw_contempt)
+            };
+
+            let b_score = if b.visits() == 0 {
+                f32::NEG_INFINITY
+            } else if !b.node_index().is_null() {
+                match self[b.node_index()].state() {
+                    GameState::Lost(n) => 1.0 + f32::from(n),
+                    GameState::Won(n) => f32::from(n) - 256.0,
+                    GameState::Drawn => 0.5,
+                    GameState::Unresolved => b.score().single(contempt),
+                }
+            } else {
+                b.score().single(draw_contempt)
+            };
+
+            if a_score > b_score {
+                return std::cmp::Ordering::Less;
+            }
+
+            std::cmp::Ordering::Greater
+        });
+
+        if moves[idx].visits() == 0 {
+            return (Score::default(), GameState::Unresolved, result);
+        }
+
+        result.push(moves[idx].mv());
+        if moves[idx].node_index().is_null() {
+            return (moves[idx].score(), GameState::Unresolved, result);
+        }
+
+        let node_idx = moves[idx].node_index();
+        self.get_pv_internal::<NOT_US, US>(node_idx, &mut result, draw_contempt);
+        (moves[idx].score(), self[node_idx].state(), result)
+    }
+
+    fn get_pv_internal<const US: bool, const NOT_US: bool>(&self, node_index: NodeIndex, result: &mut Vec<Move>, draw_contempt: f32) {
+
+        let contempt = if US {
+            draw_contempt
+        } else {
+            0.0
+        };
+
+        //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
+        let best_action_idx = self[node_index].get_best_action(self, contempt);
+        if best_action_idx == usize::MAX {
             return;
         }
 
-        //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
-        let best_action = self[node_index].get_best_action(self);
-        result.push(self[node_index].actions()[best_action].mv());
-        let new_node_index = self[node_index].actions()[best_action].node_index();
-        if !new_node_index.is_null() {
-            self.get_pv_internal(new_node_index, result)
+        let best_action = self.get_edge_clone(node_index, best_action_idx, 0);
+        result.push(best_action.mv());
+        
+        let new_node_index = best_action.node_index();
+        if !new_node_index.is_null() && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+            self.get_pv_internal::<NOT_US, US>(new_node_index, result, draw_contempt)
         }
     }
 }
