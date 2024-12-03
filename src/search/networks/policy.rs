@@ -7,14 +7,14 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/p300cos20x20see004.network"
+        "../../../resources/networks/p300cos32x32see004.network"
     ))
 };
 
 #[repr(C)]
 struct PolicySubNetwork {
-    l0: NetworkLayer<768, 20>,
-    l1: NetworkLayer<20, 20>,
+    l0: NetworkLayer<768, 32>,
+    l1: NetworkLayer<32, 32>,
 }
 
 impl PolicySubNetwork {
