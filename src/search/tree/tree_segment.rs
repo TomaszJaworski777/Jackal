@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{ops::Index, sync::atomic::{AtomicUsize, Ordering}};
 
 use crate::GameState;
 
@@ -41,10 +41,6 @@ impl TreeSegment {
         self.len() >= self.nodes.len()
     }
 
-    pub fn get(&self, index: NodeIndex) -> &Node {
-        &self.nodes[index.index() as usize]
-    }
-
     pub fn add(&self, state: GameState, key: u64) -> Option<NodeIndex> {
         let new_index = self.length.fetch_add(1, Ordering::Relaxed);
 
@@ -68,5 +64,12 @@ impl TreeSegment {
                 }
             }
         }
+    }
+}
+
+impl Index<NodeIndex> for TreeSegment {
+    type Output = Node;
+    fn index(&self, index: NodeIndex) -> &Self::Output {
+        &self.nodes[index.index() as usize]
     }
 }
