@@ -171,6 +171,7 @@ impl UciProcessor {
             }
         }
 
+        search_limits.calculate_time_limits();
         search_engine.search(&search_limits, true);
     }
 }
