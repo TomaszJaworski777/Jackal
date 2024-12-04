@@ -118,7 +118,15 @@ impl SearchLimits {
             let falling_eval = (1.0 + eval_diff * 0.05).clamp(0.60, 1.80);
             let best_move_instability = (1.0 + (*best_move_changes as f32 * 0.3).ln_1p()).clamp(1.0, 3.2);
 
-            let total_limit = (soft_limit as f32 * falling_eval * best_move_instability) as u64;
+            let best_action_index = tree[tree.root_index()].get_best_action(tree, options.draw_contempt());
+            let best_action = tree.get_edge_clone(tree.root_index(), best_action_index);
+            let nodes_effort = best_action.visits() as f32 / search_stats.iters() as f32;
+            let best_move_visits =
+                (2.5 - ((nodes_effort + 0.3) * 0.55).ln_1p() * 4.0).clamp(0.55, 1.50);
+
+            let total_limit =
+                (soft_limit as f32 * falling_eval * best_move_instability * best_move_visits)
+                    as u64;
 
             if time_passed >= total_limit {
                 return true;
