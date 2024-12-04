@@ -11,9 +11,10 @@ pub struct SearchLimits {
     max_depth: Option<u32>,
     max_iters: Option<u32>,
     infinite: bool,
+    game_ply: u32
 }
 impl SearchLimits {
-    pub fn new() -> Self {
+    pub fn new(game_ply: u32) -> Self {
         Self {
             time_remaining: None,
             increment: None,
@@ -22,6 +23,7 @@ impl SearchLimits {
             max_depth: None,
             max_iters: None,
             infinite: false,
+            game_ply
         }
     }
 
@@ -72,7 +74,7 @@ impl SearchLimits {
 
         if let Some(time) = self.time_remaining {
             if search_stats.time_passed() + options.move_overhead() as u64
-                >= Self::search_time(time, self.increment, self.moves_to_go)
+                >= Self::search_time(time, self.increment, self.moves_to_go, self.game_ply)
             {
                 return true;
             }
@@ -87,13 +89,30 @@ impl SearchLimits {
         false
     }
 
-    fn search_time(time: u64, increment: Option<u64>, moves_to_go: Option<u32>) -> u64 {
+    fn search_time(time: u64, increment: Option<u64>, moves_to_go: Option<u32>, game_ply: u32) -> u64 {
         let inc = increment.unwrap_or_default();
 
-        if let Some(mtg) = moves_to_go {
-            return (time + inc) / mtg as u64;
-        }
+        let search_time = if let Some(mtg) = moves_to_go {
+            (time + inc) as f64 / mtg as f64
+        } else {
+            let mtg = 30;
 
-        time / 20 + inc / 2
+            let time_left = (time + inc * (mtg - 1) - 10 * (2 + mtg)).max(1) as f64;
+            let log_time = (time_left / 1000.0).log10();
+
+            let opt_constant = (0.0048 + 0.00032 * log_time).min(0.0060);
+            let opt_scale = (0.0125 + (game_ply as f64 + 2.5).sqrt() * opt_constant)
+                .min(0.25 * time as f64 / time_left);
+
+            let bonus = if game_ply <= 10 {
+                1.0 + (11.0 - game_ply as f64).log10() * 0.5
+            } else {
+                1.0
+            };
+
+            opt_scale * bonus * time_left
+        } as u64;
+
+        search_time.min((time * 850 / 1000) as u64)
     }
 }

@@ -60,7 +60,7 @@ impl Bench {
     ];
 
     pub fn run(depth: u32, search_engine: &SearchEngine) {
-        let mut limits = SearchLimits::new();
+        let mut limits = SearchLimits::new(0);
         limits.add_depth(depth);
 
         let mut total_nodes = 0u32;
