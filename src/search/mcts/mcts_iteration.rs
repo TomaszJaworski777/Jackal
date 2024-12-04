@@ -25,11 +25,14 @@ impl<'a> Mcts<'a> {
         let score = if !ROOT
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
+            let current_material = Self::calculate_stm_material(&current_position, self.root_position.board().side_to_move());
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
                 current_position,
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
-                self.tree
+                self.tree,
+                self.start_material - current_material,
+                self.options
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.

@@ -11,7 +11,7 @@ impl ValueTrainer {
         let mut trainer = make_trainer(HIDDEN_SIZE);
 
         let schedule: TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> = TrainingSchedule {
-            net_id: "value_013_1024_wdl_finetune".to_string(),
+            net_id: "value_013_1024_wdl_finetune_10m".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
@@ -57,9 +57,18 @@ impl ValueTrainer {
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
             "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
         ] {
-            let (w, d, l) = trainer.eval_wdl(fen);
+            let raw = trainer.eval_raw_output(fen);
+            let (mut w, mut d, mut l) = (raw[2], raw[1], raw[0]);
+            let max = w.max(d).max(l);
+
+            w = (w - max).exp();
+            d = (d - max).exp();
+            l = (l - max).exp();
+
+            let sum = w + d + l;
+
             println!("FEN: {fen}");
-            println!("EVAL: [{},{},{}]", w, d, l);
+            println!("EVAL: [{},{},{}]", w/sum, d/sum, l/sum);
         }
     }
 }

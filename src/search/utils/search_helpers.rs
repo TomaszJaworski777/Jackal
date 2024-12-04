@@ -1,8 +1,7 @@
 use spear::ChessPosition;
 
 use crate::{
-    search::{networks::ValueNetwork, Score},
-    GameState, Tree,
+    search::{networks::ValueNetwork, Score}, EngineOptions, GameState, Tree
 };
 
 pub struct SearchHelpers;
@@ -12,22 +11,31 @@ impl SearchHelpers {
         current_position: &mut ChessPosition,
         state: GameState,
         key: u64,
-        tree: &Tree
+        tree: &Tree,
+        material_difference: i32,
+        options: &EngineOptions
     ) -> Score {
+
+        let score_bonus = if material_difference != 0 {
+            options.material_reduction_bonus() / 10.0
+        } else {
+            0.0
+        };
+
         match state {
             GameState::Drawn => Score::DRAW,
             GameState::Lost(_) => Score::LOSE,
             GameState::Won(_) => Score::WIN,
             GameState::Unresolved => {
                 if let Some(score) = tree.hash_table().probe(key) {
-                    score
+                    Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 } else {
                     let (win_chance, draw_chance, _) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
                     let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);
 
-                    score
+                    Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 }
             },
         }

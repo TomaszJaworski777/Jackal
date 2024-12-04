@@ -110,7 +110,7 @@ impl UciProcessor {
     }
 
     fn go(args: &[String], search_engine: &mut SearchEngine) {
-        let mut search_limits = SearchLimits::new();
+        let mut search_limits = SearchLimits::new(search_engine.game_ply());
 
         let parse_u64 = |str: &str| -> u64 { str.parse::<u64>().unwrap_or(0).max(0) };
         let parse_u32 = |str: &str| -> u32 { str.parse::<u32>().unwrap_or(0).max(0) };

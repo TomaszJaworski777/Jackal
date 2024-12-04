@@ -50,13 +50,15 @@ macro_rules! create_option_structs {
 }
 
 create_option_structs!(
-    "Hash"                => hash:                  SpinOptionInt,          32, 1, 131072;
-    "Threads"             => threads:               SpinOptionInt,          1, 1, 1024;
-    "MoveOverhead"        => move_overhead:         SpinOptionInt,          10, 0, 500;
-    "MultiPV"             => multi_pv:              SpinOptionInt,          1, 1, 256;
-    "UCI_ShowWDL"         => show_wdl:              CheckBool,              false;
-    "UCI_AnalyseMode"     => analyse_mode:          CheckBool,              false;
-    "DrawContempt"        => draw_contempt:         SpinOptionFloat,        0.25, -0.5, 0.5;
+    "Hash"                   => hash:                     SpinOptionInt,   32, 1, 131072;
+    "Threads"                => threads:                  SpinOptionInt,   1, 1, 1024;
+    "MoveOverhead"           => move_overhead:            SpinOptionInt,   10, 0, 500;
+    "MultiPV"                => multi_pv:                 SpinOptionInt,   1, 1, 256;
+    "UCI_ShowWDL"            => show_wdl:                 CheckBool,       false;
+    "UCI_AnalyseMode"        => analyse_mode:             CheckBool,       false;
+    "DrawContempt"           => draw_contempt:            SpinOptionFloat, 0.25, -0.5, 0.5;
+    "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.14, 0.0, 1.0;
+    "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.25, 0.0, 10.0;
     
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;

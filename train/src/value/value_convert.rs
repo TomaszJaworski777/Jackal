@@ -65,17 +65,14 @@ impl ValueConverter {
 
             let board = spear::ChessBoard::from_board_pack(&position);
             let result = position.get_result();
-            let material_score = calculate_material(&board);
-            if ((result == 1 && material_score >= 0) || (result == -1 && material_score <= 0))
-                && fine_tune
-            {
+            if fine_tune {
                 let material_score = if board.side_to_move() == Side::WHITE {
                     qsearch::<true, false>(&board, -30000, 30000, 0)
                 } else {
                     -qsearch::<false, true>(&board, -30000, 30000, 0)
                 };
 
-                if (result == 1 && material_score > -200) || (result == -1 && material_score < 200) {
+                if (result == 1 && material_score > -300) || (result == -1 && material_score < 300) {
                     material_advantage += 1;
                     continue;
                 }

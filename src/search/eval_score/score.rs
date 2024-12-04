@@ -15,7 +15,7 @@ impl Score {
     }
 
     pub fn win_chance(&self) -> f32 {
-        self.0
+        self.0.clamp(0.0, 1.0)
     }
 
     pub fn draw_chance(&self) -> f32 {
@@ -23,7 +23,7 @@ impl Score {
     }
 
     pub fn lose_chance(&self) -> f32 {
-        1.0 - self.0 - self.1
+        (1.0 - self.0 - self.1).clamp(0.0, 1.0)
     }
 
     pub fn as_cp_with_contempt(&self, draw_contempt: f32) -> i32 {

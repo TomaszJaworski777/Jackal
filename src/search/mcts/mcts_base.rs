@@ -3,7 +3,7 @@ use crate::{
     search::{print::SearchDisplay, Score},
     SearchLimits, SearchStats, Tree,
 };
-use spear::{ChessPosition, Move, Side};
+use spear::{ChessPosition, Move, Piece, Side};
 use std::sync::atomic::AtomicBool;
 
 pub struct Mcts<'a> {
@@ -13,6 +13,7 @@ pub struct Mcts<'a> {
     pub(super) options: &'a EngineOptions,
     pub(super) stats: &'a SearchStats,
     pub(super) limits: &'a SearchLimits,
+    pub(super) start_material: i32
 }
 
 impl<'a> Mcts<'a> {
@@ -31,6 +32,7 @@ impl<'a> Mcts<'a> {
             options,
             stats,
             limits,
+            start_material: Self::calculate_stm_material(&root_position, root_position.board().side_to_move())
         }
     }
 
@@ -75,5 +77,20 @@ impl<'a> Mcts<'a> {
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)
+    }
+
+    pub(super) fn calculate_stm_material(position: &ChessPosition, side: Side) -> i32 {
+        const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
+        let mut result = 0;
+    
+        for piece in Piece::PAWN.get_raw()..=Piece::QUEEN.get_raw() {
+            let piece_mask = if side == Side::WHITE {
+                position.board().get_piece_mask_for_side::<true>(Piece::from_raw(piece))
+            } else {
+                position.board().get_piece_mask_for_side::<false>(Piece::from_raw(piece))
+            };
+            result += piece_mask.pop_count() as i32 * PIECE_VALUES[piece as usize];
+        }
+        result
     }
 }

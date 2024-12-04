@@ -3,7 +3,7 @@ use std::sync::{
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-use spear::{ChessPosition, Move, Side};
+use spear::{ChessBoard, ChessPosition, Move, Piece, Side};
 
 use crate::{
     search::{tree::Edge, NodeIndex, Score}, EngineOptions, GameState, PolicyNetwork, Tree
@@ -180,7 +180,7 @@ impl Node {
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip) + mva_lvv(mv, position.board(), options);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
@@ -243,7 +243,7 @@ impl Node {
         let mut total = 0.0;
 
         for action in actions.iter_mut() {
-            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip);
+            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip) + mva_lvv(action.mv(), position.board(), options);
             policies.push(policy);
             max = max.max(policy);
         }
@@ -263,4 +263,16 @@ impl Node {
             action.update_policy(policies[i] / total);
         }
     }
+}
+
+const MVA_LVV_PIECE_VALUES: [f32; 5] = [1.0, 3.0, 3.0, 5.0, 9.0];
+fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
+    let attacker = board.get_piece_on_square(mv.get_from_square());
+    let victim = board.get_piece_on_square(mv.get_to_square());
+
+    if !mv.is_capture() || victim == Piece::NONE || attacker == Piece::KING {
+        return 0.0;
+    }
+
+    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize] - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize]) * options.policy_sac_bonus()
 }

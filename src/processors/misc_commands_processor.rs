@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 
-use spear::{Move, Perft, Side, FEN};
+use spear::{ChessBoard, Move, Perft, Piece, Side, FEN};
 
 use crate::{
     search::{NodeIndex, PolicyNetwork, Score, SearchEngine, ValueNetwork},
-    utils::{clear_terminal_screen, heat_color},
+    utils::{clear_terminal_screen, heat_color}, EngineOptions,
 };
 
 pub struct MiscCommandsProcessor;
@@ -63,14 +63,14 @@ impl MiscCommandsProcessor {
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
-                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
             PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
-                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip);
+                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
@@ -187,4 +187,16 @@ impl MiscCommandsProcessor {
         println!("Score: {} ({:.2})", score.single(0.0), score.as_cp_f32());
         println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
+}
+
+const MVA_LVV_PIECE_VALUES: [f32; 5] = [1.0, 3.0, 3.0, 5.0, 9.0];
+fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
+    let attacker = board.get_piece_on_square(mv.get_from_square());
+    let victim = board.get_piece_on_square(mv.get_to_square());
+
+    if !mv.is_capture() || victim == Piece::NONE || attacker == Piece::KING {
+        return 0.0;
+    }
+
+    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize] - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize]) * options.policy_sac_bonus()
 }
