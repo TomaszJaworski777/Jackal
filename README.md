@@ -71,7 +71,7 @@ Jackal supports all necessary commands to initialize UCI protocol, full descript
    * Architecture: 128 subnet pairs `768->32->32`
    * Selecting subnet pair for move destination based on SEE result
 
-Jackal currently supports multiple threads, but due to some unidentified bug it doesn't play better with more than 1 threads. ($100 for fixing PR)
+Jackal currently supports multiple threads, but due to some unidentified bug it doesn't play better with more than 1 thread. ($100 for fixing PR)
 
 ## EAS
 I measured Jackal's EAS to be around 230k, while I also noticed it is very slow to end the games and draws a lot of winning positions. My current guess is that MCTS heavily relies on its neural nets and my current data is just not strong enough to be efficient in end games.
