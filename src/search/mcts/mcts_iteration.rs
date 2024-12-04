@@ -148,7 +148,7 @@ impl<'a> Mcts<'a> {
 
                     //Score adjusted by the amount of thread visits
                     let w = f64::from(score.win_chance()) * v / (v + thrds);
-                    let d = f64::from(score.win_chance()) * v / (v + thrds);
+                    let d = f64::from(score.draw_chance()) * v / (v + thrds);
                     score = Score::new(w as f32, d as f32);
                 }
             }
