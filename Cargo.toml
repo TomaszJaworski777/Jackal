@@ -1,6 +1,6 @@
 [package]
 name = "jackal"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [profile.release]
@@ -15,7 +15,7 @@ colored = "*"
 console = "0.15"
 term_cursor = "0.2.1"
 term_size = "0.3.2"
-spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear' }
+spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear', features = ["pext"] }
 
 [workspace]
 members = ["datagen", "train"]
