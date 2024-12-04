@@ -1,5 +1,7 @@
 use std::{sync::atomic::Ordering, thread, time::Instant};
 
+use spear::Move;
+
 use crate::search::print::SearchDisplay;
 
 use super::Mcts;
@@ -40,6 +42,11 @@ impl<'a> Mcts<'a> {
         &self,
         printer: &'a mut PRINTER,
     ) {
+
+        let mut best_move = Move::NULL;
+        let mut best_move_changes = 0;
+        let mut previous_score = f32::NEG_INFINITY;
+
         let mut last_raport_time = Instant::now();
         let mut last_avg_depth = 0;
         loop {
@@ -70,8 +77,27 @@ impl<'a> Mcts<'a> {
             }
 
             //Update timer every few iterations to reduce the slowdown caused by obtaining time
-            if self.stats.iters() % 128 == 0 {
-                self.stats.update_time_passed()
+            if self.stats.iters() % 256 == 0 {
+                self.stats.update_time_passed();
+
+                //Check hard time limit
+                if self.limits.is_hard_time_limit_reached(self.stats, self.options) {
+                    self.interruption_token.store(true, Ordering::Relaxed)
+                }
+
+                //Update best move
+                let new_best_move = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_contempt).0;
+                if new_best_move != best_move {
+                    best_move = new_best_move;
+                    best_move_changes += 1;
+                }
+            }
+
+            //Check soft time every larger chunk of iterations
+            if self.stats.iters() % 16384 == 0 {
+                if self.limits.is_soft_time_limit_reached(self.stats, self.options, &mut best_move_changes, &mut previous_score, &self.tree) {
+                    self.interruption_token.store(true, Ordering::Relaxed)
+                }
             }
 
             //Check for end of the search

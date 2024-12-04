@@ -104,10 +104,7 @@ impl Tree {
     }
 
     #[inline]
-    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize, source: u8) -> Edge {
-        if self[node_index].actions().len() <= action_index {
-            panic!("{source}")
-        }
+    pub fn get_edge_clone(&self, node_index: NodeIndex, action_index: usize) -> Edge {
         self[node_index].actions()[action_index].clone()
     }
 
@@ -230,7 +227,7 @@ impl Tree {
             return;
         }
 
-        let best_action = self.get_edge_clone(node_index, best_action_idx, 0);
+        let best_action = self.get_edge_clone(node_index, best_action_idx);
         result.push(best_action.mv());
         
         let new_node_index = best_action.node_index();

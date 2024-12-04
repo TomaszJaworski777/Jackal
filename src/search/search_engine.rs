@@ -22,6 +22,7 @@ pub struct SearchEngine<'a> {
     options: &'a mut EngineOptions,
     command_queue: &'a mut Vec<String>,
     uci_initialized: bool,
+    game_ply: u32
 }
 
 impl<'a> SearchEngine<'a> {
@@ -40,6 +41,7 @@ impl<'a> SearchEngine<'a> {
             options,
             command_queue,
             uci_initialized: false,
+            game_ply: 0
         }
     }
 
@@ -67,6 +69,10 @@ impl<'a> SearchEngine<'a> {
         self.position
     }
 
+    pub fn game_ply(&self) -> u32 {
+        self.game_ply
+    }
+
     pub fn tree(&self) -> &Tree {
         self.tree
     }
@@ -78,6 +84,7 @@ impl<'a> SearchEngine<'a> {
     pub fn reset(&mut self) {
         self.position = ChessPosition::from_fen(&FEN::start_position());
         self.tree.clear();
+        self.game_ply = 0;
     }
 
     pub fn search(&mut self, search_limits: &SearchLimits, print_reports: bool) {
@@ -87,6 +94,8 @@ impl<'a> SearchEngine<'a> {
         self.tree
             .reuse_tree(&self.previous_board, self.current_position().board());
         self.previous_board = *self.current_position().board();
+
+        self.game_ply += 2;
 
         //Start the search thread
         std::thread::scope(|s| {
