@@ -130,7 +130,7 @@ impl<'a> Mcts<'a> {
 
         let explore_value = cpuct * explore_scale;
         self.tree[node_idx].get_best_action_by_key(|action| {
-            let visits = action.visits();
+            let visits = action.visits() + 1;
 
             let mut score = if visits == 0 {
                 parent.score().reversed()
@@ -154,7 +154,7 @@ impl<'a> Mcts<'a> {
             }
 
             let score = score.single(contempt);
-            score + (explore_value * action.policy() / (visits as f32 + 1.0))
+            score + (explore_value * action.policy() / (visits as f32))
         })
     }
 }
