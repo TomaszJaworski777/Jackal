@@ -56,7 +56,7 @@ create_option_structs!(
     "MultiPV"                => multi_pv:                 SpinOptionInt,   1, 1, 256;
     "UCI_ShowWDL"            => show_wdl:                 CheckBool,       false;
     "UCI_AnalyseMode"        => analyse_mode:             CheckBool,       false;
-    "DrawContempt"           => draw_contempt:            SpinOptionFloat, 0.25, -0.5, 0.5;
+    "DrawContempt"           => draw_contempt:            SpinOptionFloat, 0.1, -0.5, 0.5;
     "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.14, 0.0, 1.0;
     "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.25, 0.0, 10.0;
     
