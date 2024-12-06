@@ -15,10 +15,17 @@ impl<'a> Mcts<'a> {
         &self,
         printer: &'a mut PRINTER,
     ) {
+        let mut best_move = Move::NULL;
+        let mut best_move_changes = 0;
+        let mut previous_score = f32::NEG_INFINITY;
+
+        let mut last_raport_time = Instant::now();
+        let mut last_avg_depth = 0;
+
         loop {
             thread::scope(|s| {
                 s.spawn(|| {
-                    self.main_loop::<PRINTER, STM_WHITE, NSTM_WHITE>(printer);
+                    self.main_loop::<PRINTER, STM_WHITE, NSTM_WHITE>(printer, &mut best_move, &mut best_move_changes, &mut previous_score, &mut last_raport_time, &mut last_avg_depth);
                 });
 
                 for _ in 0..self.options.threads() - 1 {
@@ -41,14 +48,13 @@ impl<'a> Mcts<'a> {
     >(
         &self,
         printer: &'a mut PRINTER,
+        best_move: &'a mut Move,
+        best_move_changes: &'a mut i32,
+        previous_score: &'a mut f32,
+        last_raport_time: &'a mut Instant,
+        last_avg_depth: &'a mut u32
     ) {
 
-        let mut best_move = Move::NULL;
-        let mut best_move_changes = 0;
-        let mut previous_score = f32::NEG_INFINITY;
-
-        let mut last_raport_time = Instant::now();
-        let mut last_avg_depth = 0;
         loop {
             //Start tree descend
             let mut depth = 0;
@@ -87,15 +93,15 @@ impl<'a> Mcts<'a> {
 
                 //Update best move
                 let new_best_move = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_contempt).0;
-                if new_best_move != best_move {
-                    best_move = new_best_move;
-                    best_move_changes += 1;
+                if new_best_move != *best_move {
+                    *best_move = new_best_move;
+                    *best_move_changes += 1;
                 }
             }
 
             //Check soft time every larger chunk of iterations
             if self.stats.iters() % 16384 == 0 {
-                if self.limits.is_soft_time_limit_reached(self.stats, self.options, &mut best_move_changes, &mut previous_score, &self.tree) {
+                if self.limits.is_soft_time_limit_reached(self.stats, self.options, best_move_changes, previous_score, &self.tree) {
                     self.interruption_token.store(true, Ordering::Relaxed)
                 }
             }
@@ -111,11 +117,11 @@ impl<'a> Mcts<'a> {
             }
 
             //Draws report when avg_depth increases or if there wasn't any reports for longer than refresh rate
-            if self.stats.avg_depth() > last_avg_depth
+            if self.stats.avg_depth() > *last_avg_depth
                 || last_raport_time.elapsed().as_secs_f32() > PRINTER::REFRESH_RATE
             {
-                last_avg_depth = last_avg_depth.max(self.stats.avg_depth());
-                last_raport_time = Instant::now();
+                *last_avg_depth = self.stats.avg_depth().max(*last_avg_depth);
+                *last_raport_time = Instant::now();
                 printer.print_search_raport::<false>(
                     self.stats,
                     self.options,
