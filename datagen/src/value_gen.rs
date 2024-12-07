@@ -13,7 +13,9 @@ impl ValueGen {
         interruption_token: &AtomicBool,
     ) {
         let mut options = EngineOptions::new();
-        options.set("DrawContempt", "15");
+        options.set("DrawContempt", "20");
+        options.set("PolicySacBonus", "15");
+        options.set("MaterialReductionBonus", "30");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new(0);
         limits.add_iters(iter_count);
