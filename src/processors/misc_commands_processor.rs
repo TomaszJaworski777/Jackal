@@ -59,18 +59,20 @@ impl MiscCommandsProcessor {
             56
         };
 
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+
         let mut max = f32::NEG_INFINITY;
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
-                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip) + mva_lvv(mv, &board, search_engine.engine_options());
+                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
             PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
-                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip) + mva_lvv(mv, &board, search_engine.engine_options());
+                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })

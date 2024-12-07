@@ -43,14 +43,27 @@ pub struct PolicyNetwork {
 }
 
 impl PolicyNetwork {
-    pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, vertical_flip: u8) -> f32 {
+    pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, vertical_flip: u8, cache: &mut [Option<Vec<f32>>; 192]) -> f32 {
         let see_index = usize::from(SEE::static_exchange_evaluation::<true, false>(board, mv, -108));
 
         let from_index = (mv.get_from_square().get_raw() ^ vertical_flip) as usize;
         let to_index = (mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
 
-        let from = self.subnets[from_index].forward(inputs);
-        let to = self.subnets[to_index].forward(inputs);
+        let from = if let Some(cache_entry) = &cache[from_index] {
+            cache_entry.clone()
+        } else {
+            let result = self.subnets[from_index].forward(inputs);
+            cache[from_index] = Some(result.clone());
+            result
+        };
+        
+        let to = if let Some(cache_entry) = &cache[to_index] {
+            cache_entry.clone()
+        } else {
+            let result = self.subnets[to_index].forward(inputs);
+            cache[to_index] = Some(result.clone());
+            result
+        };
 
         dot(from, to)
     }

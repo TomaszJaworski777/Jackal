@@ -176,11 +176,14 @@ impl Node {
         let mut max = f32::NEG_INFINITY;
         let mut total = 0.0;
 
+        //Network output cache to prevent processing the same subnet twice
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+
         const MULTIPLIER: f32 = 1000.0;
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip) + mva_lvv(mv, position.board(), options);
+                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, position.board(), options);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
@@ -238,12 +241,15 @@ impl Node {
             1.0
         };
 
+        //Network output cache to prevent processing the same subnet twice
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+
         let mut policies = Vec::new();
         let mut max: f32 = f32::NEG_INFINITY;
         let mut total = 0.0;
 
         for action in actions.iter_mut() {
-            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip) + mva_lvv(action.mv(), position.board(), options);
+            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip, &mut cache) + mva_lvv(action.mv(), position.board(), options);
             policies.push(policy);
             max = max.max(policy);
         }
