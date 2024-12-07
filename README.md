@@ -18,6 +18,7 @@
 
 | Version | CCRL 40/15 | CCRL Blitz | Estimated | EAS Score | Release Date |
 | :-: | :-: | :-: | :-: | :-: | :-: |
+| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | - | - | 3070 | - | 7th December 2024 |
 | [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | - | - | 3000 | 229.96k | 4th December 2024 |
 
 </div>
