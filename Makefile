@@ -21,13 +21,6 @@ else
 	MKDIR = mkdir -p $(DIR)
 endif
 
-ifneq ("$(wildcard $(DIR))","")
-create_version_dir:
-else
-create_version_dir:
-	$(MKDIR) 
-endif
-
 rule:
 	cargo rustc --release --bin jackal -- -C target-cpu=native --emit link=$(DEV_NAME)
 
@@ -41,3 +34,10 @@ gen:
 
 trainer:
 	cargo rustc --release --package train --bin train -- -C target-cpu=native --emit link=$(TRAINER)
+
+ifneq ("$(wildcard $(DIR))","")
+create_version_dir:
+else
+create_version_dir:
+	$(MKDIR) 
+endif
