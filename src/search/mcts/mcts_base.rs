@@ -1,6 +1,6 @@
 use crate::{
     options::EngineOptions,
-    search::{print::SearchDisplay, Score},
+    search::{print::SearchDisplay, utils::ContemptParams, Score},
     SearchLimits, SearchStats, Tree,
 };
 use spear::{ChessPosition, Move, Piece, Side};
@@ -13,7 +13,8 @@ pub struct Mcts<'a> {
     pub(super) options: &'a EngineOptions,
     pub(super) stats: &'a SearchStats,
     pub(super) limits: &'a SearchLimits,
-    pub(super) start_material: i32
+    pub(super) start_material: i32,
+    pub(super) contempt_parms: &'a ContemptParams
 }
 
 impl<'a> Mcts<'a> {
@@ -24,6 +25,7 @@ impl<'a> Mcts<'a> {
         options: &'a EngineOptions,
         stats: &'a SearchStats,
         limits: &'a SearchLimits,
+        contempt_parms: &'a ContemptParams
     ) -> Self {
         Self {
             root_position,
@@ -32,7 +34,8 @@ impl<'a> Mcts<'a> {
             options,
             stats,
             limits,
-            start_material: Self::calculate_stm_material(&root_position, root_position.board().side_to_move())
+            start_material: Self::calculate_stm_material(&root_position, root_position.board().side_to_move()),
+            contempt_parms
         }
     }
 

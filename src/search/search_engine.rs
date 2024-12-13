@@ -8,10 +8,7 @@ use spear::{ChessBoard, ChessPosition, FEN};
 use crate::options::EngineOptions;
 
 use super::{
-    print::{NoPrint, PrettyPrint, UciPrint},
-    search_limits::SearchLimits,
-    tree::Tree,
-    Mcts, SearchStats,
+    print::{NoPrint, PrettyPrint, UciPrint}, search_limits::SearchLimits, tree::Tree, utils::ContemptParams, Mcts, SearchStats
 };
 
 pub struct SearchEngine<'a> {
@@ -97,6 +94,8 @@ impl<'a> SearchEngine<'a> {
 
         self.game_ply += 2;
 
+        let contempt_parms = ContemptParams::new(0.0, 0.0);
+
         //Start the search thread
         std::thread::scope(|s| {
             s.spawn(|| {
@@ -107,6 +106,7 @@ impl<'a> SearchEngine<'a> {
                     self.options,
                     &search_stats,
                     search_limits,
+                    &contempt_parms
                 );
                 let (_, _) = if print_reports {
                     if self.uci_initialized {

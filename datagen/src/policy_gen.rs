@@ -1,6 +1,6 @@
 use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
-use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree};
+use jackal::{ContemptParams, EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree};
 use spear::{ChessPosition, Move, PolicyPacked, Side};
 use std::sync::atomic::AtomicBool;
 
@@ -13,6 +13,7 @@ impl PolicyGen {
         interruption_token: &AtomicBool,
     ) {
         let mut options = EngineOptions::new();
+        let contempt_parms = ContemptParams::new(0.0, 0.0);
         options.set("DrawContempt", "20");
         options.set("MaterialReductionBonus", "20");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
@@ -41,6 +42,7 @@ impl PolicyGen {
                     &options,
                     &search_stats,
                     &limits,
+                    &contempt_parms
                 );
 
                 let (best_move, _) = mcts.search::<NoPrint>();

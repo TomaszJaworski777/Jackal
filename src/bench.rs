@@ -2,7 +2,7 @@ use std::sync::atomic::AtomicBool;
 
 use spear::{ChessPosition, FEN};
 
-use crate::{Mcts, NoPrint, SearchEngine, SearchLimits, SearchStats, Tree};
+use crate::{ContemptParams, Mcts, NoPrint, SearchEngine, SearchLimits, SearchStats, Tree};
 
 pub struct Bench;
 impl Bench {
@@ -74,7 +74,8 @@ impl Bench {
             let stats = SearchStats::new();
             let token = AtomicBool::new(false);
             tree.clear();
-            let mcts = Mcts::new(position, &tree, &token, options, &stats, &limits);
+            let contempt_parms = ContemptParams::new(0.0, 0.0);
+            let mcts = Mcts::new(position, &tree, &token, options, &stats, &limits, &contempt_parms);
             mcts.search::<NoPrint>();
             total_nodes += stats.iters();
             total_time += stats.time_passed();

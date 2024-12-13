@@ -60,6 +60,8 @@ create_option_structs!(
     "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.0, 0.0, 1.0;
     "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
     
+    "MaxReasonableS" => max_reasonable_s: SpinOptionFloat, 1.0, 0.0, 10.0;
+
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;
     "CpuctVisitsScale"    => cpuct_visits_scale:    SpinOptionFloatTunable, 64.0, 1.0, 512.0, 3.15, 0.002;

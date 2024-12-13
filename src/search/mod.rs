@@ -20,4 +20,5 @@ pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
 pub use tree::NodeIndex;
 pub use tree::Tree;
+pub use utils::ContemptParams;
 pub(super) use utils::SearchHelpers;

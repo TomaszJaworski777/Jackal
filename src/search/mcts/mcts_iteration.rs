@@ -18,7 +18,7 @@ impl<'a> Mcts<'a> {
         current_node_index: NodeIndex,
         action_cpy: &Edge,
         current_position: &mut ChessPosition,
-        depth: &mut u32,
+        depth: &mut u32
     ) -> Option<Score> {
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
@@ -26,13 +26,14 @@ impl<'a> Mcts<'a> {
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
             let current_material = Self::calculate_stm_material(&current_position, self.root_position.board().side_to_move());
-            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
+            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, US>(
                 current_position,
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
                 self.tree,
                 self.start_material - current_material,
-                self.options
+                self.options,
+                self.contempt_parms
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
