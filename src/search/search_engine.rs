@@ -94,7 +94,11 @@ impl<'a> SearchEngine<'a> {
 
         self.game_ply += 2;
 
-        let contempt_parms = ContemptParams::new(0.0, 0.0);
+        let contempt_parms = ContemptParams::new(0.8, -0.05);
+
+        if self.options.analyse_mode() {
+            self.tree.clear();
+        }
 
         //Start the search thread
         std::thread::scope(|s| {

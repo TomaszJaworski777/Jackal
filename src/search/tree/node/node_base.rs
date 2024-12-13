@@ -170,7 +170,7 @@ impl Node {
         let pst = if ROOT {
             options.root_pst()
         } else {
-            1.0
+            options.common_pst()
         };
 
         let mut max = f32::NEG_INFINITY;

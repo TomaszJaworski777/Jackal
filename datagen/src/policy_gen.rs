@@ -14,7 +14,6 @@ impl PolicyGen {
     ) {
         let mut options = EngineOptions::new();
         let contempt_parms = ContemptParams::new(0.0, 0.0);
-        options.set("DrawContempt", "20");
         options.set("MaterialReductionBonus", "20");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new(0);
