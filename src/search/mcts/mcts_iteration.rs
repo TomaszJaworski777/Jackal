@@ -12,7 +12,7 @@ impl<'a> Mcts<'a> {
         const NSTM_WHITE: bool,
         const ROOT: bool,
         const US: bool,
-        const NOT_US: bool
+        const NOT_US: bool,
     >(
         &self,
         current_node_index: NodeIndex,
@@ -25,35 +25,41 @@ impl<'a> Mcts<'a> {
         let score = if !ROOT
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
-            let current_material = Self::calculate_stm_material(&current_position, self.root_position.board().side_to_move());
-            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE>(
+            let current_material = Self::calculate_stm_material(
+                &current_position,
+                self.root_position.board().side_to_move(),
+            );
+            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, NOT_US>(
                 current_position,
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
                 self.tree,
                 self.start_material - current_material,
-                self.options
+                self.options,
+                self.contempt_parms,
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                self.tree[current_node_index].expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
+                self.tree[current_node_index]
+                    .expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
             }
 
             //Calculate asymetrical draw contempt
-            let contempt = if US {
-                self.options.draw_contempt()
+            let draw_score = if US {
+                self.options.draw_score()
             } else {
-                0.0
+                self.options.draw_score_opp()
             };
 
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy,
-                contempt
+                draw_score
             );
+
             let new_edge_cpy = self
                 .tree
                 .get_edge_clone(current_node_index, best_action_index);
@@ -103,21 +109,21 @@ impl<'a> Mcts<'a> {
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
-        contempt: f32
+        draw_score: f32
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
         let parent_visits = parent.visits();
 
-        let mut cpuct = if ROOT { 
-            self.options.root_cpuct_value() 
-        } else { 
-            self.options.cpuct_value() 
+        let mut cpuct = if ROOT {
+            self.options.root_cpuct_value()
+        } else {
+            self.options.cpuct_value()
         };
 
         //Variance scaling
         if parent_visits > 1 {
-            let frac = parent.variance(contempt).sqrt() / self.options.cpuct_variance_scale();
+            let frac = parent.variance(draw_score).sqrt() / self.options.cpuct_variance_scale();
             cpuct *= 1.0 + self.options.cpuct_variance_weight() * (frac - 1.0);
         }
 
@@ -125,8 +131,10 @@ impl<'a> Mcts<'a> {
         cpuct *= 1.0 + ((parent_visits as f32 + scale) / scale).ln();
 
         //Exploration scaling with visits and gini impurity
-        let mut explore_scale = (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
-        explore_scale *= (0.679 - 1.634 * (self.tree[node_idx].gini_impurity() + 0.001).ln()).min(2.1);
+        let mut explore_scale =
+            (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
+        explore_scale *=
+            (0.679 - 1.634 * (self.tree[node_idx].gini_impurity() + 0.001).ln()).min(2.1);
 
         let explore_value = cpuct * explore_scale;
         self.tree[node_idx].get_best_action_by_key(|action| {
@@ -145,7 +153,6 @@ impl<'a> Mcts<'a> {
                 let v = f64::from(visits);
 
                 if thrds > 0.0 {
-
                     //Score adjusted by the amount of thread visits
                     let w = f64::from(score.win_chance()) * v / (v + thrds);
                     let d = f64::from(score.draw_chance()) * v / (v + thrds);
@@ -153,7 +160,7 @@ impl<'a> Mcts<'a> {
                 }
             }
 
-            let score = score.single(contempt);
+            let score = score.single(draw_score);
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }

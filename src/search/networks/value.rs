@@ -19,7 +19,7 @@ impl ValueNetwork {
     pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         board: &ChessBoard,
-    ) -> (f32,f32,f32) {
+    ) -> (f32, f32, f32) {
         let mut l1_out = *self.l1.biases();
 
         Self::map_value_inputs::<_, STM_WHITE, NSTM_WHITE>(board, |weight_index| {
@@ -58,7 +58,7 @@ impl ValueNetwork {
         } else {
             0
         };
-        
+
         let flip = board.side_to_move() == Side::BLACK;
 
         let mut threats = board.generate_attack_map::<STM_WHITE, NSTM_WHITE>();
@@ -76,7 +76,7 @@ impl ValueNetwork {
                 board.get_piece_mask_for_side::<STM_WHITE>(Piece::from_raw(piece));
             let mut nstm_bitboard =
                 board.get_piece_mask_for_side::<NSTM_WHITE>(Piece::from_raw(piece));
-        
+
             if flip {
                 stm_bitboard = stm_bitboard.flip();
                 nstm_bitboard = nstm_bitboard.flip();
@@ -88,7 +88,7 @@ impl ValueNetwork {
                 if threats.get_bit(square) {
                     feat += 768;
                 }
-    
+
                 if defences.get_bit(square) {
                     feat += 768 * 2;
                 }
@@ -102,7 +102,7 @@ impl ValueNetwork {
                 if threats.get_bit(square) {
                     feat += 768;
                 }
-    
+
                 if defences.get_bit(square) {
                     feat += 768 * 2;
                 }

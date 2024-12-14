@@ -11,6 +11,7 @@ use super::{
     print::{NoPrint, PrettyPrint, UciPrint},
     search_limits::SearchLimits,
     tree::Tree,
+    utils::ContemptParams,
     Mcts, SearchStats,
 };
 
@@ -22,7 +23,7 @@ pub struct SearchEngine<'a> {
     options: &'a mut EngineOptions,
     command_queue: &'a mut Vec<String>,
     uci_initialized: bool,
-    game_ply: u32
+    game_ply: u32,
 }
 
 impl<'a> SearchEngine<'a> {
@@ -41,7 +42,7 @@ impl<'a> SearchEngine<'a> {
             options,
             command_queue,
             uci_initialized: false,
-            game_ply: 0
+            game_ply: 0,
         }
     }
 
@@ -97,6 +98,12 @@ impl<'a> SearchEngine<'a> {
 
         self.game_ply += 2;
 
+        let contempt_parms = ContemptParams::calculate_params(self.options);
+
+        if self.options.analyse_mode() {
+            self.tree.clear();
+        }
+
         //Start the search thread
         std::thread::scope(|s| {
             s.spawn(|| {
@@ -107,6 +114,7 @@ impl<'a> SearchEngine<'a> {
                     self.options,
                     &search_stats,
                     search_limits,
+                    &contempt_parms,
                 );
                 let (_, _) = if print_reports {
                     if self.uci_initialized {

@@ -14,15 +14,19 @@ impl Default for AtomicScore {
 
 impl Clone for AtomicScore {
     fn clone(&self) -> Self {
-        Self(AtomicU32::new(self.0.load(Ordering::Relaxed)),
-            AtomicU32::new(self.1.load(Ordering::Relaxed)))
+        Self(
+            AtomicU32::new(self.0.load(Ordering::Relaxed)),
+            AtomicU32::new(self.1.load(Ordering::Relaxed)),
+        )
     }
 }
 
 impl AtomicScore {
     pub fn store(&self, score: Score) {
-        self.0.store(f32_to_u32(score.win_chance()), Ordering::Relaxed);
-        self.1.store(f32_to_u32(score.draw_chance()), Ordering::Relaxed);
+        self.0
+            .store(f32_to_u32(score.win_chance()), Ordering::Relaxed);
+        self.1
+            .store(f32_to_u32(score.draw_chance()), Ordering::Relaxed);
     }
 
     pub fn load(&self) -> Score {

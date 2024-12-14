@@ -1,10 +1,15 @@
 use std::{
-    f32::consts::PI, fs::File, io::{BufRead, BufReader, Write}, path::PathBuf, time::Instant
+    f32::consts::PI,
+    fs::File,
+    io::{BufRead, BufReader, Write},
+    path::PathBuf,
+    time::Instant,
 };
 
 use goober::{
-    activation, layer::{DenseConnected, SparseConnected}, FeedForwardNetwork, Matrix, OutputLayer, SparseVector,
-    Vector,
+    activation,
+    layer::{DenseConnected, SparseConnected},
+    FeedForwardNetwork, Matrix, OutputLayer, SparseVector, Vector,
 };
 use jackal::{PolicyNetwork, SEE};
 use rand::{seq::SliceRandom, Rng};
@@ -49,7 +54,10 @@ impl PolicyTrainer {
         println!("Batches in superbatch: {}", BATCHES_PER_SUPERBATCH);
         println!("Start LR:              {}", START_LR);
         println!("End LR:                {}", END_LR);
-        println!("Epochs                 {:.2}\n", throughput as f64 / entry_count as f64);
+        println!(
+            "Epochs                 {:.2}\n",
+            throughput as f64 / entry_count as f64
+        );
 
         let mut momentum = boxed_and_zeroed::<TrainerPolicyNet>();
         let mut velocity = boxed_and_zeroed::<TrainerPolicyNet>();
@@ -89,7 +97,7 @@ impl PolicyTrainer {
                     let adjustment = 1.0 / batch.len() as f32;
 
                     let used_lr = if superbatch_index == 0 && batch_index < WARMUP_BATCHES {
-                        START_LR / ( WARMUP_BATCHES - batch_index ) as f32
+                        START_LR / (WARMUP_BATCHES - batch_index) as f32
                     } else {
                         learning_rate
                     };
@@ -239,13 +247,23 @@ fn update_single_grad(
         total_expected += move_data.visits;
 
         let see_index = if board.side_to_move() == Side::WHITE {
-            usize::from(SEE::static_exchange_evaluation::<true, false>(&board, move_data.mv, -108))
+            usize::from(SEE::static_exchange_evaluation::<true, false>(
+                &board,
+                move_data.mv,
+                -108,
+            ))
         } else {
-            usize::from(SEE::static_exchange_evaluation::<false, true>(&board, move_data.mv, -108))
+            usize::from(SEE::static_exchange_evaluation::<false, true>(
+                &board,
+                move_data.mv,
+                -108,
+            ))
         };
 
         let from_index = (move_data.mv.get_from_square().get_raw() ^ vertical_flip) as usize;
-        let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
+        let to_index = (move_data.mv.get_to_square().get_raw() ^ vertical_flip) as usize
+            + 64
+            + (see_index * 64);
 
         let from_out = policy.subnets[from_index].out_with_layers(&inputs);
         let to_out = policy.subnets[to_index].out_with_layers(&inputs);

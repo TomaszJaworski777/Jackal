@@ -9,7 +9,7 @@ pub struct Edge {
     policy: AtomicI16,
     visits: AtomicU32,
     score: AtomicScore,
-    squared_score: AtomicU32
+    squared_score: AtomicU32,
 }
 
 impl Clone for Edge {
@@ -91,19 +91,24 @@ impl Edge {
         f64::from(self.squared_score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
     }
 
-    pub fn variance(&self, draw_contempt: f32) -> f32 {
-        (self.squared_score() - (self.score().single(draw_contempt) as f64).powi(2)).max(0.0) as f32
+    pub fn variance(&self, draw_score: f32) -> f32 {
+        (self.squared_score() - (self.score().single(draw_score) as f64).powi(2)).max(0.0) as f32
     }
 
     #[inline]
     pub fn add_score(&self, score: Score) {
         let previous_visits = self.visits.fetch_add(1, Ordering::Relaxed) as f64;
 
-        let new_win_chance = (f64::from(self.score().win_chance()) * previous_visits + f64::from(score.win_chance())) / (previous_visits + 1.0);
-        let new_draw_chance = (f64::from(self.score().draw_chance()) * previous_visits + f64::from(score.draw_chance())) / (previous_visits + 1.0);
-        self.score.store(Score::new(new_win_chance as f32, new_draw_chance as f32));
+        let new_win_chance = (f64::from(self.score().win_chance()) * previous_visits
+            + f64::from(score.win_chance()))
+            / (previous_visits + 1.0);
+        let new_draw_chance = (f64::from(self.score().draw_chance()) * previous_visits
+            + f64::from(score.draw_chance()))
+            / (previous_visits + 1.0);
+        self.score
+            .store(Score::new(new_win_chance as f32, new_draw_chance as f32));
 
-        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single(0.0)).powi(2)) / (previous_visits + 1.0);
+        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single(0.5)).powi(2)) / (previous_visits + 1.0);
         self.squared_score.store((new_squared_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed);
     }
 

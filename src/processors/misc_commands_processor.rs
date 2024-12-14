@@ -4,7 +4,8 @@ use spear::{ChessBoard, Move, Perft, Piece, Side, FEN};
 
 use crate::{
     search::{NodeIndex, PolicyNetwork, Score, SearchEngine, ValueNetwork},
-    utils::{clear_terminal_screen, heat_color}, EngineOptions,
+    utils::{clear_terminal_screen, heat_color},
+    EngineOptions,
 };
 
 pub struct MiscCommandsProcessor;
@@ -59,20 +60,32 @@ impl MiscCommandsProcessor {
             56
         };
 
-        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
         let mut max = f32::NEG_INFINITY;
         if search_engine.current_position().board().side_to_move() == Side::WHITE {
             PolicyNetwork::map_policy_inputs::<_, true, false>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, true, false>(|mv| {
-                let policy = PolicyNetwork.forward::<true, false>(&board, &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, &board, search_engine.engine_options());
+                let policy = PolicyNetwork.forward::<true, false>(
+                    &board,
+                    &inputs,
+                    mv,
+                    vertical_flip,
+                    &mut cache,
+                ) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
         } else {
             PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |idx| inputs.push(idx));
             board.map_moves::<_, false, true>(|mv| {
-                let policy = PolicyNetwork.forward::<false, true>(&board, &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, &board, search_engine.engine_options());
+                let policy = PolicyNetwork.forward::<false, true>(
+                    &board,
+                    &inputs,
+                    mv,
+                    vertical_flip,
+                    &mut cache,
+                ) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
                 moves.push((mv, policy))
             })
@@ -158,13 +171,13 @@ impl MiscCommandsProcessor {
             search_engine.tree().draw_tree::<true, false>(
                 search_engine.current_position().board(),
                 node_index,
-                depth
+                depth,
             )
         } else {
             search_engine.tree().draw_tree::<false, true>(
                 search_engine.current_position().board(),
                 node_index,
-                depth
+                depth,
             )
         }
     }
@@ -178,15 +191,17 @@ impl MiscCommandsProcessor {
         };
         let score = Score::new(w, d);
 
-        let draw_contempt = search_engine.engine_options().draw_contempt();
+        let draw_score = search_engine.engine_options().draw_score();
 
         position.board().draw_board();
         println!("For me");
-        println!("Score: {} ({:.2})", score.single(draw_contempt), score.as_cp_f32_with_contempt(draw_contempt));
+        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
         println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
 
+        let draw_score = search_engine.engine_options().draw_score_opp();
+
         println!("For them");
-        println!("Score: {} ({:.2})", score.single(0.0), score.as_cp_f32());
+        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
         println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
 }
@@ -200,5 +215,7 @@ fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
         return 0.0;
     }
 
-    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize] - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize]) * options.policy_sac_bonus()
+    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize]
+        - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize])
+        * options.policy_sac_bonus()
 }

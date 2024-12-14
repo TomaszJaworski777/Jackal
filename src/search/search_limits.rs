@@ -27,7 +27,7 @@ impl SearchLimits {
             infinite: false,
             game_ply,
             soft_limit: None,
-            hard_limit: None
+            hard_limit: None,
         }
     }
 
@@ -61,7 +61,8 @@ impl SearchLimits {
 
     pub fn calculate_time_limits(&mut self) {
         if let Some(time) = self.time_remaining {
-            let (soft, hard) = Self::search_time(time, self.increment, self.moves_to_go, self.game_ply);
+            let (soft, hard) =
+                Self::search_time(time, self.increment, self.moves_to_go, self.game_ply);
             self.soft_limit = Some(soft);
             self.hard_limit = Some(hard);
         }
@@ -93,7 +94,11 @@ impl SearchLimits {
         false
     }
 
-    pub fn is_hard_time_limit_reached(&self, search_stats: &SearchStats, options: &EngineOptions) -> bool {
+    pub fn is_hard_time_limit_reached(
+        &self,
+        search_stats: &SearchStats,
+        options: &EngineOptions,
+    ) -> bool {
         if let Some(hard_limit) = self.hard_limit {
             let time_passed = search_stats.time_passed() + options.move_overhead() as u64;
             if time_passed >= hard_limit {
@@ -104,11 +109,18 @@ impl SearchLimits {
         false
     }
 
-    pub fn is_soft_time_limit_reached(&self, search_stats: &SearchStats, options: &EngineOptions, best_move_changes: &mut i32, previous_score: &mut f32, tree: &Tree) -> bool {
+    pub fn is_soft_time_limit_reached(
+        &self,
+        search_stats: &SearchStats,
+        options: &EngineOptions,
+        best_move_changes: &mut i32,
+        previous_score: &mut f32,
+        tree: &Tree,
+    ) -> bool {
         if let Some(soft_limit) = self.soft_limit {
             let time_passed = search_stats.time_passed() + options.move_overhead() as u64;
 
-            let best_move_score = tree[tree.root_index()].get_best_move(tree, options.draw_contempt()).1.as_cp_f32();
+            let best_move_score = tree[tree.root_index()].get_best_move(tree, options.draw_score()).1.as_cp_f32(0.5); //TODO: test adding contempt here
             let eval_diff = if *previous_score == f32::NEG_INFINITY {
                 0.0
             } else {
@@ -116,9 +128,10 @@ impl SearchLimits {
             };
 
             let falling_eval = (1.0 + eval_diff * 0.05).clamp(0.60, 1.80);
-            let best_move_instability = (1.0 + (*best_move_changes as f32 * 0.3).ln_1p()).clamp(1.0, 3.2);
+            let best_move_instability =
+                (1.0 + (*best_move_changes as f32 * 0.3).ln_1p()).clamp(1.0, 3.2);
 
-            let best_action_index = tree[tree.root_index()].get_best_action(tree, options.draw_contempt());
+            let best_action_index = tree[tree.root_index()].get_best_action(tree, options.draw_score());
             let best_action = tree.get_edge_clone(tree.root_index(), best_action_index);
             let nodes_effort = best_action.visits() as f32 / search_stats.iters() as f32;
             let best_move_visits =
@@ -143,13 +156,18 @@ impl SearchLimits {
         false
     }
 
-    fn search_time(time: u64, increment: Option<u64>, moves_to_go: Option<u32>, game_ply: u32) -> (u64, u64) {
+    fn search_time(
+        time: u64,
+        increment: Option<u64>,
+        moves_to_go: Option<u32>,
+        game_ply: u32,
+    ) -> (u64, u64) {
         let inc = increment.unwrap_or_default();
 
         if let Some(mtg) = moves_to_go {
             let time = ((time + inc) as f64 / mtg as f64) as u64;
-            return (time, time)
-        } 
+            return (time, time);
+        }
 
         let mtg = 30;
 
@@ -161,8 +179,7 @@ impl SearchLimits {
             .min(0.25 * time as f64 / time_left);
 
         let hard_constant = (3.39 + 3.01 * log_time).max(2.93);
-        let hard_scale = (hard_constant + game_ply as f64 / 12.0)
-            .min(4.00);
+        let hard_scale = (hard_constant + game_ply as f64 / 12.0).min(4.00);
 
         let bonus = if game_ply <= 10 {
             1.0 + (11.0 - game_ply as f64).log10() * 0.5

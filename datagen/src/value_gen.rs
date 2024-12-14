@@ -1,6 +1,8 @@
 use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
-use jackal::{EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree};
+use jackal::{
+    ContemptParams, EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree,
+};
 use spear::{ChessBoardPacked, ChessPosition, Move, Side};
 use std::sync::atomic::AtomicBool;
 
@@ -13,7 +15,8 @@ impl ValueGen {
         interruption_token: &AtomicBool,
     ) {
         let mut options = EngineOptions::new();
-        options.set("DrawContempt", "20");
+        let contempt_parms = ContemptParams::calculate_params(&options);
+        options.set("DrawScore", "30");
         options.set("MaterialReductionBonus", "20");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new(0);
@@ -41,11 +44,12 @@ impl ValueGen {
                     &options,
                     &search_stats,
                     &limits,
+                    &contempt_parms,
                 );
 
                 let (best_move, best_score) = mcts.search::<NoPrint>();
                 let packed_position =
-                    ChessBoardPacked::from_board(position.board(), best_score.single(options.draw_contempt()));
+                    ChessBoardPacked::from_board(position.board(), best_score.single(options.draw_score()));
 
                 let is_game_end = if position.board().side_to_move() == Side::WHITE {
                     Self::process_move::<true, false>(&mut position, best_move, &mut state)

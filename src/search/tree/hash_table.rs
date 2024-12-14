@@ -4,14 +4,14 @@ use crate::search::{eval_score::AtomicScore, Score};
 
 pub struct HashTableEntry {
     key: AtomicU16,
-    score: AtomicScore
+    score: AtomicScore,
 }
 
 impl HashTableEntry {
     pub fn new() -> Self {
-        Self { 
-            key: AtomicU16::new(0), 
-            score: AtomicScore::default() 
+        Self {
+            key: AtomicU16::new(0),
+            score: AtomicScore::default(),
         }
     }
 
@@ -22,12 +22,11 @@ impl HashTableEntry {
 }
 
 pub struct HashTable {
-    entries: Vec<HashTableEntry>
+    entries: Vec<HashTableEntry>,
 }
 
 impl HashTable {
     pub fn new(size_in_bytes: usize) -> Self {
-
         let size = size_in_bytes / 8;
         let mut entries = Vec::with_capacity(size);
 

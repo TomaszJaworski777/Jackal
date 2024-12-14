@@ -1,4 +1,7 @@
-use std::{ops::Index, sync::atomic::{AtomicUsize, Ordering}};
+use std::{
+    ops::Index,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use crate::GameState;
 
