@@ -11,7 +11,6 @@ impl Score {
     }
 
     pub fn single(&self, draw_score: f32) -> f32 {
-        assert!(draw_score == 0.5, "{draw_score}");
         self.win_chance() + self.draw_chance() * draw_score
     }
 

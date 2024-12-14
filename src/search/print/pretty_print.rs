@@ -114,7 +114,7 @@ impl SearchDisplay for PrettyPrint {
         println!(
             " {}      {}",
             "Score:".label(),
-            heat_color(score_cp_string.as_str(), score.single(0.0), 0.0, 1.0)
+            heat_color(score_cp_string.as_str(), score.single(0.5), 0.0, 1.0)
         );
         print!("                                                                                                             \r");
         println!(

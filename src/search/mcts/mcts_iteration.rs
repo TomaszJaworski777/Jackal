@@ -29,7 +29,7 @@ impl<'a> Mcts<'a> {
                 &current_position,
                 self.root_position.board().side_to_move(),
             );
-            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, US>(
+            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, NOT_US>(
                 current_position,
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
