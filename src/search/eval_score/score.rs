@@ -11,7 +11,7 @@ impl Score {
     }
 
     pub fn single(&self) -> f32 {
-        self.0 + self.1 * 0.5
+        (self.win_chance()) + self.draw_chance() * 0.5
     }
 
     pub fn win_chance(&self) -> f32 {

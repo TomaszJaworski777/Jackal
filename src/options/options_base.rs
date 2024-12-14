@@ -61,7 +61,7 @@ create_option_structs!(
     "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
 
     "MaxReasonableS"      => max_reasonable_s:     SpinOptionFloat, 2.0, 0.0, 100.0;
-    "Contempt"            => contempt:             SpinOptionFloat, 17.5, -10000.0, 10000.0;
+    "Contempt"            => contempt:             SpinOptionFloat, 5.0, -10000.0, 10000.0;
     "ContemptMax"         => contempt_max:         SpinOptionFloat, 1000.0, 0.0, 10000.0;
     "BookExitBias"        => book_exit_bias:       SpinOptionFloat, 0.65, 0.0, 1.0;
     "DrawRateTarget"      => draw_rate_target:     SpinOptionFloat, 0.0, 0.0, 1.0;
