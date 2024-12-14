@@ -48,7 +48,7 @@ impl ValueGen {
 
                 let (best_move, best_score) = mcts.search::<NoPrint>();
                 let packed_position =
-                    ChessBoardPacked::from_board(position.board(), best_score.single());
+                    ChessBoardPacked::from_board(position.board(), best_score.single(options.draw_contempt()));
 
                 let is_game_end = if position.board().side_to_move() == Side::WHITE {
                     Self::process_move::<true, false>(&mut position, best_move, &mut state)

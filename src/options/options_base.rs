@@ -66,6 +66,8 @@ create_option_structs!(
     "BookExitBias"        => book_exit_bias:       SpinOptionFloat, 0.65, 0.0, 1.0;
     "DrawRateTarget"      => draw_rate_target:     SpinOptionFloat, 0.0, 0.0, 1.0;
     "DrawRateReference"   => draw_rate_reference:  SpinOptionFloat, 0.65, 0.0, 1.0;
+    "DrawScore"           => draw_score:           SpinOptionFloat, 0.45, -1.0, 1.0;
+    "DrawScoreOpp"        => draw_score_opp:       SpinOptionFloat, 0.5, -1.0, 1.0;
     "ContemptAttenuation" => contempt_attenuation: SpinOptionFloat, 1.0, -10.0, 10.0;
 
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;

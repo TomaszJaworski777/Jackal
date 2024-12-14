@@ -191,32 +191,18 @@ impl MiscCommandsProcessor {
         };
         let score = Score::new(w, d);
 
+        let draw_score = search_engine.engine_options().draw_score();
+
         position.board().draw_board();
         println!("For me");
-        println!("Score: {} ({:.2})", score.single(), score.as_cp_f32());
-        println!(
-            "WDL: [{:.2}%, {:.2}%, {:.2}%]\n",
-            score.win_chance() * 100.0,
-            score.draw_chance() * 100.0,
-            score.lose_chance() * 100.0
-        );
+        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
 
-        let position: &spear::ChessPosition = &search_engine.current_position();
-        let (w, d, _) = if position.board().side_to_move() == Side::WHITE {
-            ValueNetwork.forward::<true, false>(position.board())
-        } else {
-            ValueNetwork.forward::<false, true>(position.board())
-        };
-        let score = Score::new(w, d);
+        let draw_score = search_engine.engine_options().draw_score_opp();
 
         println!("For them");
-        println!("Score: {} ({:.2})", score.single(), score.as_cp_f32());
-        println!(
-            "WDL: [{:.2}%, {:.2}%, {:.2}%]\n",
-            score.win_chance() * 100.0,
-            score.draw_chance() * 100.0,
-            score.lose_chance() * 100.0
-        );
+        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
+        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
     }
 }
 

@@ -45,13 +45,9 @@ impl SearchDisplay for UciPrint {
 
             let mut score_text = match *state {
                 GameState::Drawn => "score cp 0".to_string(),
-                GameState::Won(x) => {
-                    format!("score mate -{}", ((x + 1) as f32 / 2.0).ceil() as u32)
-                }
-                GameState::Lost(x) => {
-                    format!("score mate {}", ((x + 1) as f32 / 2.0).ceil() as u32)
-                }
-                _ => format!("score cp {}", score.as_cp()),
+                GameState::Won(x) => format!("score mate -{}", ((x+1) as f32 / 2.0).ceil() as u32),
+                GameState::Lost(x) => format!("score mate {}", ((x+1) as f32 / 2.0).ceil() as u32),
+                _ => format!("score cp {}", score.as_cp_with_contempt(0.0)),
             };
 
             if engine_options.show_wdl() {

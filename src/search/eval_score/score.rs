@@ -10,8 +10,8 @@ impl Score {
         Self(win_chance, draw_chance)
     }
 
-    pub fn single(&self) -> f32 {
-        (self.win_chance()) + self.draw_chance() * 0.5
+    pub fn single(&self, draw_score: f32) -> f32 {
+        self.win_chance() + self.draw_chance() * (0.5 - draw_score)
     }
 
     pub fn win_chance(&self) -> f32 {
@@ -26,12 +26,12 @@ impl Score {
         (1.0 - self.0 - self.1).clamp(0.0, 1.0)
     }
 
-    pub fn as_cp(&self) -> i32 {
-        (-400.0 * (1.0 / self.single().clamp(0.0, 1.0) - 1.0).ln()) as i32
+    pub fn as_cp(&self, draw_score: f32) -> i32 {
+        (-400.0 * (1.0 / self.single(draw_score).clamp(0.0, 1.0) - 1.0).ln()) as i32
     }
 
-    pub fn as_cp_f32(&self) -> f32 {
-        self.as_cp() as f32 / 100.0
+    pub fn as_cp_f32(&self, draw_score: f32) -> f32 {
+        self.as_cp(draw_score) as f32 / 100.0
     }
 
     pub fn reversed(&self) -> Self {

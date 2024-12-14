@@ -141,26 +141,29 @@ impl Tree {
         }
     }
 
-    pub fn get_pvs(&self, multi_pv: i32) -> Vec<(Score, GameState, Vec<Move>)> {
+    pub fn get_pvs(&self, multi_pv: i32, draw_contempt: f32) -> Vec<(Score, GameState, Vec<Move>)> {
         let mut results = Vec::new();
 
         for pv_idx in 0..multi_pv {
-            results.push(self.get_pv_by_index::<true, false>(pv_idx as usize));
+            results.push(self.get_pv_by_index::<true, false>(pv_idx as usize, draw_contempt));
         }
 
         results
     }
 
-    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(
-        &self,
-        idx: usize,
-    ) -> (Score, GameState, Vec<Move>) {
+    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(&self, idx: usize, draw_contempt: f32) -> (Score, GameState, Vec<Move>) {
         let mut result = Vec::new();
         let mut moves = self[self.root_index()].actions().clone();
 
         if moves.len() <= idx {
             return (Score::default(), GameState::Unresolved, result);
         }
+
+        let contempt = if US {
+            draw_contempt
+        } else {
+            0.0
+        };
 
         moves.sort_by(|a, b| {
             let a_score = if a.visits() == 0 {
@@ -170,10 +173,10 @@ impl Tree {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => a.score().single(),
+                    GameState::Unresolved => a.score().single(contempt),
                 }
             } else {
-                a.score().single()
+                a.score().single(draw_contempt)
             };
 
             let b_score = if b.visits() == 0 {
@@ -183,10 +186,10 @@ impl Tree {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => b.score().single(),
+                    GameState::Unresolved => b.score().single(contempt),
                 }
             } else {
-                b.score().single()
+                b.score().single(draw_contempt)
             };
 
             if a_score > b_score {
@@ -206,17 +209,20 @@ impl Tree {
         }
 
         let node_idx = moves[idx].node_index();
-        self.get_pv_internal::<NOT_US, US>(node_idx, &mut result);
+        self.get_pv_internal::<NOT_US, US>(node_idx, &mut result, draw_contempt);
         (moves[idx].score(), self[node_idx].state(), result)
     }
 
-    fn get_pv_internal<const US: bool, const NOT_US: bool>(
-        &self,
-        node_index: NodeIndex,
-        result: &mut Vec<Move>,
-    ) {
+    fn get_pv_internal<const US: bool, const NOT_US: bool>(&self, node_index: NodeIndex, result: &mut Vec<Move>, draw_contempt: f32) {
+
+        let contempt = if US {
+            draw_contempt
+        } else {
+            0.0
+        };
+
         //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
-        let best_action_idx = self[node_index].get_best_action(self);
+        let best_action_idx = self[node_index].get_best_action(self, contempt);
         if best_action_idx == usize::MAX {
             return;
         }
@@ -225,10 +231,8 @@ impl Tree {
         result.push(best_action.mv());
 
         let new_node_index = best_action.node_index();
-        if !new_node_index.is_null()
-            && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed)
-        {
-            self.get_pv_internal::<NOT_US, US>(new_node_index, result)
+        if !new_node_index.is_null() && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+            self.get_pv_internal::<NOT_US, US>(new_node_index, result, draw_contempt)
         }
     }
 }
