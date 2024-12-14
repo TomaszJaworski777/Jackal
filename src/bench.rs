@@ -74,7 +74,7 @@ impl Bench {
             let stats = SearchStats::new();
             let token = AtomicBool::new(false);
             tree.clear();
-            let contempt_parms = ContemptParams::new(0.0, 0.0);
+            let contempt_parms = ContemptParams::calculate_params(options);
             let mcts = Mcts::new(position, &tree, &token, options, &stats, &limits, &contempt_parms);
             mcts.search::<NoPrint>();
             total_nodes += stats.iters();

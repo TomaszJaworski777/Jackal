@@ -94,7 +94,7 @@ impl<'a> SearchEngine<'a> {
 
         self.game_ply += 2;
 
-        let contempt_parms = ContemptParams::new(0.8, -0.05);
+        let contempt_parms = ContemptParams::calculate_params(self.options);
 
         if self.options.analyse_mode() {
             self.tree.clear();
