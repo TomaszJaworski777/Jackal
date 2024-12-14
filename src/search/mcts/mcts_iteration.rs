@@ -47,17 +47,17 @@ impl<'a> Mcts<'a> {
             }
 
             //Calculate asymetrical draw contempt
-            let contempt = if US {
-                self.options.draw_contempt()
+            let draw_score = if US {
+                self.options.draw_score()
             } else {
-                0.0
+                self.options.draw_score_opp()
             };
 
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index = self.select_action::<ROOT>(
                 current_node_index,
                 action_cpy,
-                contempt
+                draw_score
             );
 
             let new_edge_cpy = self
@@ -109,7 +109,7 @@ impl<'a> Mcts<'a> {
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
-        contempt: f32
+        draw_score: f32
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
@@ -123,7 +123,7 @@ impl<'a> Mcts<'a> {
 
         //Variance scaling
         if parent_visits > 1 {
-            let frac = parent.variance(contempt).sqrt() / self.options.cpuct_variance_scale();
+            let frac = parent.variance(draw_score).sqrt() / self.options.cpuct_variance_scale();
             cpuct *= 1.0 + self.options.cpuct_variance_weight() * (frac - 1.0);
         }
 
@@ -160,7 +160,7 @@ impl<'a> Mcts<'a> {
                 }
             }
 
-            let score = score.single(contempt);
+            let score = score.single(draw_score);
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }

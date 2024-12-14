@@ -91,8 +91,8 @@ impl Edge {
         f64::from(self.squared_score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
     }
 
-    pub fn variance(&self, draw_contempt: f32) -> f32 {
-        (self.squared_score() - (self.score().single(draw_contempt) as f64).powi(2)).max(0.0) as f32
+    pub fn variance(&self, draw_score: f32) -> f32 {
+        (self.squared_score() - (self.score().single(draw_score) as f64).powi(2)).max(0.0) as f32
     }
 
     #[inline]

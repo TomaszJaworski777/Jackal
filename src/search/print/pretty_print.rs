@@ -97,7 +97,7 @@ impl SearchDisplay for PrettyPrint {
         );
 
         print!("                                    \r");
-        let score_cp = score.as_cp_f32_with_score(0.0);
+        let score_cp = score.as_cp_f32(0.5);
         let mut score_cp_string = match *state {
             GameState::Drawn => "+0.0".to_string(),
             GameState::Won(x) => format!("-M{}", ((x + 1) as f32 / 2.0).ceil() as u32),

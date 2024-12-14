@@ -120,7 +120,7 @@ impl SearchLimits {
         if let Some(soft_limit) = self.soft_limit {
             let time_passed = search_stats.time_passed() + options.move_overhead() as u64;
 
-            let best_move_score = tree[tree.root_index()].get_best_move(tree, options.draw_contempt()).1.as_cp_f32();
+            let best_move_score = tree[tree.root_index()].get_best_move(tree, options.draw_score()).1.as_cp_f32(0.5); //TODO: test adding contempt here
             let eval_diff = if *previous_score == f32::NEG_INFINITY {
                 0.0
             } else {
@@ -131,7 +131,7 @@ impl SearchLimits {
             let best_move_instability =
                 (1.0 + (*best_move_changes as f32 * 0.3).ln_1p()).clamp(1.0, 3.2);
 
-            let best_action_index = tree[tree.root_index()].get_best_action(tree, options.draw_contempt());
+            let best_action_index = tree[tree.root_index()].get_best_action(tree, options.draw_score());
             let best_action = tree.get_edge_clone(tree.root_index(), best_action_index);
             let nodes_effort = best_action.visits() as f32 / search_stats.iters() as f32;
             let best_move_visits =

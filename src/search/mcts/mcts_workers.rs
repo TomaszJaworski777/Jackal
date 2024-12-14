@@ -69,7 +69,7 @@ impl<'a> Mcts<'a> {
                 &mut depth,
             );
 
-            let draw_contempt = self.options.draw_contempt();
+            let draw_score = self.options.draw_score();
             if let Some(score) = result {
                 self.tree.root_edge().add_score(score);
             } else {
@@ -97,7 +97,7 @@ impl<'a> Mcts<'a> {
                 }
 
                 //Update best move
-                let new_best_move = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_contempt).0;
+                let new_best_move = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_score).0;
                 if new_best_move != *best_move {
                     *best_move = new_best_move;
                     *best_move_changes += 1;
@@ -138,7 +138,7 @@ impl<'a> Mcts<'a> {
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    &self.tree.get_pvs(self.options.multi_pv(), draw_contempt)
+                    &self.tree.get_pvs(self.options.multi_pv(), self.options)
                 )
             }
         }

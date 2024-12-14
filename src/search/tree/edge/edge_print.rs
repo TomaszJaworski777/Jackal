@@ -50,7 +50,7 @@ impl Edge {
         } else {
             score
         };
-        let score_cp = score.as_cp_f32_with_score(0.0);
+        let score_cp = score.as_cp_f32(0.5);
         let score_cp_string = if score_cp >= 0.0 {
             format!("+{:.2}", score_cp)
         } else {

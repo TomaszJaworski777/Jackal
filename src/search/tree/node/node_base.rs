@@ -106,9 +106,9 @@ impl Node {
         self.state() != GameState::Unresolved
     }
 
-    pub fn get_best_move(&self, tree: &Tree, draw_contempt: f32) -> (Move, Score) {
+    pub fn get_best_move(&self, tree: &Tree, draw_score: f32) -> (Move, Score) {
         //Extracts the best move from all possible root moves
-        let action_index = self.get_best_action(tree, draw_contempt);
+        let action_index = self.get_best_action(tree, draw_score);
 
         //If no action was selected then return null move
         if action_index == usize::MAX {
@@ -119,7 +119,7 @@ impl Node {
         (edge_clone.mv(), edge_clone.score())
     }
 
-    pub fn get_best_action(&self, tree: &Tree, draw_contempt: f32) -> usize {
+    pub fn get_best_action(&self, tree: &Tree, draw_score: f32) -> usize {
         self.get_best_action_by_key(|action| {
             if action.visits() == 0 {
                 f32::NEG_INFINITY
@@ -128,10 +128,10 @@ impl Node {
                     GameState::Lost(n) => 1.0 + f32::from(n),
                     GameState::Won(n) => f32::from(n) - 256.0,
                     GameState::Drawn => 0.5,
-                    GameState::Unresolved => action.score().single(draw_contempt),
+                    GameState::Unresolved => action.score().single(draw_score),
                 }
             } else {
-                action.score().single(draw_contempt)
+                action.score().single(draw_score)
             }
         })
     }
