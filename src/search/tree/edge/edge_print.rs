@@ -10,7 +10,7 @@ impl Edge {
         lowest_policy: f32,
         highest_policy: f32,
         state: GameState,
-        flip_score: bool
+        flip_score: bool,
     ) {
         let terminal_string = match state {
             GameState::Drawn => "   terminal draw".highlight_alt(),

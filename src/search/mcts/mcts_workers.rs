@@ -25,7 +25,14 @@ impl<'a> Mcts<'a> {
         loop {
             thread::scope(|s| {
                 s.spawn(|| {
-                    self.main_loop::<PRINTER, STM_WHITE, NSTM_WHITE>(printer, &mut best_move, &mut best_move_changes, &mut previous_score, &mut last_raport_time, &mut last_avg_depth);
+                    self.main_loop::<PRINTER, STM_WHITE, NSTM_WHITE>(
+                        printer,
+                        &mut best_move,
+                        &mut best_move_changes,
+                        &mut previous_score,
+                        &mut last_raport_time,
+                        &mut last_avg_depth,
+                    );
                 });
 
                 for _ in 0..self.options.threads() - 1 {
@@ -37,24 +44,19 @@ impl<'a> Mcts<'a> {
                 return;
             }
 
-            self.tree.advance_segments();     
+            self.tree.advance_segments();
         }
     }
 
-    fn main_loop<
-        PRINTER: SearchDisplay,
-        const STM_WHITE: bool,
-        const NSTM_WHITE: bool,
-    >(
+    fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         printer: &'a mut PRINTER,
         best_move: &'a mut Move,
         best_move_changes: &'a mut i32,
         previous_score: &'a mut f32,
         last_raport_time: &'a mut Instant,
-        last_avg_depth: &'a mut u32
+        last_avg_depth: &'a mut u32,
     ) {
-
         loop {
             //Start tree descend
             let mut depth = 0;
@@ -86,7 +88,10 @@ impl<'a> Mcts<'a> {
                 self.stats.update_time_passed();
 
                 //Check hard time limit
-                if self.limits.is_hard_time_limit_reached(self.stats, self.options) {
+                if self
+                    .limits
+                    .is_hard_time_limit_reached(self.stats, self.options)
+                {
                     self.interruption_token.store(true, Ordering::Relaxed)
                 }
 
@@ -100,7 +105,13 @@ impl<'a> Mcts<'a> {
 
             //Check soft time every larger chunk of iterations
             if self.stats.iters() % 16384 == 0 {
-                if self.limits.is_soft_time_limit_reached(self.stats, self.options, best_move_changes, previous_score, &self.tree) {
+                if self.limits.is_soft_time_limit_reached(
+                    self.stats,
+                    self.options,
+                    best_move_changes,
+                    previous_score,
+                    &self.tree,
+                ) {
                     self.interruption_token.store(true, Ordering::Relaxed)
                 }
             }
@@ -126,7 +137,7 @@ impl<'a> Mcts<'a> {
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    &self.tree.get_pvs(self.options.multi_pv())
+                    &self.tree.get_pvs(self.options.multi_pv()),
                 )
             }
         }

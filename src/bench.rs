@@ -75,7 +75,15 @@ impl Bench {
             let token = AtomicBool::new(false);
             tree.clear();
             let contempt_parms = ContemptParams::calculate_params(options);
-            let mcts = Mcts::new(position, &tree, &token, options, &stats, &limits, &contempt_parms);
+            let mcts = Mcts::new(
+                position,
+                &tree,
+                &token,
+                options,
+                &stats,
+                &limits,
+                &contempt_parms,
+            );
             mcts.search::<NoPrint>();
             total_nodes += stats.iters();
             total_time += stats.time_passed();

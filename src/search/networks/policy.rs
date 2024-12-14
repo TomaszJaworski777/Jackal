@@ -43,11 +43,21 @@ pub struct PolicyNetwork {
 }
 
 impl PolicyNetwork {
-    pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, vertical_flip: u8, cache: &mut [Option<Vec<f32>>; 192]) -> f32 {
-        let see_index = usize::from(SEE::static_exchange_evaluation::<true, false>(board, mv, -108));
+    pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
+        &self,
+        board: &ChessBoard,
+        inputs: &Vec<usize>,
+        mv: Move,
+        vertical_flip: u8,
+        cache: &mut [Option<Vec<f32>>; 192],
+    ) -> f32 {
+        let see_index = usize::from(SEE::static_exchange_evaluation::<true, false>(
+            board, mv, -108,
+        ));
 
         let from_index = (mv.get_from_square().get_raw() ^ vertical_flip) as usize;
-        let to_index = (mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
+        let to_index =
+            (mv.get_to_square().get_raw() ^ vertical_flip) as usize + 64 + (see_index * 64);
 
         let from = if let Some(cache_entry) = &cache[from_index] {
             cache_entry.clone()
@@ -56,7 +66,7 @@ impl PolicyNetwork {
             cache[from_index] = Some(result.clone());
             result
         };
-        
+
         let to = if let Some(cache_entry) = &cache[to_index] {
             cache_entry.clone()
         } else {
@@ -73,25 +83,25 @@ impl PolicyNetwork {
         mut method: F,
     ) {
         let flip = board.side_to_move() == Side::BLACK;
-    
+
         for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
             let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
-    
+
             let mut stm_bitboard =
                 board.get_piece_mask_for_side::<STM_WHITE>(Piece::from_raw(piece));
             let mut nstm_bitboard =
                 board.get_piece_mask_for_side::<NSTM_WHITE>(Piece::from_raw(piece));
-        
+
             if flip {
                 stm_bitboard = stm_bitboard.flip();
                 nstm_bitboard = nstm_bitboard.flip();
             }
-    
+
             stm_bitboard.map(|square| {
                 let feat = piece_index + (square.get_raw() as usize);
                 method(feat)
             });
-    
+
             nstm_bitboard.map(|square| {
                 let feat = 384 + piece_index + (square.get_raw() as usize);
                 method(feat)

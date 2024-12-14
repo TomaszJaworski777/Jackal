@@ -1,21 +1,22 @@
-use crate::EngineOptions;
 use super::ContemptParams;
+use crate::EngineOptions;
 
 pub struct Contempt;
 impl Contempt {
-    pub fn wdl_rescale<const US: bool>(v: &mut f32, d: &mut f32, options: &EngineOptions, contempt_parms: &ContemptParams) {
-        
-        let sign = if US {
-            1.0
-        } else {
-            -1.0
-        };
+    pub fn wdl_rescale<const US: bool>(
+        v: &mut f32,
+        d: &mut f32,
+        options: &EngineOptions,
+        contempt_parms: &ContemptParams,
+    ) {
+        let sign = if US { 1.0 } else { -1.0 };
 
         let w = (1.0 + *v - *d) / 2.0;
         let l = (1.0 - *v - *d) / 2.0;
 
         const EPS: f32 = 0.0001;
-        if w > EPS && *d > EPS && l > EPS && w < (1.0 - EPS) && *d < (1.0 - EPS) && l < (1.0 - EPS) { 
+        if w > EPS && *d > EPS && l > EPS && w < (1.0 - EPS) && *d < (1.0 - EPS) && l < (1.0 - EPS)
+        {
             let a = (1.0 / l - 1.0).ln();
             let b = (1.0 / w - 1.0).ln();
             let mut s = 2.0 / (a + b);
@@ -36,4 +37,4 @@ impl Contempt {
 
 fn fast_logistic(x: f32) -> f32 {
     1.0 / (1.0 + (-x).exp())
-}  
+}

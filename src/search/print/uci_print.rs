@@ -23,7 +23,7 @@ impl SearchDisplay for UciPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        pvs: &Vec<(Score, GameState, Vec<Move>)>
+        pvs: &Vec<(Score, GameState, Vec<Move>)>,
     ) {
         for multi_pv_idx in 0..pvs.len() {
             let (mut score, state, pv) = &pvs[multi_pv_idx];
@@ -45,11 +45,15 @@ impl SearchDisplay for UciPrint {
 
             let mut score_text = match *state {
                 GameState::Drawn => "score cp 0".to_string(),
-                GameState::Won(x) => format!("score mate -{}", ((x+1) as f32 / 2.0).ceil() as u32),
-                GameState::Lost(x) => format!("score mate {}", ((x+1) as f32 / 2.0).ceil() as u32),
+                GameState::Won(x) => {
+                    format!("score mate -{}", ((x + 1) as f32 / 2.0).ceil() as u32)
+                }
+                GameState::Lost(x) => {
+                    format!("score mate {}", ((x + 1) as f32 / 2.0).ceil() as u32)
+                }
                 _ => format!("score cp {}", score.as_cp()),
             };
-    
+
             if engine_options.show_wdl() {
                 score_text.push_str(&format!(
                     " wdl {} {} {}",

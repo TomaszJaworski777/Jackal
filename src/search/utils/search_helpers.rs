@@ -1,7 +1,8 @@
 use spear::ChessPosition;
 
 use crate::{
-    search::{networks::ValueNetwork, Score}, EngineOptions, GameState, Tree
+    search::{networks::ValueNetwork, Score},
+    EngineOptions, GameState, Tree,
 };
 
 use super::contempt::{Contempt, ContemptParams};
@@ -15,10 +16,9 @@ impl SearchHelpers {
         key: u64,
         tree: &Tree,
         material_difference: i32,
-        options: &EngineOptions, 
-        contempt_parms: &ContemptParams
+        options: &EngineOptions,
+        contempt_parms: &ContemptParams,
     ) -> Score {
-
         let score_bonus = if material_difference != 0 {
             options.material_reduction_bonus() / 10.0
         } else {
@@ -33,18 +33,27 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 } else {
-                    let (win_chance, draw_chance, _) = SearchHelpers::get_position_score::<STM_WHITE, NSTM_WHITE, US>(current_position, options, contempt_parms);
+                    let (win_chance, draw_chance, _) =
+                        SearchHelpers::get_position_score::<STM_WHITE, NSTM_WHITE, US>(
+                            current_position,
+                            options,
+                            contempt_parms,
+                        );
                     let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);
 
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 }
-            },
+            }
         }
     }
 
-    pub fn get_position_score<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool>(current_position: &mut ChessPosition, options: &EngineOptions, contempt_parms: &ContemptParams) -> (f32, f32, f32) {
+    pub fn get_position_score<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool>(
+        current_position: &mut ChessPosition,
+        options: &EngineOptions,
+        contempt_parms: &ContemptParams,
+    ) -> (f32, f32, f32) {
         let (w, mut d, l) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
         let mut v = w - l;
 
@@ -55,7 +64,7 @@ impl SearchHelpers {
         let d_new = d;
 
         (w_new, d_new, l_new)
-    }  
+    }
 
     pub fn get_position_state<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         position: &ChessPosition,

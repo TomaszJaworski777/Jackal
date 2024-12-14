@@ -16,7 +16,7 @@ pub struct Tree {
     pub(super) root_edge: Edge,
     pub(super) current_segment: AtomicUsize,
     pub tree_size_in_bytes: usize,
-    hash_table: HashTable
+    hash_table: HashTable,
 }
 
 impl Index<NodeIndex> for Tree {
@@ -49,7 +49,7 @@ impl Tree {
             root_edge: Edge::new(NodeIndex::from_raw(0), Move::NULL, 0.0),
             current_segment: AtomicUsize::new(0),
             tree_size_in_bytes: tree_bytes,
-            hash_table
+            hash_table,
         }
     }
 
@@ -151,7 +151,10 @@ impl Tree {
         results
     }
 
-    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(&self, idx: usize) -> (Score, GameState, Vec<Move>) {
+    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(
+        &self,
+        idx: usize,
+    ) -> (Score, GameState, Vec<Move>) {
         let mut result = Vec::new();
         let mut moves = self[self.root_index()].actions().clone();
 
@@ -207,8 +210,11 @@ impl Tree {
         (moves[idx].score(), self[node_idx].state(), result)
     }
 
-    fn get_pv_internal<const US: bool, const NOT_US: bool>(&self, node_index: NodeIndex, result: &mut Vec<Move>) {
-
+    fn get_pv_internal<const US: bool, const NOT_US: bool>(
+        &self,
+        node_index: NodeIndex,
+        result: &mut Vec<Move>,
+    ) {
         //We recursivly descend down the tree picking the best moves and adding them to the result forming pv line
         let best_action_idx = self[node_index].get_best_action(self);
         if best_action_idx == usize::MAX {
@@ -217,9 +223,11 @@ impl Tree {
 
         let best_action = self.get_edge_clone(node_index, best_action_idx);
         result.push(best_action.mv());
-        
+
         let new_node_index = best_action.node_index();
-        if !new_node_index.is_null() && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+        if !new_node_index.is_null()
+            && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed)
+        {
             self.get_pv_internal::<NOT_US, US>(new_node_index, result)
         }
     }

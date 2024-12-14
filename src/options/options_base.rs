@@ -1,5 +1,6 @@
 use super::{
-    check_bool::CheckBool, spin_float::SpinOptionFloat, spin_float_tunable::SpinOptionFloatTunable, spin_int::SpinOptionInt, OptionTrait
+    check_bool::CheckBool, spin_float::SpinOptionFloat, spin_float_tunable::SpinOptionFloatTunable,
+    spin_int::SpinOptionInt, OptionTrait,
 };
 
 macro_rules! create_option_structs {
@@ -58,7 +59,7 @@ create_option_structs!(
     "UCI_AnalyseMode"        => analyse_mode:             CheckBool,       false;
     "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.0, 0.0, 1.0;
     "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
-    
+
     "MaxReasonableS"      => max_reasonable_s:     SpinOptionFloat, 2.0, 0.0, 100.0;
     "Contempt"            => contempt:             SpinOptionFloat, 17.5, -10000.0, 10000.0;
     "ContemptMax"         => contempt_max:         SpinOptionFloat, 1000.0, 0.0, 10000.0;

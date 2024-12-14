@@ -6,7 +6,8 @@ use std::sync::{
 use spear::{ChessBoard, ChessPosition, Move, Piece, Side};
 
 use crate::{
-    search::{tree::Edge, NodeIndex, Score}, EngineOptions, GameState, PolicyNetwork, Tree
+    search::{tree::Edge, NodeIndex, Score},
+    EngineOptions, GameState, PolicyNetwork, Tree,
 };
 
 pub struct Node {
@@ -14,7 +15,7 @@ pub struct Node {
     state: AtomicU16,
     key: AtomicU64,
     threads: AtomicU16,
-    gini_impurity: AtomicU32
+    gini_impurity: AtomicU32,
 }
 
 impl Default for Node {
@@ -28,9 +29,9 @@ impl Node {
         Self {
             actions: RwLock::new(Vec::new()),
             state: AtomicU16::new(u16::from(state)),
-            key: AtomicU64::new(0), 
+            key: AtomicU64::new(0),
             threads: AtomicU16::new(0),
-            gini_impurity: AtomicU32::new(0)
+            gini_impurity: AtomicU32::new(0),
         }
     }
 
@@ -79,7 +80,7 @@ impl Node {
     }
 
     pub fn inc_threads(&self) -> u16 {
-        self.threads.fetch_add(1,Ordering::Relaxed)
+        self.threads.fetch_add(1, Ordering::Relaxed)
     }
 
     pub fn dec_threads(&self) -> u16 {
@@ -91,7 +92,8 @@ impl Node {
     }
 
     pub fn set_gini_impurity(&self, gini_impurity: f32) {
-        self.gini_impurity.store(f32::to_bits(gini_impurity), Ordering::Relaxed);
+        self.gini_impurity
+            .store(f32::to_bits(gini_impurity), Ordering::Relaxed);
     }
 
     #[inline]
@@ -152,7 +154,7 @@ impl Node {
     pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
         position: &ChessPosition,
-        options: &EngineOptions
+        options: &EngineOptions,
     ) {
         let mut actions = self.actions_mut();
 
@@ -177,13 +179,19 @@ impl Node {
         let mut total = 0.0;
 
         //Network output cache to prevent processing the same subnet twice
-        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
         const MULTIPLIER: f32 = 1000.0;
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, mv, vertical_flip, &mut cache) + mva_lvv(mv, position.board(), options);
+                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
+                    position.board(),
+                    &inputs,
+                    mv,
+                    vertical_flip,
+                    &mut cache,
+                ) + mva_lvv(mv, position.board(), options);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
@@ -220,7 +228,7 @@ impl Node {
     pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
         &self,
         position: &ChessPosition,
-        options: &EngineOptions
+        options: &EngineOptions,
     ) {
         let mut actions = self.actions_mut();
 
@@ -235,25 +243,27 @@ impl Node {
             56
         };
 
-        let pst = if ROOT {
-            options.root_pst()
-        } else {
-            1.0
-        };
+        let pst = if ROOT { options.root_pst() } else { 1.0 };
 
         //Network output cache to prevent processing the same subnet twice
-        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192]; 
+        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
         let mut policies = Vec::new();
         let mut max: f32 = f32::NEG_INFINITY;
         let mut total = 0.0;
 
         for action in actions.iter_mut() {
-            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(position.board(), &inputs, action.mv(), vertical_flip, &mut cache) + mva_lvv(action.mv(), position.board(), options);
+            let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
+                position.board(),
+                &inputs,
+                action.mv(),
+                vertical_flip,
+                &mut cache,
+            ) + mva_lvv(action.mv(), position.board(), options);
             policies.push(policy);
             max = max.max(policy);
         }
-        
+
         let is_single_action = actions.len() == 1;
         for policy in policies.iter_mut() {
             if is_single_action {
@@ -280,5 +290,7 @@ fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
         return 0.0;
     }
 
-    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize] - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize]) * options.policy_sac_bonus()
+    (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize]
+        - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize])
+        * options.policy_sac_bonus()
 }

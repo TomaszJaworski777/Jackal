@@ -14,7 +14,7 @@ pub struct Mcts<'a> {
     pub(super) stats: &'a SearchStats,
     pub(super) limits: &'a SearchLimits,
     pub(super) start_material: i32,
-    pub(super) contempt_parms: &'a ContemptParams
+    pub(super) contempt_parms: &'a ContemptParams,
 }
 
 impl<'a> Mcts<'a> {
@@ -25,7 +25,7 @@ impl<'a> Mcts<'a> {
         options: &'a EngineOptions,
         stats: &'a SearchStats,
         limits: &'a SearchLimits,
-        contempt_parms: &'a ContemptParams
+        contempt_parms: &'a ContemptParams,
     ) -> Self {
         Self {
             root_position,
@@ -34,8 +34,11 @@ impl<'a> Mcts<'a> {
             options,
             stats,
             limits,
-            start_material: Self::calculate_stm_material(&root_position, root_position.board().side_to_move()),
-            contempt_parms
+            start_material: Self::calculate_stm_material(
+                &root_position,
+                root_position.board().side_to_move(),
+            ),
+            contempt_parms,
         }
     }
 
@@ -53,9 +56,11 @@ impl<'a> Mcts<'a> {
             }
         } else {
             if side_to_move == Side::WHITE {
-                self.tree[root_index].recalculate_policy::<true, false, true>(&self.root_position, self.options)
+                self.tree[root_index]
+                    .recalculate_policy::<true, false, true>(&self.root_position, self.options)
             } else {
-                self.tree[root_index].recalculate_policy::<false, true, true>(&self.root_position, self.options)
+                self.tree[root_index]
+                    .recalculate_policy::<false, true, true>(&self.root_position, self.options)
             }
         }
 
@@ -75,7 +80,7 @@ impl<'a> Mcts<'a> {
             self.options,
             self.limits,
             self.tree.total_usage(),
-            &self.tree.get_pvs(self.options.multi_pv())
+            &self.tree.get_pvs(self.options.multi_pv()),
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)
@@ -84,12 +89,16 @@ impl<'a> Mcts<'a> {
     pub(super) fn calculate_stm_material(position: &ChessPosition, side: Side) -> i32 {
         const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
         let mut result = 0;
-    
+
         for piece in Piece::PAWN.get_raw()..=Piece::QUEEN.get_raw() {
             let piece_mask = if side == Side::WHITE {
-                position.board().get_piece_mask_for_side::<true>(Piece::from_raw(piece))
+                position
+                    .board()
+                    .get_piece_mask_for_side::<true>(Piece::from_raw(piece))
             } else {
-                position.board().get_piece_mask_for_side::<false>(Piece::from_raw(piece))
+                position
+                    .board()
+                    .get_piece_mask_for_side::<false>(Piece::from_raw(piece))
             };
             result += piece_mask.pop_count() as i32 * PIECE_VALUES[piece as usize];
         }

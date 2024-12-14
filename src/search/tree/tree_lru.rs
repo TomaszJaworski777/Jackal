@@ -27,7 +27,9 @@ impl Tree {
 
             //Create new node in the current segment
             let state = SearchHelpers::get_position_state::<STM_WHITE, NSTM_WHITE>(position);
-            let new_index = self.current_segment().add(state, position.board().get_key().get_raw())?;
+            let new_index = self
+                .current_segment()
+                .add(state, position.board().get_key().get_raw())?;
 
             //Assign new node index to the edge
             actions[action_index].set_node_index(new_index);

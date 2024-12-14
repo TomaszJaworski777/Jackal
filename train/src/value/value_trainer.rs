@@ -1,5 +1,10 @@
 use bullet::{
-    format::{chess::BoardIter, ChessBoard}, inputs::{self, InputType}, loader, lr, operations, optimiser::{self, AdamWOptimiser, AdamWParams}, outputs, wdl, Activation, ExecutionContext, Graph, GraphBuilder, LocalSettings, Node, QuantTarget, Shape, Trainer, TrainingSchedule, TrainingSteps
+    format::{chess::BoardIter, ChessBoard},
+    inputs::{self, InputType},
+    loader, lr, operations,
+    optimiser::{self, AdamWOptimiser, AdamWParams},
+    outputs, wdl, Activation, ExecutionContext, Graph, GraphBuilder, LocalSettings, Node,
+    QuantTarget, Shape, Trainer, TrainingSchedule, TrainingSteps,
 };
 use spear::{Bitboard, Piece, Square};
 
@@ -27,7 +32,7 @@ impl ValueTrainer {
             },
             save_rate: 5,
         };
-    
+
         let optimiser_params = optimiser::AdamWParams {
             decay: 0.01,
             beta1: 0.9,
@@ -35,21 +40,22 @@ impl ValueTrainer {
             min_weight: -0.99,
             max_weight: 0.99,
         };
-    
+
         trainer.set_optimiser_params(optimiser_params);
-    
+
         let settings = LocalSettings {
             threads: 8,
             test_set: None,
             output_directory: "checkpoints",
             batch_queue_size: 512,
         };
-    
-        let data_loader = loader::DirectSequentialDataLoader::new(&["./shuffled_finetune_data.bin"]);
+
+        let data_loader =
+            loader::DirectSequentialDataLoader::new(&["./shuffled_finetune_data.bin"]);
 
         trainer.load_from_checkpoint("checkpoints/value_013_1024_wdl-600");
         trainer.run(&schedule, &settings, &data_loader);
-    
+
         for fen in [
             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
@@ -68,7 +74,7 @@ impl ValueTrainer {
             let sum = w + d + l;
 
             println!("FEN: {fen}");
-            println!("EVAL: [{},{},{}]", w/sum, d/sum, l/sum);
+            println!("EVAL: [{},{},{}]", w / sum, d / sum, l / sum);
         }
     }
 }
@@ -157,7 +163,9 @@ impl Iterator for ThreatsDefencesMirroredInputsIter {
     }
 }
 
-fn make_trainer(l1: usize) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInputs, outputs::Single> {
+fn make_trainer(
+    l1: usize,
+) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInputs, outputs::Single> {
     let num_inputs = ThreatsDefencesMirroredInputs.size();
 
     let (mut graph, output_node) = build_network(num_inputs, l1);
@@ -186,7 +194,7 @@ fn make_trainer(l1: usize) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInp
             ("l1w".to_string(), QuantTarget::Float),
             ("l1b".to_string(), QuantTarget::Float),
         ],
-        false
+        false,
     )
 }
 

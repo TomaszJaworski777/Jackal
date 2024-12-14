@@ -16,7 +16,7 @@ pub struct PrettyPrint {
     start_height: i32,
     max_history_size: usize,
     history: Vec<(u128, String)>,
-    last_best_move: Move
+    last_best_move: Move,
 }
 #[allow(unused)]
 impl SearchDisplay for PrettyPrint {
@@ -26,7 +26,11 @@ impl SearchDisplay for PrettyPrint {
         clear_terminal_screen();
         position.board().draw_board();
         println!(" {}    {}", "Threads:".label(), engine_options.threads());
-        println!(" {}  {}B", "Tree Size:".label(), bytes_to_string(tree.tree_size_in_bytes as u128));
+        println!(
+            " {}  {}B",
+            "Tree Size:".label(),
+            bytes_to_string(tree.tree_size_in_bytes as u128)
+        );
 
         #[cfg(target_os = "linux")]
         let start_height = 14;
@@ -52,7 +56,7 @@ impl SearchDisplay for PrettyPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        pvs: &Vec<(Score, GameState, Vec<Move>)>
+        pvs: &Vec<(Score, GameState, Vec<Move>)>,
     ) {
         let (mut score, state, pv) = &pvs[0];
         score = match *state {
@@ -96,13 +100,15 @@ impl SearchDisplay for PrettyPrint {
         let score_cp = score.as_cp_f32();
         let mut score_cp_string = match *state {
             GameState::Drawn => "+0.0".to_string(),
-            GameState::Won(x) => format!("-M{}", ((x+1) as f32 / 2.0).ceil() as u32),
-            GameState::Lost(x) => format!("+M{}", ((x+1) as f32 / 2.0).ceil() as u32),
-            _ => if score_cp >= 0.0 {
-                format!("+{:.2}", score_cp)
-            } else {
-                format!("{:.2}", score_cp)
-            },
+            GameState::Won(x) => format!("-M{}", ((x + 1) as f32 / 2.0).ceil() as u32),
+            GameState::Lost(x) => format!("+M{}", ((x + 1) as f32 / 2.0).ceil() as u32),
+            _ => {
+                if score_cp >= 0.0 {
+                    format!("+{:.2}", score_cp)
+                } else {
+                    format!("{:.2}", score_cp)
+                }
+            }
         };
 
         println!(

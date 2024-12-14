@@ -12,20 +12,23 @@ impl<'a> Mcts<'a> {
         const NSTM_WHITE: bool,
         const ROOT: bool,
         const US: bool,
-        const NOT_US: bool
+        const NOT_US: bool,
     >(
         &self,
         current_node_index: NodeIndex,
         action_cpy: &Edge,
         current_position: &mut ChessPosition,
-        depth: &mut u32
+        depth: &mut u32,
     ) -> Option<Score> {
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
         let score = if !ROOT
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
-            let current_material = Self::calculate_stm_material(&current_position, self.root_position.board().side_to_move());
+            let current_material = Self::calculate_stm_material(
+                &current_position,
+                self.root_position.board().side_to_move(),
+            );
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, US>(
                 current_position,
                 self.tree[current_node_index].state(),
@@ -33,20 +36,18 @@ impl<'a> Mcts<'a> {
                 self.tree,
                 self.start_material - current_material,
                 self.options,
-                self.contempt_parms
+                self.contempt_parms,
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                self.tree[current_node_index].expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
+                self.tree[current_node_index]
+                    .expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
             }
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.select_action::<ROOT>(
-                current_node_index,
-                action_cpy
-            );
+            let best_action_index = self.select_action::<ROOT>(current_node_index, action_cpy);
             let new_edge_cpy = self
                 .tree
                 .get_edge_clone(current_node_index, best_action_index);
@@ -92,19 +93,15 @@ impl<'a> Mcts<'a> {
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    fn select_action<const ROOT: bool>(
-        &self,
-        node_idx: NodeIndex,
-        parent: &Edge
-    ) -> usize {
+    fn select_action<const ROOT: bool>(&self, node_idx: NodeIndex, parent: &Edge) -> usize {
         assert!(self.tree[node_idx].has_children());
 
         let parent_visits = parent.visits();
 
-        let mut cpuct = if ROOT { 
-            self.options.root_cpuct_value() 
-        } else { 
-            self.options.cpuct_value() 
+        let mut cpuct = if ROOT {
+            self.options.root_cpuct_value()
+        } else {
+            self.options.cpuct_value()
         };
 
         //Variance scaling
@@ -117,8 +114,10 @@ impl<'a> Mcts<'a> {
         cpuct *= 1.0 + ((parent_visits as f32 + scale) / scale).ln();
 
         //Exploration scaling with visits and gini impurity
-        let mut explore_scale = (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
-        explore_scale *= (0.679 - 1.634 * (self.tree[node_idx].gini_impurity() + 0.001).ln()).min(2.1);
+        let mut explore_scale =
+            (self.options.exploration_tau() * (parent_visits.max(1) as f32).ln()).exp();
+        explore_scale *=
+            (0.679 - 1.634 * (self.tree[node_idx].gini_impurity() + 0.001).ln()).min(2.1);
 
         let explore_value = cpuct * explore_scale;
         self.tree[node_idx].get_best_action_by_key(|action| {
@@ -137,7 +136,6 @@ impl<'a> Mcts<'a> {
                 let v = f64::from(visits);
 
                 if thrds > 0.0 {
-
                     //Score adjusted by the amount of thread visits
                     let w = f64::from(score.win_chance()) * v / (v + thrds);
                     let d = f64::from(score.draw_chance()) * v / (v + thrds);
