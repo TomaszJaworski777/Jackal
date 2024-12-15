@@ -275,9 +275,15 @@ impl Node {
             }
         }
 
+        let mut policy_squares = 0.0;
         for (i, action) in actions.iter_mut().enumerate() {
-            action.update_policy(policies[i] / total);
+            let policy = policies[i] / total;
+            action.update_policy(policy);
+            policy_squares += policy * policy;
         }
+
+        let gini_impurity = (1.0 - policy_squares).clamp(0.0, 1.0);
+        self.set_gini_impurity(gini_impurity);
     }
 }
 
