@@ -39,7 +39,9 @@ Jackal is developed by Tomasz Jaworski. Special thanks to:
 * [@jw1912](https://github.com/jw1912) for helping me with my previous engine, which allowed me to make Jackal.
 * [@jw1912](https://github.com/jw1912) for creating [goober](https://github.com/jw1912/goober), that I used for policy training and inference.
 * [@jw1912](https://github.com/jw1912) for creating [bullet](https://github.com/jw1912/bullet), that I used for value net training.
-* [@Viren6](https://github.com/Viren6) for helping me with concepts of aggressivness in MCTS.
+* [@Viren6](https://github.com/Viren6) and [@Adam-Kulju](https://github.com/Adam-Kulju) for helping me with concepts of aggressivness in MCTS.
+* [@jw1912](https://github.com/jw1912) and [@Viren6](https://github.com/Viren6) for creating [Monty](https://github.com/official-monty/Monty) that provided a lot of help during bugfixing or understanding new ideas.
+* [Stefan Pohl](https://www.sp-cc.de) for creating EAS tool, that I'm using to measure progress in aggressivness of Jackal.
 
 ## Command List
 Jackal supports all necessary commands to initialize UCI protocol, full description of the protocol can be found [here](https://gist.github.com/DOBRO/2592c6dad754ba67e6dcaec8c90165bf). Here are additional commands:
@@ -77,9 +79,10 @@ Jackal currently supports multiple threads, but due to some unidentified bug it 
 ## EAS
 I measured Jackal's EAS to be around 230k, while I also noticed it is very slow to end the games and draws a lot of winning positions. My current guess is that MCTS heavily relies on its neural nets and my current data is just not strong enough to be efficient in end games.
 
-| EAS Score| Sacs | Shorts | Bad draws | Avg. win moves  | Engine/player  |
+| EAS Score| Sacs | Shorts | Bad draws | Avg. win moves  | Version  |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| 229966 | 40.00% | 26.71% | 17.36% | 103 | Jackal |
+| 194262 | 34.56% | 16.64% | 13.91% | 75 | 1.1.0 |
+| 229966 | 40.00% | 26.71% | 17.36% | 103 | 1.0.0 |
 
 List of featues increasing EAS:
 - Policy bonus to sacrifices
