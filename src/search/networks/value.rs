@@ -1,18 +1,19 @@
 use spear::{ChessBoard, Piece, Side};
 
-use super::NetworkLayer;
+use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA, QB};
 
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v200cos1024td006wdl.network"
+        "../../../resources/networks/v190cos1024td006wdlq.network"
     ))
 };
 
 #[repr(C)]
+#[repr(align(64))]
 pub struct ValueNetwork {
-    l1: NetworkLayer<{ 768 * 4 }, 1024>,
-    l2: NetworkLayer<1024, 3>,
+    l1: QunatisedNetworkLayer<i16, { 768 * 4 }, 1024>,
+    l2: QunatisedNetworkLayer<i16, 1024, 3>,
 }
 
 impl ValueNetwork {
@@ -32,11 +33,18 @@ impl ValueNetwork {
             }
         });
 
-        let out = self.l2.forward(&l1_out);
+        let mut out = QuantizedAccumulator::<i32, 3>::default();
 
-        let mut win_chance = out.values()[2];
-        let mut draw_chance = out.values()[1];
-        let mut loss_chance = out.values()[0];
+        for (&neuron, weights) in l1_out.values().iter().zip(self.l2.weights.iter()) {
+            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
+            for (i, &j) in out.vals.iter_mut().zip(weights.vals.iter()) {
+                *i += act * i32::from(j);
+            }
+        }
+
+        let mut win_chance = (out.values()[2] as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[2])) / f32::from(QA * QB);
+        let mut draw_chance = (out.values()[1] as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[1])) / f32::from(QA * QB);
+        let mut loss_chance = (out.values()[0] as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[0])) / f32::from(QA * QB);
 
         let max = win_chance.max(draw_chance).max(loss_chance);
 
