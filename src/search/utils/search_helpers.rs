@@ -1,7 +1,7 @@
 use spear::ChessPosition;
 
 use crate::{
-    search::{networks::ValueNetwork, Score},
+    search::{Score, ValueNetwork},
     EngineOptions, GameState, Tree,
 };
 
