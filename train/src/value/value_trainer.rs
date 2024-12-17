@@ -9,6 +9,8 @@ use bullet::{
 use spear::{Bitboard, Piece, Square};
 
 const HIDDEN_SIZE: usize = 1024;
+const QA: i16 = 255;
+const QB: i16 = 64;
 
 pub struct ValueTrainer;
 impl ValueTrainer {
@@ -53,7 +55,7 @@ impl ValueTrainer {
         let data_loader =
             loader::DirectSequentialDataLoader::new(&["./shuffled_finetune_data.bin"]);
 
-        trainer.load_from_checkpoint("checkpoints/value_013_1024_wdl-600");
+        //trainer.load_from_checkpoint("checkpoints/value_014_1024_wdl-190");
         trainer.run(&schedule, &settings, &data_loader);
 
         for fen in [
@@ -66,7 +68,7 @@ impl ValueTrainer {
             let raw = trainer.eval_raw_output(fen);
             let (mut w, mut d, mut l) = (raw[2], raw[1], raw[0]);
             let max = w.max(d).max(l);
-
+            
             w = (w - max).exp();
             d = (d - max).exp();
             l = (l - max).exp();
@@ -189,10 +191,10 @@ fn make_trainer(
         ThreatsDefencesMirroredInputs,
         outputs::Single,
         vec![
-            ("l0w".to_string(), QuantTarget::Float),
-            ("l0b".to_string(), QuantTarget::Float),
-            ("l1w".to_string(), QuantTarget::Float),
-            ("l1b".to_string(), QuantTarget::Float),
+            ("l0w".to_string(), QuantTarget::I16(QA)),
+            ("l0b".to_string(), QuantTarget::I16(QA)),
+            ("l1w".to_string(), QuantTarget::I16(QB)),
+            ("l1b".to_string(), QuantTarget::I16(QA * QB)),
         ],
         false,
     )
