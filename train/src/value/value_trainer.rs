@@ -8,7 +8,7 @@ use bullet::{
 };
 use spear::{Bitboard, Piece, Square};
 
-const HIDDEN_SIZE: usize = 1024;
+const HIDDEN_SIZE: usize = 2048;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
@@ -18,7 +18,7 @@ impl ValueTrainer {
         let mut trainer = make_trainer(HIDDEN_SIZE);
 
         let schedule: TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> = TrainingSchedule {
-            net_id: "value_014_1024_wdl".to_string(),
+            net_id: "value_014_2048_wdl".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
