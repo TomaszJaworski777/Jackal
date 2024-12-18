@@ -18,19 +18,19 @@ impl ValueTrainer {
         let mut trainer = make_trainer(HIDDEN_SIZE);
 
         let schedule: TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> = TrainingSchedule {
-            net_id: "value_014_2048_wdl".to_string(),
+            net_id: "value_014_2048_wdl-ft1".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
                 batches_per_superbatch: 6104,
                 start_superbatch: 1,
-                end_superbatch: 200,
+                end_superbatch: 25,
             },
             wdl_scheduler: wdl::ConstantWDL { value: 1.0 },
             lr_scheduler: lr::CosineDecayLR {
-                initial_lr: 0.001,
-                final_lr: 0.00001,
-                final_superbatch: 200,
+                initial_lr: 0.00000001,
+                final_lr: 0.0000000001,
+                final_superbatch: 25,
             },
             save_rate: 5,
         };
@@ -53,9 +53,9 @@ impl ValueTrainer {
         };
 
         let data_loader =
-            loader::DirectSequentialDataLoader::new(&["./bullet_data.bin"]);
+            loader::DirectSequentialDataLoader::new(&["./finetune_data.bin"]);
 
-        //trainer.load_from_checkpoint("checkpoints/value_014_1024_wdl-190");
+        trainer.load_from_checkpoint("checkpoints/value_014_2048_wdl-600");
         trainer.run(&schedule, &settings, &data_loader);
 
         for fen in [

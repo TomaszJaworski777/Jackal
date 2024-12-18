@@ -5,7 +5,7 @@ use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA,
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v190cos2048td006wdlq.network"
+        "../../../resources/networks/v600cos2048td006wdlq-ft2.network"
     ))
 };
 
