@@ -11,8 +11,8 @@ codegen-units = 1
 opt-level = 3
 
 [dependencies]
-colored = "*"
-console = "0.15"
+colored = "=2.1.0"
+console = "=0.15.8"
 term_cursor = "0.2.1"
 term_size = "0.3.2"
 bytemuck = "1.18.0"
