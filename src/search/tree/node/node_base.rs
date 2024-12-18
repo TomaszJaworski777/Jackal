@@ -3,7 +3,7 @@ use std::sync::{
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-use spear::{ChessBoard, ChessPosition, Move, Piece, Side};
+use crate::spear::{ChessBoard, ChessPosition, Move, Piece, Side};
 
 use crate::{
     search::{tree::Edge, NodeIndex, Score},

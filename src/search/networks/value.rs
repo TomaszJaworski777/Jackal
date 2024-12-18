@@ -1,4 +1,4 @@
-use spear::{ChessBoard, Piece, Side};
+use crate::spear::{ChessBoard, Piece, Side};
 
 use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA, QB};
 

@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicI16, AtomicU16, AtomicU32, Ordering};
 
 use crate::search::{eval_score::AtomicScore, NodeIndex, Score};
-use spear::Move;
+use crate::spear::Move;
 
 pub struct Edge {
     node_index: AtomicU32,

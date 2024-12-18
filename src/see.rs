@@ -1,4 +1,5 @@
-use spear::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
+use crate::spear::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
+
 
 pub struct SEE;
 impl SEE {

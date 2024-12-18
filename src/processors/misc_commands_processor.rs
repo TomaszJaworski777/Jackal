@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use spear::{ChessBoard, Move, Perft, Piece, Side, FEN};
+use crate::spear::{ChessBoard, ChessPosition, Move, Perft, Piece, Side, FEN};
 
 use crate::{
     search::{NodeIndex, PolicyNetwork, Score, SearchEngine, ValueNetwork},
@@ -183,7 +183,7 @@ impl MiscCommandsProcessor {
     }
 
     fn eval(search_engine: &SearchEngine) {
-        let position: &spear::ChessPosition = &search_engine.current_position();
+        let position: &ChessPosition = &search_engine.current_position();
         let (w, d, _) = if position.board().side_to_move() == Side::WHITE {
             ValueNetwork.forward::<true, false>(position.board())
         } else {

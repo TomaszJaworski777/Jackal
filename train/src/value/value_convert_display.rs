@@ -1,4 +1,4 @@
-use spear::StringUtils;
+use jackal::StringUtils;
 
 pub struct ValueConvertDisplay;
 impl ValueConvertDisplay {

@@ -3,7 +3,7 @@ use crate::{
     search::{print::SearchDisplay, utils::ContemptParams, Score},
     SearchLimits, SearchStats, Tree,
 };
-use spear::{ChessPosition, Move, Piece, Side};
+use crate::spear::{ChessPosition, Move, Piece, Side};
 use std::sync::atomic::AtomicBool;
 
 pub struct Mcts<'a> {

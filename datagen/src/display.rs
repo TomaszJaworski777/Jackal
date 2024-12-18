@@ -4,7 +4,7 @@ use std::{
 };
 
 use jackal::clear_terminal_screen;
-use spear::StringUtils;
+use jackal::StringUtils;
 
 use crate::DataGenMode;
 

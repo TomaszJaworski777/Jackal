@@ -1,5 +1,5 @@
 use rand::Rng;
-use spear::{ChessPosition, Move, FEN};
+use jackal::{ChessPosition, Move, FEN};
 
 pub struct DataGenUtils;
 impl DataGenUtils {

@@ -1,6 +1,6 @@
 use colored::Colorize;
 use console::pad_str;
-use spear::{ChessPosition, Move, StringUtils};
+use crate::spear::{ChessPosition, Move, StringUtils};
 
 use crate::{
     clear_terminal_screen,

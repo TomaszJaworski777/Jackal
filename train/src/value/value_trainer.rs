@@ -6,7 +6,7 @@ use bullet::{
     outputs, wdl, Activation, ExecutionContext, Graph, GraphBuilder, LocalSettings, Node,
     QuantTarget, Shape, Trainer, TrainingSchedule, TrainingSteps,
 };
-use spear::{Bitboard, Piece, Square};
+use jackal::{Bitboard, Piece, Square};
 
 const HIDDEN_SIZE: usize = 2048;
 const QA: i16 = 255;
@@ -116,7 +116,7 @@ impl inputs::InputType for ThreatsDefencesMirroredInputs {
             bb[usize::from(2 + (pc & 7))].set_bit(square);
         }
 
-        let mut board = spear::ChessBoard::default();
+        let mut board = jackal::ChessBoard::default();
         for idx in 2..8 {
             let piece = Piece::from_raw(idx as u8 - 2);
             for side in 0..=1 {
