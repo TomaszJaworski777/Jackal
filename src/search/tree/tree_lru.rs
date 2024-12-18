@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use spear::ChessPosition;
+use crate::spear::ChessPosition;
 
 use crate::{search::SearchHelpers, GameState};
 

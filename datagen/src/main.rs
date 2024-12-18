@@ -9,7 +9,7 @@ use std::{
 use crossbeam_queue::SegQueue;
 use display::Printer;
 use policy_gen::PolicyGen;
-use spear::{ChessBoardPacked, PolicyPacked};
+use jackal::{ChessBoardPacked, PolicyPacked};
 use value_gen::ValueGen;
 
 mod display;

@@ -1,6 +1,6 @@
 use std::sync::atomic::AtomicBool;
 
-use spear::{ChessPosition, FEN};
+use crate::spear::{ChessPosition, FEN};
 
 use crate::{ContemptParams, Mcts, NoPrint, SearchEngine, SearchLimits, SearchStats, Tree};
 

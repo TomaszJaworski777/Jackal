@@ -1,4 +1,4 @@
-use spear::{ChessBoard, Side};
+use crate::spear::{ChessBoard, Side};
 
 use crate::GameState;
 

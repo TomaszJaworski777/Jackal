@@ -1,4 +1,4 @@
-use spear::{ChessBoard, Move, Piece, Side};
+use crate::spear::{ChessBoard, Move, Piece, Side};
 
 use crate::SEE;
 

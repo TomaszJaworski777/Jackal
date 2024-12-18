@@ -4,7 +4,7 @@ use std::{
     time::Instant,
 };
 
-use spear::PolicyPacked;
+use jackal::PolicyPacked;
 
 use super::PolicyConvertDisplay;
 

@@ -3,7 +3,7 @@ use crossbeam_queue::SegQueue;
 use jackal::{
     ContemptParams, EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree,
 };
-use spear::{ChessBoardPacked, ChessPosition, Move, Side};
+use jackal::{ChessBoardPacked, ChessPosition, Move, Side};
 use std::sync::atomic::AtomicBool;
 
 pub struct ValueGen;

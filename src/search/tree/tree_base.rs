@@ -7,7 +7,7 @@ use crate::{search::Score, EngineOptions, GameState};
 
 use super::{hash_table::HashTable, tree_segment::TreeSegment};
 use super::{node::NodeIndex, Edge, Node};
-use spear::Move;
+use crate::spear::Move;
 
 pub(super) const SEGMENT_COUNT: usize = 2;
 

@@ -6,7 +6,7 @@ edition = "2021"
 [profile.release]
 panic = 'abort'
 strip = true
-lto = 'fat'
+lto = true
 codegen-units = 1
 opt-level = 3
 
@@ -15,8 +15,11 @@ colored = "*"
 console = "0.15"
 term_cursor = "0.2.1"
 term_size = "0.3.2"
-spear = { package = "spear", git = 'https://github.com/TomaszJaworski777/Spear', features = ["pext"] }
+bytemuck = "1.18.0"
 
 [workspace]
 members = ["datagen", "train"]
 resolver = "2"
+
+[features]
+pext = []

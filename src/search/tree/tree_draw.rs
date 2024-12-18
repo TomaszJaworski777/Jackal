@@ -1,5 +1,5 @@
 use colored::Colorize;
-use spear::{ChessBoard, Move};
+use crate::spear::{ChessBoard, Move};
 
 use crate::{utils::heat_color, GameState};
 

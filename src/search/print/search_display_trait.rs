@@ -1,5 +1,5 @@
 use crate::{search::Score, GameState, Tree};
-use spear::{ChessPosition, Move};
+use crate::spear::{ChessPosition, Move};
 
 use crate::{
     options::EngineOptions,

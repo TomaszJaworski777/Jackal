@@ -1,9 +1,8 @@
 use std::{env, io::stdin, sync::atomic::AtomicBool};
 
 use jackal::{
-    EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, Tree, UciProcessor,
+    EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, Tree, UciProcessor, ChessPosition, FEN
 };
-use spear::{ChessPosition, FEN};
 
 fn main() {
     //Init search engine

@@ -1,4 +1,4 @@
-use spear::ChessPosition;
+use crate::spear::ChessPosition;
 
 use crate::{
     search::{Score, ValueNetwork},

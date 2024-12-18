@@ -5,7 +5,7 @@ use std::{
 };
 
 use bullet::format::ChessBoard;
-use spear::{ChessBoardPacked, Move, Piece, Side};
+use jackal::{ChessBoardPacked, Move, Piece, Side};
 
 use crate::value::ValueConvertDisplay;
 
@@ -63,7 +63,7 @@ impl ValueConverter {
             //     continue;
             // }
 
-            let board = spear::ChessBoard::from_board_pack(&position);
+            let board = jackal::ChessBoard::from_board_pack(&position);
             let result = position.get_result();
             if fine_tune {
                 let material_score = if board.side_to_move() == Side::WHITE {
@@ -131,7 +131,7 @@ impl ValueConverter {
 }
 
 fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>(
-    board: &spear::ChessBoard,
+    board: &jackal::ChessBoard,
     mut alpha: i32,
     beta: i32,
     depth: u8,
@@ -185,7 +185,7 @@ fn qsearch<const STM_WHITE: bool, const NSTM_WHITE: bool>(
 }
 
 #[inline]
-fn get_move_value(position: &spear::ChessBoard, mv: Move) -> i32 {
+fn get_move_value(position: &jackal::ChessBoard, mv: Move) -> i32 {
     let mut result: i32 = 0;
 
     if mv.is_capture() {
@@ -200,7 +200,7 @@ fn get_move_value(position: &spear::ChessBoard, mv: Move) -> i32 {
     return result;
 }
 
-fn calculate_material(board: &spear::ChessBoard) -> i32 {
+fn calculate_material(board: &jackal::ChessBoard) -> i32 {
     const PIECE_VALUES: [i32; 5] = [100, 300, 300, 500, 900];
     let mut result = 0;
 

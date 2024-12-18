@@ -1,6 +1,6 @@
 use core::f32;
 
-use spear::ChessPosition;
+use crate::spear::ChessPosition;
 
 use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
 

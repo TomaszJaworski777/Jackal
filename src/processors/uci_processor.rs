@@ -1,4 +1,4 @@
-use spear::{ChessPosition, Move, Side, FEN};
+use crate::spear::{ChessPosition, Move, Side, FEN};
 
 use crate::search::{SearchEngine, SearchLimits};
 

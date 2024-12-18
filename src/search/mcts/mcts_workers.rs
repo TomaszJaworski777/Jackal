@@ -1,6 +1,6 @@
 use std::{sync::atomic::Ordering, thread, time::Instant};
 
-use spear::Move;
+use crate::spear::Move;
 
 use crate::search::print::SearchDisplay;
 
