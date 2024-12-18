@@ -30,7 +30,7 @@ impl ValueConverter {
         let mut timer = Instant::now();
         let mut entries_processed = 0;
         let mut unfiltered = 0;
-        let mut mate_scores: u64 = 0;
+        let mate_scores: u64 = 0;
         let mut material_advantage = 0;
         let mut draw = 0;
 
@@ -57,11 +57,11 @@ impl ValueConverter {
             let position: ChessBoardPacked = unsafe { std::ptr::read(buffer.as_ptr() as *const _) };
             entries_processed += 1;
 
-            let score = position.get_white_perspective_score();
-            if score <= 0.0 || score >= 1.0 {
-                mate_scores += 1;
-                continue;
-            }
+             let score = position.get_white_perspective_score();
+            // if score <= 0.0 || score >= 1.0 {
+            //     mate_scores += 1;
+            //     continue;
+            // }
 
             let board = spear::ChessBoard::from_board_pack(&position);
             let result = position.get_result();

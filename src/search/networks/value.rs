@@ -5,15 +5,15 @@ use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA,
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v190cos1024td006wdlq.network"
+        "../../../resources/networks/v600cos2048td006wdlq-ft2.network"
     ))
 };
 
 #[repr(C)]
 #[repr(align(64))]
 pub struct ValueNetwork {
-    l1: QunatisedNetworkLayer<i16, { 768 * 4 }, 1024>,
-    l2: QunatisedNetworkLayer<i16, 1024, 3>,
+    l1: QunatisedNetworkLayer<i16, { 768 * 4 }, 2048>,
+    l2: QunatisedNetworkLayer<i16, 2048, 3>,
 }
 
 impl ValueNetwork {
