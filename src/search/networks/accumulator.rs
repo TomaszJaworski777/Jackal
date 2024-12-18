@@ -43,11 +43,11 @@ impl<const HIDDEN: usize> Accumulator<HIDDEN> {
 }
 
 impl<T: AddAssign<T> + Copy + Mul<T, Output = T>, const HIDDEN: usize> QuantizedAccumulator<T, HIDDEN> {
-    pub fn madd(&mut self, mul: T, other: &Self) {
-        for (i, &j) in self.vals.iter_mut().zip(other.vals.iter()) {
-            *i += mul * j;
-        }
-    }
+    // pub fn madd(&mut self, mul: T, other: &Self) {
+    //     for (i, &j) in self.vals.iter_mut().zip(other.vals.iter()) {
+    //         *i += mul * j;
+    //     }
+    // }
 
     #[inline]
     pub fn values(&self) -> &[T; HIDDEN] {

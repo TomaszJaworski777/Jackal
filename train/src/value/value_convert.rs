@@ -30,7 +30,7 @@ impl ValueConverter {
         let mut timer = Instant::now();
         let mut entries_processed = 0;
         let mut unfiltered = 0;
-        let mut mate_scores: u64 = 0;
+        let mate_scores: u64 = 0;
         let mut material_advantage = 0;
         let mut draw = 0;
 
