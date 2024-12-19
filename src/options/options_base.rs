@@ -70,13 +70,13 @@ create_option_structs!(
     "DrawScoreOpp"        => draw_score_opp:       SpinOptionFloat, 0.5, -1.0, 1.0;
     "ContemptAttenuation" => contempt_attenuation: SpinOptionFloat, 1.0, -10.0, 10.0;
 
-    "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 0.96, 0.1, 5.0, 0.055, 0.002;
-    "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.64, 0.1, 5.0, 0.055, 0.002;
-    "CpuctVisitsScale"    => cpuct_visits_scale:    SpinOptionFloatTunable, 64.0, 1.0, 512.0, 3.15, 0.002;
+    "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 1.01, 0.1, 5.0, 0.055, 0.002;
+    "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.62, 0.1, 5.0, 0.055, 0.002;
+    "CpuctVisitsScale"    => cpuct_visits_scale:    SpinOptionFloatTunable, 61.95, 1.0, 512.0, 3.15, 0.002;
     "CpuctVarianceScale"  => cpuct_variance_scale:  SpinOptionFloatTunable, 0.2, 0.0, 2.0, 0.02, 0.002;
-    "CpuctVarianceWeight" => cpuct_variance_weight: SpinOptionFloatTunable, 0.85, 0.0, 2.0, 0.084, 0.002;
-    "ExplorationTau"      => exploration_tau:       SpinOptionFloatTunable, 0.58, 0.0, 1.0, 0.04, 0.002;
-    "RootPST"             => root_pst:              SpinOptionFloatTunable, 3.5, 0.1, 10.0, 0.4, 0.002;
-    "CommonPST"           => common_pst:            SpinOptionFloatTunable, 1.15, 0.1, 10.0, 0.4, 0.002;
+    "CpuctVarianceWeight" => cpuct_variance_weight: SpinOptionFloatTunable, 0.86, 0.0, 2.0, 0.084, 0.002;
+    "ExplorationTau"      => exploration_tau:       SpinOptionFloatTunable, 0.56, 0.0, 1.0, 0.04, 0.002;
+    "RootPST"             => root_pst:              SpinOptionFloatTunable, 3.25, 0.1, 10.0, 0.4, 0.002;
+    "CommonPST"           => common_pst:            SpinOptionFloatTunable, 1.23, 0.1, 10.0, 0.4, 0.002;
     "HashPercentage"      => hash_percentage:       SpinOptionFloatTunable, 0.11, 0.01, 5.0, 0.025, 0.002;
 );
