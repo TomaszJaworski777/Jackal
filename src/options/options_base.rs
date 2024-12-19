@@ -51,17 +51,15 @@ macro_rules! create_option_structs {
 }
 
 create_option_structs!(
-    "Hash"                   => hash:                     SpinOptionInt,   32, 1, 131072;
-    "Threads"                => threads:                  SpinOptionInt,   1, 1, 1024;
-    "MoveOverhead"           => move_overhead:            SpinOptionInt,   20, 0, 500;
-    "MultiPV"                => multi_pv:                 SpinOptionInt,   1, 1, 256;
-    "UCI_ShowWDL"            => show_wdl:                 CheckBool,       false;
-    "UCI_AnalyseMode"        => analyse_mode:             CheckBool,       false;
-    "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.0, 0.0, 1.0;
-    "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
+    "Hash"            => hash:          SpinOptionInt, 32, 1, 131072;
+    "Threads"         => threads:       SpinOptionInt, 1, 1, 1024;
+    "MoveOverhead"    => move_overhead: SpinOptionInt, 20, 0, 500;
+    "MultiPV"         => multi_pv:      SpinOptionInt, 1, 1, 256;
+    "UCI_ShowWDL"     => show_wdl:      CheckBool,     false;
+    "UCI_AnalyseMode" => analyse_mode:  CheckBool,     false;
 
-    "MaxReasonableS"      => max_reasonable_s:     SpinOptionFloat, 2.0, 0.0, 100.0;
     "Contempt"            => contempt:             SpinOptionFloat, 5.0, -10000.0, 10000.0;
+    "MaxReasonableS"      => max_reasonable_s:     SpinOptionFloat, 2.0, 0.0, 100.0;
     "ContemptMax"         => contempt_max:         SpinOptionFloat, 1000.0, 0.0, 10000.0;
     "BookExitBias"        => book_exit_bias:       SpinOptionFloat, 0.65, 0.0, 1.0;
     "DrawRateTarget"      => draw_rate_target:     SpinOptionFloat, 0.0, 0.0, 1.0;
@@ -69,6 +67,9 @@ create_option_structs!(
     "DrawScore"           => draw_score:           SpinOptionFloat, 0.4, -1.0, 1.0;
     "DrawScoreOpp"        => draw_score_opp:       SpinOptionFloat, 0.5, -1.0, 1.0;
     "ContemptAttenuation" => contempt_attenuation: SpinOptionFloat, 1.0, -10.0, 10.0;
+
+    "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.0, 0.0, 1.0;
+    "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
 
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 1.01, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.62, 0.1, 5.0, 0.055, 0.002;

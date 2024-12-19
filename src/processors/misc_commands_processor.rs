@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 
+use crate::bench::Bench;
 use crate::spear::{ChessBoard, ChessPosition, Move, Perft, Piece, Side, FEN};
 
 use crate::{
@@ -25,6 +26,7 @@ impl MiscCommandsProcessor {
             "moves" => Self::moves(search_engine),
             "tree" => Self::draw_tree(args, search_engine),
             "eval" | "e" => Self::eval(search_engine),
+            "bench" => Self::bench(args, search_engine),
             _ => return false,
         }
 
@@ -45,6 +47,22 @@ impl MiscCommandsProcessor {
         };
 
         Perft::perft::<BULK, true, true>(current_fen, depth);
+    }
+
+    //Performs performance test of search engine
+    fn bench(args: &[String], search_engine: &SearchEngine) {
+        //Obtain test depth from command arguments
+        let depth = if args.is_empty() {
+            5
+        } else {
+            let parse = args[0].parse::<u32>();
+            if parse.is_err() {
+                return;
+            }
+            parse.unwrap()
+        };
+
+        Bench::run(depth, search_engine);
     }
 
     //Prints all legal moves together with thier policy

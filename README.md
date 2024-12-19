@@ -49,9 +49,10 @@ Jackal supports all necessary commands to initialize UCI protocol, full descript
 * `draw` - Draws the board in the terminal.
 * `eval` - Shows evaluation of current position.
 * `tree <depth>` - Draws tree of most recent search.
-* `perft <depth>` - Runs perft test on current position.
-* `bulk <depth>` - Runs perft test on current position in bulk mode.
+* `perft <depth>` - Runs perft test on current position to specified depth (default = 5).
+* `bulk <depth>` - Runs perft test on current position in bulk mode to specified depth (default = 5).
 * `moves` - Prints all legal moves together with thier policy.
+* `bench <depth>` - Runs bench test to specified depth (default = 5). 
 
 ## Feature List
 * MCTS Search
