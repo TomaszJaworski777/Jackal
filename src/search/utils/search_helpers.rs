@@ -25,7 +25,7 @@ impl SearchHelpers {
             0.0
         };
 
-        match state {
+        let score = match state {
             GameState::Drawn => Score::DRAW,
             GameState::Lost(_) => Score::LOSE,
             GameState::Won(_) => Score::WIN,
@@ -33,12 +33,7 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 } else {
-                    let (win_chance, draw_chance, _) =
-                        SearchHelpers::get_position_score::<STM_WHITE, NSTM_WHITE, US>(
-                            current_position,
-                            options,
-                            contempt_parms,
-                        );
+                    let (win_chance, draw_chance, _) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
                     let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);
@@ -46,24 +41,17 @@ impl SearchHelpers {
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 }
             }
-        }
-    }
+        };
 
-    pub fn get_position_score<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool>(
-        current_position: &mut ChessPosition,
-        options: &EngineOptions,
-        contempt_parms: &ContemptParams,
-    ) -> (f32, f32, f32) {
-        let (w, mut d, l) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
+        let (w, mut d, l) = (score.win_chance(), score.draw_chance(), score.lose_chance());
         let mut v = w - l;
 
         Contempt::wdl_rescale::<US>(&mut v, &mut d, options, contempt_parms);
 
         let w_new = (1.0 + v - d) / 2.0;
-        let l_new = (1.0 - v - d) / 2.0;
         let d_new = d;
 
-        (w_new, d_new, l_new)
+        Score::new(w_new, d_new)
     }
 
     pub fn get_position_state<const STM_WHITE: bool, const NSTM_WHITE: bool>(
