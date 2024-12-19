@@ -42,6 +42,7 @@ Jackal is developed by Tomasz Jaworski. Special thanks to:
 * [@Viren6](https://github.com/Viren6) and [@Adam-Kulju](https://github.com/Adam-Kulju) for helping me with concepts of aggressivness in MCTS.
 * [@jw1912](https://github.com/jw1912) and [@Viren6](https://github.com/Viren6) for creating [Monty](https://github.com/official-monty/Monty) that provided a lot of help during bugfixing or understanding new ideas.
 * [Stefan Pohl](https://www.sp-cc.de) for creating EAS tool, that I'm using to measure progress in aggressivness of Jackal.
+* [Vast342](https://github.com/Vast342) for help with quantising value net.
 
 ## Command List
 Jackal supports all necessary commands to initialize UCI protocol, full description of the protocol can be found [here](https://gist.github.com/DOBRO/2592c6dad754ba67e6dcaec8c90165bf). Here are additional commands:
@@ -66,10 +67,11 @@ Jackal supports all necessary commands to initialize UCI protocol, full descript
    * Multithreading
    * Extended time manager
 * Value Network
-   * Architecture: `768x4->1024->3`
+   * Architecture: `768x4->2048->3`
    * WDL net
    * Horizontal mirroring based on kings file
    * Threats and defences inputs
+   * Quantised L1 and L2
 * Policy Network
    * Architecture: 128 subnet pairs `768->32->32`
    * Selecting subnet pair for move destination based on SEE result
@@ -85,7 +87,10 @@ I measured Jackal's EAS to be around 230k, while I also noticed it is very slow 
 | 229966 | 40.00% | 26.71% | 17.36% | 103 | 1.0.0 |
 
 List of featues increasing EAS:
-- Policy bonus to sacrifices
 - Filtering positions to only those where sides with lower material won the game
 - Asymmetrical contempt in PUCT
-- Bonus to positions that have less material than root position
+- Asymmetrucal WDL rescaling
+
+Additional features used in datagen:
+- Policy bonus to sacs
+- Evaluation bonus to losing materal
