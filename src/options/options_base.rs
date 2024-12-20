@@ -69,7 +69,7 @@ create_option_structs!(
     "ContemptAttenuation" => contempt_attenuation: SpinOptionFloat, 1.0, -10.0, 10.0;
 
     "PolicySacBonus"         => policy_sac_bonus:         SpinOptionFloat, 0.0, 0.0, 1.0;
-    "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.0, 0.0, 10.0;
+    "MaterialReductionBonus" => material_reduction_bonus: SpinOptionFloat, 0.25, 0.0, 10.0;
 
     "RootCpuctValue"      => root_cpuct_value:      SpinOptionFloatTunable, 1.01, 0.1, 5.0, 0.055, 0.002;
     "CpuctValue"          => cpuct_value:           SpinOptionFloatTunable, 0.62, 0.1, 5.0, 0.055, 0.002;

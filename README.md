@@ -18,7 +18,8 @@
 
 | Version | CCRL 40/15 | CCRL Blitz | Estimated | EAS Score | Release Date |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | - | - | 3070 | 194.26k | 7th December 2024 |
+| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | - | 3150 | - | 20th December 2024 |
+| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | - | 3070 | 194.26k | 7th December 2024 |
 | [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | - | - | 3000 | 229.96k | 4th December 2024 |
 
 </div>
@@ -91,7 +92,4 @@ List of featues increasing EAS:
 - Filtering positions to only those where sides with lower material won the game
 - Asymmetrical contempt in PUCT
 - Asymmetrucal WDL rescaling
-
-Additional features used in datagen:
-- Policy bonus to sacs
-- Evaluation bonus to losing materal
+- Evaluation bonus to losing material
