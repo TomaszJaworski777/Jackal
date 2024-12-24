@@ -16,11 +16,11 @@
 <br>
 <br>
 
-| Version | CCRL 40/15 | CCRL Blitz | Estimated | EAS Score | Release Date |
+| Version | CCRL Blitz | CCRL 40/15 | Estimated | EAS Score | Release Date |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | - | 3150 | - | 20th December 2024 |
-| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | - | 3070 | 194.26k | 7th December 2024 |
-| [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | - | - | 3000 | 229.96k | 4th December 2024 |
+| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | - | 3150 | 131.02k | 20th December 2024 |
+| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | 2963 | 3070 | 194.26k | 7th December 2024 |
+| [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | 2956 | - | 3000 | 229.96k | 4th December 2024 |
 
 </div>
 
@@ -78,15 +78,18 @@ Jackal supports all necessary commands to initialize UCI protocol, full descript
    * Architecture: 128 subnet pairs `768->32->32`
    * Selecting subnet pair for move destination based on SEE result
 
-Jackal currently supports multiple threads, but due to some unidentified bug it doesn't play better with more than 1 thread. ($100 for fixing PR)
+Jackal currently supports multiple threads, but due to some unidentified bug it doesn't play better with more than 2 threads. ($100 for fixing PR)
 
 ## EAS
 I measured Jackal's EAS to be around 230k, while I also noticed it is very slow to end the games and draws a lot of winning positions. My current guess is that MCTS heavily relies on its neural nets and my current data is just not strong enough to be efficient in end games.
 
 | EAS Score| Sacs | Shorts | Bad draws | Avg. win moves  | Version  |
 | :-: | :-: | :-: | :-: | :-: | :-: |
+| 131021 | 28.99% | 09.45% | 21.26% | 98 | 1.2.0 |
 | 194262 | 34.56% | 16.64% | 13.91% | 75 | 1.1.0 |
 | 229966 | 40.00% | 26.71% | 17.36% | 103 | 1.0.0 |
+
+Even though new version has lower EAS, it was tested against different engines and it doesn't mean engine is much less aggressive. I would argue that it's plays very attacking chess. Amount of sacs seems to be a bit lower which I will investigate, but they are still at level of around 30%. Short wins and bad draws skyrocketed and that's due to the fact that stronger opponents of jackal were ending the games very fast, and jackal struggles to convert winning endgames, it often just shuffles pieces which results in either very long wins or just bad draws.
 
 List of featues increasing EAS:
 - Filtering positions to only those where sides with lower material won the game
