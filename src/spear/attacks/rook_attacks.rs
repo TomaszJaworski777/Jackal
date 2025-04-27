@@ -4,9 +4,9 @@ use std::arch::x86_64::_pext_u64;
 use crate::spear::{Bitboard, Square};
 
 #[cfg(not(feature = "pext"))]
-const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks.bin")) };
+const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks.spear")) };
 #[cfg(feature = "pext")]
-const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks_pext.bin")) };
+const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks_pext.spear")) };
 
 pub struct RookAttacks;
 impl RookAttacks {
