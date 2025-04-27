@@ -5,9 +5,9 @@ use crate::spear::{Bitboard, Square};
 
 #[cfg(not(feature = "pext"))]
 const BISHOP_ATTACKS: [[Bitboard; 512]; 64] = unsafe {
- std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks.bin")) };
+ std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks.spear")) };
 #[cfg(feature = "pext")]
-const BISHOP_ATTACKS: [[Bitboard; 512]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks_pext.bin")) };
+const BISHOP_ATTACKS: [[Bitboard; 512]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks_pext.spear")) };
 
 pub struct BishopAttacks;
 impl BishopAttacks {
