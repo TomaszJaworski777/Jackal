@@ -16,11 +16,13 @@
 <br>
 <br>
 
-| Version | CCRL Blitz | CCRL 40/15 | Estimated | EAS Score | Release Date |
+| Version | CCRL Blitz | CCRL 40/15 | CEGT 40/20 | EAS Score | Release Date |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | - | 3150 | 131.02k | 20th December 2024 |
-| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | 2963 | 3070 | 194.26k | 7th December 2024 |
-| [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | 2956 | - | 3000 | 229.96k | 4th December 2024 |
+| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | 3073 | 2984 | 131.02k | 20th December 2024 |
+| [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | 2963 | - | 194.26k | 7th December 2024 |
+| [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | 2956 | - | - | 229.96k | 4th December 2024 |
+
+<i>* estimated in 40+0.4 gauntlet</i>
 
 </div>
 
