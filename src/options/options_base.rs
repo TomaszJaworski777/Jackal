@@ -52,8 +52,8 @@ macro_rules! create_option_structs {
 
 create_option_structs!(
     "Hash"            => hash:          SpinOptionInt, 32, 1, 131072;
-    "Threads"         => threads:       SpinOptionInt, 1, 1, 1024;
-    "MoveOverhead"    => move_overhead: SpinOptionInt, 20, 0, 500;
+    "Threads"         => threads:       SpinOptionInt, 1, 1, 2;
+    "MoveOverhead"    => move_overhead: SpinOptionInt, 100, 0, 500;
     "MultiPV"         => multi_pv:      SpinOptionInt, 1, 1, 256;
     "UCI_ShowWDL"     => show_wdl:      CheckBool,     false;
     "UCI_AnalyseMode" => analyse_mode:  CheckBool,     false;
@@ -80,4 +80,5 @@ create_option_structs!(
     "RootPST"             => root_pst:              SpinOptionFloatTunable, 3.25, 0.1, 10.0, 0.4, 0.002;
     "CommonPST"           => common_pst:            SpinOptionFloatTunable, 1.23, 0.1, 10.0, 0.4, 0.002;
     "HashPercentage"      => hash_percentage:       SpinOptionFloatTunable, 0.11, 0.01, 5.0, 0.025, 0.002;
+    "MoveCountScale"      => move_count_scale:      SpinOptionFloatTunable, 300.0, 100.0, 1000.0, 40.0, 0.002;
 );

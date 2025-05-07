@@ -44,12 +44,24 @@ impl SearchHelpers {
         };
 
         let (w, mut d, l) = (score.win_chance(), score.draw_chance(), score.lose_chance());
+        
         let mut v = w - l;
-
+        
         Contempt::wdl_rescale::<US>(&mut v, &mut d, options, contempt_parms);
 
-        let w_new = (1.0 + v - d) / 2.0;
-        let d_new = d;
+        let half_move_scalar = current_position.board().half_move_counter() as f32 / options.move_count_scale();
+
+        let mut w_new = (1.0 + v - d) / 2.0;
+        let mut d_new = d;
+        
+        if US {
+            let virtual_l = 1.0 - w_new - d;
+            let sw = w_new * half_move_scalar;
+            let sl = virtual_l * half_move_scalar;
+
+            w_new = w_new - sw;
+            d_new = d + sw + sl;
+        }
 
         Score::new(w_new, d_new)
     }
