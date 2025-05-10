@@ -2,19 +2,19 @@ use std::env;
 
 use policy::PolicyConvert;
 use policy::PolicyTrainer;
-use value::ValueConverter;
-use value::ValueTrainer;
+//use value::ValueConverter;
+//use value::ValueTrainer;
 
 mod policy;
-mod value;
+//mod value;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     for arg in &args {
         match arg.as_str() {
-            "value-conv" => value_convert(&args),
+            //"value-conv" => value_convert(&args),
             "policy-conv" => policy_convert(&args),
-            "value" => ValueTrainer::execute(),
+            //"value" => ValueTrainer::execute(),
             "policy" => PolicyTrainer::execute(),
             _ => continue,
         }
@@ -41,7 +41,7 @@ fn value_convert(args: &Vec<String>) {
         }
     }
 
-    ValueConverter::convert(input_path, output_path, fine_tune);
+    //ValueConverter::convert(input_path, output_path, fine_tune);
 }
 
 fn policy_convert(args: &Vec<String>) {

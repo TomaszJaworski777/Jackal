@@ -14,7 +14,7 @@ use goober::{
 use jackal::{PolicyNetwork, SEE, ChessBoard, PolicyPacked, Side};
 use rand::{seq::SliceRandom, Rng};
 
-const NAME: &'static str = "policy_006-32x32see_300";
+const NAME: &'static str = "policy_007-32x32see_300";
 
 const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 300;
