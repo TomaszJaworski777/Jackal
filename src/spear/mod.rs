@@ -9,6 +9,10 @@ mod utils;
 #[allow(unused)]
 pub use attacks::Attacks;
 #[allow(unused)]
+pub use attacks::KnightAttacks;
+#[allow(unused)]
+pub use attacks::KingAttacks;
+#[allow(unused)]
 pub use base_structures::Bitboard;
 #[allow(unused)]
 pub use base_structures::CastleRights;

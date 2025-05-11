@@ -8,3 +8,6 @@ mod rook_attacks;
 
 pub use piece_attacks::Attacks;
 pub use rays::Rays;
+
+pub use knight_attacks::KnightAttacks;
+pub use king_attacks::KingAttacks;

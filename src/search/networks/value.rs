@@ -1,6 +1,6 @@
 use crate::spear::{ChessBoard, Piece, Side};
 
-use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA, QB};
+use super::{Accumulator, NetworkLayer, QA, QB};
 
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
@@ -12,8 +12,8 @@ pub static ValueNetwork: ValueNetwork = unsafe {
 #[repr(C)]
 #[repr(align(64))]
 pub struct ValueNetwork {
-    l1: QunatisedNetworkLayer<i16, { 768 * 4 }, 2048>,
-    l2: QunatisedNetworkLayer<i16, 2048, 3>,
+    l1: NetworkLayer<i16, { 768 * 4 }, 2048>,
+    l2: NetworkLayer<i16, 2048, 3>,
 }
 
 impl ValueNetwork {
@@ -33,12 +33,12 @@ impl ValueNetwork {
             }
         });
 
-        let mut out = QuantizedAccumulator::<i32, 3>::default();
+        let mut out = Accumulator::<i32, 3>::default();
 
-        for (&neuron, weights) in l1_out.values().iter().zip(self.l2.weights.iter()) {
-            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
-            for (i, &j) in out.vals.iter_mut().zip(weights.vals.iter()) {
-                *i += act * i32::from(j);
+        for (&value, weights) in l1_out.values().iter().zip(self.l2.weights().iter()) {
+            let activated_value = i32::from(value).clamp(0, i32::from(QA)).pow(2);
+            for (i, &weight) in out.vals.iter_mut().zip(weights.vals.iter()) {
+                *i += activated_value * i32::from(weight);
             }
         }
 

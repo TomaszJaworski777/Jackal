@@ -3,7 +3,7 @@ use std::sync::{
     RwLock, RwLockReadGuard, RwLockWriteGuard,
 };
 
-use crate::spear::{ChessBoard, ChessPosition, Move, Piece, Side};
+use crate::spear::{ChessBoard, ChessPosition, Move, Piece};
 
 use crate::{
     search::{tree::Edge, NodeIndex, Score},
@@ -158,16 +158,7 @@ impl Node {
     ) {
         let mut actions = self.actions_mut();
 
-        let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
-            inputs.push(idx)
-        });
-
-        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
+        let base = PolicyNetwork.create_base::<STM_WHITE, NSTM_WHITE>(&position.board());
 
         let pst = if ROOT {
             options.root_pst()
@@ -178,19 +169,14 @@ impl Node {
         let mut max = f32::NEG_INFINITY;
         let mut total = 0.0;
 
-        //Network output cache to prevent processing the same subnet twice
-        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
-
         const MULTIPLIER: f32 = 1000.0;
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
                 let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
                     position.board(),
-                    &inputs,
+                    &base,
                     mv,
-                    vertical_flip,
-                    &mut cache,
                 ) + mva_lvv(mv, position.board(), options);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
@@ -232,21 +218,9 @@ impl Node {
     ) {
         let mut actions = self.actions_mut();
 
-        let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
-            inputs.push(idx)
-        });
-
-        let vertical_flip = if position.board().side_to_move() == Side::WHITE {
-            0
-        } else {
-            56
-        };
+        let base = PolicyNetwork.create_base::<STM_WHITE, NSTM_WHITE>(&position.board());
 
         let pst = if ROOT { options.root_pst() } else { 1.0 };
-
-        //Network output cache to prevent processing the same subnet twice
-        let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
         let mut policies = Vec::new();
         let mut max: f32 = f32::NEG_INFINITY;
@@ -255,10 +229,8 @@ impl Node {
         for action in actions.iter_mut() {
             let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
                 position.board(),
-                &inputs,
+                &base,
                 action.mv(),
-                vertical_flip,
-                &mut cache,
             ) + mva_lvv(action.mv(), position.board(), options);
             policies.push(policy);
             max = max.max(policy);

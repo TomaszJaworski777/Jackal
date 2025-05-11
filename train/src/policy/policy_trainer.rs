@@ -9,27 +9,27 @@ use bullet::{
     trainer::{
         save::{Layout, QuantTarget, SavedFormat},
         schedule::{lr, TrainingSteps},
-    },
+    }, Shape,
 };
 
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 64;
 
 pub struct PolicyTrainer;
 impl PolicyTrainer {
     pub fn execute() {
     let inputs = inputs::Chess768;
-    let transform = move_maps::NoTransform;
-    let buckets = move_maps::GoodSEEBuckets(-108);
+    let transform = move_maps::HorizontalMirror;
+    let buckets = move_maps::NoBuckets;
 
     let num_inputs = inputs.num_inputs();
     let num_outputs = buckets.num_buckets() * move_maps::UNIQUE_CHESS_MOVES;
 
-    //let l1_shape = Shape::new(num_outputs, HL_SIZE);
+    let l1_shape = Shape::new(num_outputs, HL_SIZE);
 
     let save_format = [
         SavedFormat::new("l0w", QuantTarget::Float, Layout::Normal),
         SavedFormat::new("l0b", QuantTarget::Float, Layout::Normal),
-        SavedFormat::new("l1w", QuantTarget::Float, Layout::Normal),
+        SavedFormat::new("l1w", QuantTarget::Float, Layout::Transposed(l1_shape)),
         SavedFormat::new("l1b", QuantTarget::Float, Layout::Normal),
     ];
 
@@ -48,7 +48,7 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007-1024_40",
+        net_id: "policy_007-128_40",
         lr_scheduler: lr::ExponentialDecayLR { initial_lr: 0.001, final_lr: 0.00001, final_superbatch: 40 },
         steps: TrainingSteps {
             batch_size: 16_384,
@@ -61,8 +61,10 @@ impl PolicyTrainer {
 
     let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 4096);
+    let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
     trainer.run(&schedule, &settings, &data_loader);
+
+    trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 }
