@@ -4,9 +4,19 @@ use std::{
     time::Instant,
 };
 
-use jackal::PolicyPacked;
+use jackal::{Piece, PolicyPacked};
+use bullet::default::formats::montyformat::chess::Position;
 
 use super::PolicyConvertDisplay;
+
+#[repr(C)]
+#[repr(align(64))]
+#[derive(Clone, Copy)]
+pub struct DecompressedData {
+    pub pos: Position,
+    pub moves: [(u16, u16); 108],
+    pub num: usize,
+}
 
 pub struct PolicyConvert;
 impl PolicyConvert {
@@ -21,10 +31,9 @@ impl PolicyConvert {
             .open(output_path)
             .expect("Cannot open output file");
 
-        let entry_size = std::mem::size_of::<PolicyPacked>();
-        let policy_packed_size = std::mem::size_of::<PolicyPacked>();
-        let entry_count = input_meta.len() / entry_size as u64;
-        let mut buffer = vec![0u8; entry_size];
+        let decompressed_size = std::mem::size_of::<DecompressedData>();
+        let mut buffer = [0u8; std::mem::size_of::<PolicyPacked>()];
+        let entry_count = input_meta.len() / buffer.len() as u64;
 
         let mut timer = Instant::now();
         let mut entries_processed = 0;
@@ -36,13 +45,42 @@ impl PolicyConvert {
                 timer = Instant::now();
             }
 
-            let position: PolicyPacked = unsafe { std::ptr::read(buffer.as_ptr() as *const _) };
+            let policy_pack: PolicyPacked = unsafe { std::mem::transmute(buffer) };
+
+            let board = jackal::ChessBoard::from_policy_pack(&policy_pack);
+
+            let mut bb = [0u64; 8];
+            bb[0] = board.get_occupancy_for_side::<true>().get_raw();
+            bb[1] = board.get_occupancy_for_side::<false>().get_raw();
+            for idx in 0..6 {
+                bb[idx + 2] = board.get_piece_mask(Piece::from_raw(idx as u8)).get_raw();
+            }
+
+            let stm = board.side_to_move() == jackal::Side::WHITE;
+
+            let enp_sq = board.en_passant_square().get_raw();
+            let castle_rights = board.castle_rights().get_raw();
+            let half_move = board.half_move_counter();
+
+            let pos = Position::from_raw(bb, stm, enp_sq, castle_rights, half_move, 0);
+
+            let mut moves = [(0u16, 0u16); 108];
+            for (idx, mv_pack) in policy_pack.moves().into_iter().enumerate() {
+                moves[idx] = (mv_pack.mv.get_raw(), mv_pack.visits);
+            }
+
+            let decompressed = DecompressedData {
+                pos,
+                moves,
+                num: usize::from(policy_pack.move_count()),
+            };
+
             entries_processed += 1;
 
             let chess_board_bytes = unsafe {
                 std::slice::from_raw_parts(
-                    (&position as *const PolicyPacked) as *const u8,
-                    policy_packed_size,
+                    (&decompressed as *const DecompressedData) as *const u8,
+                    decompressed_size,
                 )
             };
 

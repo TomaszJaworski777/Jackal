@@ -1,10 +1,16 @@
 use bullet::{
-    format::{chess::BoardIter, ChessBoard},
-    inputs::{self, InputType},
-    loader, lr, operations,
-    optimiser::{self, AdamWOptimiser, AdamWParams},
-    outputs, wdl, Activation, ExecutionContext, Graph, GraphBuilder, LocalSettings, Node,
-    QuantTarget, Shape, Trainer, TrainingSchedule, TrainingSteps,
+    default::{
+            formats::bulletformat::ChessBoard,
+            inputs::{self, SparseInputType},
+            loader,
+    },
+    nn::{optimiser::{self, AdamWOptimiser, AdamWParams}, NetworkBuilder, Activation, ExecutionContext, Graph, Node, Shape},
+    trainer::{
+        default::{outputs, Trainer},
+        schedule::{ lr, wdl, TrainingSchedule, TrainingSteps },
+        settings::LocalSettings,
+        save::{Layout, QuantTarget, SavedFormat},
+    },
 };
 use jackal::{Bitboard, Piece, Square};
 
@@ -83,36 +89,23 @@ impl ValueTrainer {
 
 #[derive(Clone, Copy, Default)]
 pub struct ThreatsDefencesMirroredInputs;
-
-pub struct ThreatsDefencesMirroredInputsIter {
-    board_iter: BoardIter,
-    threats: Bitboard,
-    defences: Bitboard,
-    flip: usize,
-}
-
-impl inputs::InputType for ThreatsDefencesMirroredInputs {
+impl inputs::SparseInputType for ThreatsDefencesMirroredInputs {
     type RequiredDataType = ChessBoard;
-    type FeatureIter = ThreatsDefencesMirroredInputsIter;
 
-    fn buckets(&self) -> usize {
-        1
-    }
-
-    fn max_active_inputs(&self) -> usize {
+    fn max_active(&self) -> usize {
         32
     }
 
-    fn inputs(&self) -> usize {
+    fn num_inputs(&self) -> usize {
         768 * 4
     }
 
-    fn feature_iter(&self, position: &Self::RequiredDataType) -> Self::FeatureIter {
+    fn map_features<F: FnMut(usize, usize)>(&self, pos: &Self::RequiredDataType, mut f: F) {
         let mut bb = [Bitboard::EMPTY; 8];
 
-        for (pc, sq) in position.into_iter() {
+        for (pc, sq) in pos.into_iter() {
             let square = Square::from_raw(sq);
-            bb[usize::from(pc >> 3)].set_bit(square);
+            bb[usize::from(pc & 8 > 0)].set_bit(square);
             bb[usize::from(2 + (pc & 7))].set_bit(square);
         }
 
@@ -133,55 +126,52 @@ impl inputs::InputType for ThreatsDefencesMirroredInputs {
         let threats = board.generate_attack_map::<true, false>();
         let defences = board.generate_attack_map::<false, true>();
 
-        ThreatsDefencesMirroredInputsIter {
-            board_iter: position.into_iter(),
-            threats,
-            defences,
-            flip: if position.our_ksq() % 8 > 3 { 7 } else { 0 },
-        }
-    }
-}
+        let flip = if pos.our_ksq() % 8 > 3 { 7 } else { 0 };
 
-impl Iterator for ThreatsDefencesMirroredInputsIter {
-    type Item = (usize, usize);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.board_iter.next().map(|(piece, square)| {
+        for (piece, square) in pos.into_iter() {
             let piece_index = usize::from(piece & 7);
             let square = usize::from(square);
             let side = usize::from(piece & 8 > 0);
-            let mut input = (side * 384) + (64 * piece_index) + (square ^ self.flip);
+            let mut input = (side * 384) + (64 * piece_index) + (square ^ flip);
 
-            if self.threats.get_bit(Square::from_raw(square as u8)) {
+            if threats.get_bit(Square::from_raw(square as u8)) {
                 input += 768;
             }
 
-            if self.defences.get_bit(Square::from_raw(square as u8)) {
+            if defences.get_bit(Square::from_raw(square as u8)) {
                 input += 768 * 2;
             }
 
-            (input, input)
-        })
+            f(input, input)
+        }
+    }
+
+    fn shorthand(&self) -> String {
+        format!("{}", self.num_inputs())
+    }
+
+    fn description(&self) -> String {
+        "Threat & Defences inputs".to_string()
     }
 }
 
 fn make_trainer(
     l1: usize,
 ) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInputs, outputs::Single> {
-    let num_inputs = ThreatsDefencesMirroredInputs.size();
+    let num_inputs = ThreatsDefencesMirroredInputs.num_inputs();
 
-    let (mut graph, output_node) = build_network(num_inputs, l1);
+    let (mut graph, output_node) = build_network(num_inputs, l1, ThreatsDefencesMirroredInputs.max_active());
 
     let sizes = [num_inputs, l1];
 
     for (i, &size) in sizes.iter().enumerate() {
         graph
             .get_weights_mut(&format!("l{i}w"))
-            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true);
+            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true).unwrap();
 
         graph
             .get_weights_mut(&format!("l{i}b"))
-            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true);
+            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true).unwrap();
     }
 
     Trainer::new(
@@ -191,30 +181,28 @@ fn make_trainer(
         ThreatsDefencesMirroredInputs,
         outputs::Single,
         vec![
-            ("l0w".to_string(), QuantTarget::I16(QA)),
-            ("l0b".to_string(), QuantTarget::I16(QA)),
-            ("l1w".to_string(), QuantTarget::I16(QB)),
-            ("l1b".to_string(), QuantTarget::I16(QA * QB)),
+            SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
+            SavedFormat::new("l0b", QuantTarget::I16(QA), Layout::Normal),
+            SavedFormat::new("l1w", QuantTarget::I16(QB), Layout::Normal),
+            SavedFormat::new("l1b", QuantTarget::I16(QA * QB), Layout::Normal),
         ],
         false,
     )
 }
 
-fn build_network(inputs: usize, l1: usize) -> (Graph, Node) {
-    let mut builder = GraphBuilder::default();
+fn build_network(inputs: usize, l1: usize, max_inputs: usize) -> (Graph, Node) {
+    let builder = NetworkBuilder::default();
 
-    let stm = builder.create_input("stm", Shape::new(inputs, 1));
-    let targets = builder.create_input("targets", Shape::new(3, 1));
+    let stm = builder.new_sparse_input("stm", Shape::new(inputs, 1), max_inputs);
+    let targets = builder.new_dense_input("targets", Shape::new(3, 1));
 
-    let l0w = builder.create_weights("l0w", Shape::new(l1, inputs));
-    let l0b = builder.create_weights("l0b", Shape::new(l1, 1));
-    let l1w = builder.create_weights("l1w", Shape::new(3, l1));
-    let l1b = builder.create_weights("l1b", Shape::new(3, 1));
+    let l0 = builder.new_affine("l0", inputs, l1);
+    let l1 = builder.new_affine("l1", l1, 3);
 
-    let l1 = operations::affine(&mut builder, l0w, stm, l0b);
-    let l1 = operations::activate(&mut builder, l1, Activation::SCReLU);
-    let l2 = operations::affine(&mut builder, l1w, l1, l1b);
+    let out = l0.forward(stm).activate(Activation::SCReLU);
+    let out = l1.forward(out);
+    out.softmax_crossentropy_loss(targets);
 
-    operations::softmax_crossentropy_loss(&mut builder, l2, targets);
-    (builder.build(ExecutionContext::default()), l2)
+    let output_node = out.node();
+    (builder.build(ExecutionContext::default()), output_node)
 }

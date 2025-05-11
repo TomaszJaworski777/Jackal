@@ -18,7 +18,7 @@
 
 | Version | CCRL Blitz | CCRL 40/15 | CEGT 40/20 | EAS Score | Release Date |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | 3073 | 2984 | 131.02k | 20th December 2024 |
+| [1.2.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.2.0) | - | 3073 | 2984 | 140.19k | 20th December 2024 |
 | [1.1.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.1.0) | - | 2963 | - | 194.26k | 7th December 2024 |
 | [1.0.0](https://github.com/TomaszJaworski777/Jackal/releases/tag/1.0.0) | 2956 | - | - | 229.96k | 4th December 2024 |
 
@@ -87,7 +87,7 @@ I measured Jackal's EAS to be around 230k, while I also noticed it is very slow 
 
 | EAS Score| Sacs | Shorts | Bad draws | Avg. win moves  | Version  |
 | :-: | :-: | :-: | :-: | :-: | :-: |
-| 131021 | 28.99% | 09.45% | 21.26% | 98 | 1.2.0 |
+| 140191 | 35.86% | 13.55% | 21.17% | 104 | 1.2.0 |
 | 194262 | 34.56% | 16.64% | 13.91% | 75 | 1.1.0 |
 | 229966 | 40.00% | 26.71% | 17.36% | 103 | 1.0.0 |
 
