@@ -8,51 +8,64 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/mini.network"
+        "../../../resources/networks/p150exp1024ptd_see005q.network"
     ))
 };
 
-const HL_SIZE: usize = 64;
+const HL_SIZE: usize = 1024;
+const QA: i16 = 255;
+const QB: i16 = 64;
 
 #[repr(C)]
 pub struct PolicyNetwork {
-    l1: NetworkLayer<f32, 768, HL_SIZE>,
-    l2: TransposedNetworkLayer<f32, HL_SIZE, 1880>,
+    l1: NetworkLayer<i16, {768 * 4}, HL_SIZE>,
+    l2: TransposedNetworkLayer<i16, { HL_SIZE / 2 }, { 1880 * 2 }>,
 }
 
 impl PolicyNetwork {
-    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<f32, HL_SIZE> {
+    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<i16, { HL_SIZE / 2 }> {
         let mut l1_out = *self.l1.biases();
 
         map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(board, |weight_index| {
             for (i, weight) in l1_out
                 .values_mut()
                 .iter_mut()
-                .zip(&self.l1.weights()[weight_index].vals)
+                .zip(self.l1.weights()[weight_index].values())
             {
                 *i += *weight;
             }
         });
 
-        l1_out
+        let mut out: Accumulator<i16, { HL_SIZE / 2 }> = Accumulator::default();
+
+        for (i, (&first, &second)) in out
+            .values_mut()
+            .iter_mut()
+            .zip(l1_out.values().iter().take(HL_SIZE / 2).zip(l1_out.values().iter().skip(HL_SIZE / 2)))
+        {
+            let first = i32::from(first).clamp(0, i32::from(QA));
+            let second = i32::from(second).clamp(0, i32::from(QA));
+            *i = ((first * second) / i32::from(QA)) as i16;
+        }
+
+        out
     }
 
     pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         board: &ChessBoard,
-        base: &Accumulator<f32, HL_SIZE>,
+        base: &Accumulator<i16, { HL_SIZE / 2 }>,
         mv: Move,
     ) -> f32 {
         let idx = map_move_to_index::<STM_WHITE, NSTM_WHITE>(board, mv);
         let weights = self.l2.weights()[idx];
-        let mut result = 0.0;
+        let mut result = 0;
 
-        for (&weight, &value) in weights.vals.iter().zip(base.vals.iter()) {
-            let activated_value = value.clamp(0.0, 1.0).powi(2);
-            result += weight * activated_value;
+        for (&weight, &value) in weights.values().iter().zip(base.values()) {
+            result += i32::from(weight) * i32::from(value);
         }
 
-        result
+        (result as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[idx])) / f32::from(QB)
     }
 }
 
@@ -89,7 +102,7 @@ fn map_policy_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: b
 
 fn map_move_to_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(board: &ChessBoard, mv: Move) -> usize {
     let horizontal_mirror = if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
-    let good_see = 0; //(OFFSETS[64] + PROMOS) * usize::from(SEE::static_exchange_evaluation::<STM_WHITE, NSTM_WHITE>(board, mv, -108,));
+    let good_see = (OFFSETS[64] + PROMOS) * usize::from(SEE::static_exchange_evaluation::<STM_WHITE, NSTM_WHITE>(board, mv, -108,));
 
     let idx = if mv.is_promotion() {
         let from_file = (mv.get_from_square() ^ horizontal_mirror).get_file();

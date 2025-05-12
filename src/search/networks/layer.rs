@@ -1,5 +1,3 @@
-use std::ops::{AddAssign, Mul};
-
 use super::Accumulator;
 
 #[repr(C)]
