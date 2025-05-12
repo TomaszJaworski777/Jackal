@@ -10,7 +10,7 @@ use bullet::{
 };
 use jackal::{Bitboard, Piece, Side, Square};
 
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 2304;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
@@ -49,22 +49,22 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007-tdp1024see_150",
-        lr_scheduler: lr::ExponentialDecayLR { initial_lr: 0.001, final_lr: 0.00001, final_superbatch: 150 },
+        net_id: "policy_007-tdp2304see_200",
+        lr_scheduler: lr::ExponentialDecayLR { initial_lr: 0.001, final_lr: 0.00001, final_superbatch: 200 },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
-            start_superbatch: 1,
-            end_superbatch: 150,
+            start_superbatch: 11,
+            end_superbatch: 200 ,
         },
         save_rate: 10,
     };
 
-    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 256 };
+    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
     let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
-    // trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp1024see_150-150");
+    trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp2304see_200-10");
 
     trainer.run(&schedule, &settings, &data_loader);
 

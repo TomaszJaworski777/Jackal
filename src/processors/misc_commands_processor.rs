@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 use crate::bench::Bench;
 use crate::spear::{ChessBoard, ChessPosition, Move, Perft, Piece, Side, FEN};
 
@@ -95,7 +93,7 @@ impl MiscCommandsProcessor {
                 moves.push((mv, policy))
             })
         }
-
+        
         let mut total = 0.0;
         for (_, policy) in &mut moves {
             *policy = (*policy - max).exp();
@@ -122,7 +120,7 @@ impl MiscCommandsProcessor {
             .unwrap()
             .1;
 
-        moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
+        moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal));
 
         for (index, &(mv, policy)) in moves.iter().enumerate() {
             let arrow = if index == moves.len() - 1 {

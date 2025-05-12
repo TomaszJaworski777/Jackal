@@ -8,11 +8,11 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/p150exp1024ptd_see005q.network"
+        "../../../resources/networks/p200exp2304ptd_see005q.network"
     ))
 };
 
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 2304;
 const QA: i16 = 255;
 const QB: i16 = 64;
 

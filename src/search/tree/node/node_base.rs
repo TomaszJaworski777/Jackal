@@ -167,9 +167,10 @@ impl Node {
         };
 
         let mut max = f32::NEG_INFINITY;
-        let mut total = 0.0;
 
-        const MULTIPLIER: f32 = 1000.0;
+        let mut policies = [0.0; 256];
+        let mut count = 0;
+
         position
             .board()
             .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
@@ -178,37 +179,21 @@ impl Node {
                     &base,
                     mv,
                 ) + mva_lvv(mv, position.board(), options);
+
                 actions.push(Edge::new(
-                    NodeIndex::from_raw((policy * MULTIPLIER) as u32),
+                    NodeIndex::NULL,
                     mv,
                     0.0,
                 ));
+
                 max = max.max(policy);
+
+                policies[count] = policy; 
+                count += 1;
             });
 
-        for action in actions.iter_mut() {
-            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = ((policy - max) / pst).exp();
-            total += policy;
-            action.set_node_index(NodeIndex::from_raw((policy * MULTIPLIER) as u32));
-        }
 
-        let mut policy_squares = 0.0;
-        let is_single_action = actions.len() == 1;
-        for action in actions.iter_mut() {
-            let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
-            let policy = if is_single_action {
-                1.0
-            } else {
-                policy / total
-            };
-            action.update_policy(policy);
-            action.set_node_index(NodeIndex::NULL);
-            policy_squares += policy * policy;
-        }
-
-        let gini_impurity = (1.0 - policy_squares).clamp(0.0, 1.0);
-        self.set_gini_impurity(gini_impurity);
+        self.softmax_edge_policy(&mut actions, max, &mut policies, count, pst);
     }
 
     pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
@@ -220,11 +205,12 @@ impl Node {
 
         let base = PolicyNetwork.create_base::<STM_WHITE, NSTM_WHITE>(&position.board());
 
-        let pst = if ROOT { options.root_pst() } else { 1.0 };
+        let pst = if ROOT { options.root_pst() } else { 1.0 }; //TODO: Fix this shit
 
-        let mut policies = Vec::new();
         let mut max: f32 = f32::NEG_INFINITY;
-        let mut total = 0.0;
+
+        let mut policies = [0.0; 256];
+        let mut count = 0;
 
         for action in actions.iter_mut() {
             let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
@@ -232,24 +218,34 @@ impl Node {
                 &base,
                 action.mv(),
             ) + mva_lvv(action.mv(), position.board(), options);
-            policies.push(policy);
+
             max = max.max(policy);
+
+            policies[count] = policy; 
+            count += 1;
         }
 
-        let is_single_action = actions.len() == 1;
-        for policy in policies.iter_mut() {
-            if is_single_action {
-                *policy = 1.0;
-                total = 1.0;
-            } else {
-                *policy = ((*policy - max) / pst).exp();
-                total += *policy;
-            }
+        self.softmax_edge_policy(&mut actions, max, &mut policies, count, pst);
+    }
+
+    fn softmax_edge_policy( &self, actions: &mut RwLockWriteGuard<Vec<Edge>>, max: f32, policies: &mut [f32; 256], policy_count: usize, pst: f32 ) {
+        let mut total = 0.0;
+
+        for i in 0..policy_count {
+            let policy = ((policies[i] - max) / pst).exp();
+            total += policy;
+            policies[i] = policy;
         }
 
         let mut policy_squares = 0.0;
+        let is_single_action = actions.len() == 1;
         for (i, action) in actions.iter_mut().enumerate() {
-            let policy = policies[i] / total;
+            let policy = if is_single_action {
+                1.0
+            } else {
+                policies[i] / total
+            };
+
             action.update_policy(policy);
             policy_squares += policy * policy;
         }
