@@ -5,7 +5,7 @@ use std::{
 };
 
 use jackal::{Piece, PolicyPacked};
-use bullet::default::formats::montyformat::chess::Position;
+use bullet::{default::formats::montyformat::chess::Position, game::formats::montyformat::chess::Move};
 
 use super::PolicyConvertDisplay;
 
@@ -56,7 +56,7 @@ impl PolicyConvert {
                 bb[idx + 2] = board.get_piece_mask(Piece::from_raw(idx as u8)).get_raw();
             }
 
-            let stm = board.side_to_move() == jackal::Side::WHITE;
+            let stm = board.side_to_move() == jackal::Side::BLACK;
 
             let enp_sq = board.en_passant_square().get_raw();
             let castle_rights = board.castle_rights().get_raw();
@@ -66,7 +66,11 @@ impl PolicyConvert {
 
             let mut moves = [(0u16, 0u16); 108];
             for (idx, mv_pack) in policy_pack.moves().into_iter().enumerate() {
-                moves[idx] = (mv_pack.mv.get_raw(), mv_pack.visits);
+                let from = u16::from(mv_pack.mv.get_from_square().get_raw());
+                let to = u16::from(mv_pack.mv.get_to_square().get_raw());
+                let flag = u16::from(mv_pack.mv.get_flag());
+
+                moves[idx] = (u16::from(Move::new(from, to, flag)), mv_pack.visits);
             }
 
             let decompressed = DecompressedData {

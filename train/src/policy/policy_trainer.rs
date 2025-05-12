@@ -60,17 +60,18 @@ impl PolicyTrainer {
         save_rate: 10,
     };
 
-    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
+    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 256 };
 
     let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
-    //trainer.run(&schedule, &settings, &data_loader);
+    // trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp1024see_150-150");
 
-    trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp1024see_150-150");
-    trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
-    trainer.display_eval("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-    trainer.display_eval("8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
+    trainer.run(&schedule, &settings, &data_loader);
+
+    // trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
+    // trainer.display_eval("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    // trainer.display_eval("8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
 }
 }
 
