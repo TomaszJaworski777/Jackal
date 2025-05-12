@@ -81,9 +81,7 @@ impl MiscCommandsProcessor {
                     mv,
                 ) + mva_lvv(mv, &board, search_engine.engine_options());
                 max = max.max(policy);
-                moves.push((mv, policy));
-
-                println!("{mv}: {policy}")
+                moves.push((mv, policy))
             })
         } else {
             let base = PolicyNetwork.create_base::<false, true>(&board);

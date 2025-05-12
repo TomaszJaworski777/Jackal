@@ -65,7 +65,7 @@ impl PolicyNetwork {
             result += i32::from(weight) * i32::from(value);
         }
 
-        (result as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[idx])) / f32::from(QB)
+        (result as f32 + f32::from(self.l2.biases().values()[idx])) / f32::from(QA * QB)
     }
 }
 
