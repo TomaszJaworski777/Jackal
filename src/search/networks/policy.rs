@@ -73,7 +73,21 @@ fn map_policy_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: b
     board: &ChessBoard,
     mut method: F,
 ) {
+    let horizontal_mirror = if board.get_king_square::<STM_WHITE>().get_file() > 3 {
+        7
+    } else {
+        0
+    };
+
     let flip = board.side_to_move() == Side::BLACK;
+
+    let mut threats = board.generate_attack_map::<STM_WHITE, NSTM_WHITE>();
+    let mut defences = board.generate_attack_map::<NSTM_WHITE, STM_WHITE>();
+
+    if flip {
+        threats = threats.flip();
+        defences = defences.flip();
+    }
 
     for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
         let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
@@ -89,12 +103,30 @@ fn map_policy_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: b
         }
 
         stm_bitboard.map(|square| {
-            let feat = piece_index + (square.get_raw() as usize);
+            let mut feat = piece_index + (square.get_raw() as usize ^ horizontal_mirror);
+
+            if threats.get_bit(square) {
+                feat += 768;
+            }
+
+            if defences.get_bit(square) {
+                feat += 768 * 2;
+            }
+
             method(feat)
         });
 
         nstm_bitboard.map(|square| {
-            let feat = 384 + piece_index + (square.get_raw() as usize);
+            let mut feat = 384 + piece_index + (square.get_raw() as usize ^ horizontal_mirror);
+
+            if threats.get_bit(square) {
+                feat += 768;
+            }
+
+            if defences.get_bit(square) {
+                feat += 768 * 2;
+            }
+
             method(feat)
         });
     }

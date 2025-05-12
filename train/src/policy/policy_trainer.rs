@@ -5,10 +5,10 @@ use bullet::{
         PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule,
     }, trainer::{
         save::{Layout, QuantTarget, SavedFormat},
-        schedule::{lr, TrainingSteps},
+        schedule::{lr, TrainingSteps}, NetworkTrainer,
     }, Shape
 };
-use jackal::{Bitboard, Piece, Square};
+use jackal::{Bitboard, Piece, Side, Square};
 
 const HL_SIZE: usize = 1024;
 const QA: i16 = 255;
@@ -64,9 +64,13 @@ impl PolicyTrainer {
 
     let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
-    trainer.run(&schedule, &settings, &data_loader);
+    //trainer.run(&schedule, &settings, &data_loader);
 
+    trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp1024see_150-150");
     trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
+    trainer.display_eval("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    trainer.display_eval("8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
 }
 }
 
@@ -106,26 +110,56 @@ impl inputs::SparseInputType for ThreatsDefencesMirroredInputs {
             }
         }
 
-        let threats = board.generate_attack_map::<true, false>();
-        let defences = board.generate_attack_map::<false, true>();
+        let horizontal_mirror = if pos.our_ksq() % 8 > 3 { 7 } else { 0 };
 
-        let flip = if pos.our_ksq() % 8 > 3 { 7 } else { 0 };
+        let flip = board.side_to_move() == Side::BLACK;
 
-        for (piece, square) in pos.into_iter() {
-            let piece_index = usize::from(piece & 7);
-            let square = usize::from(square);
-            let side = usize::from(piece & 8 > 0);
-            let mut input = (side * 384) + (64 * piece_index) + (square ^ flip);
+        let mut threats = if board.side_to_move() == Side::WHITE { board.generate_attack_map::<true, false>() } else { board.generate_attack_map::<false, true>() };
+        let mut defences = if board.side_to_move() == Side::WHITE { board.generate_attack_map::<false, true>() } else { board.generate_attack_map::<true, false>() };
 
-            if threats.get_bit(Square::from_raw(square as u8)) {
-                input += 768;
+        if flip {
+            threats = threats.flip();
+            defences = defences.flip();
+        }
+
+        for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
+            let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
+
+            let mut stm_bitboard = if board.side_to_move() == Side::WHITE { board.get_piece_mask_for_side::<true>(Piece::from_raw(piece)) } else { board.get_piece_mask_for_side::<false>(Piece::from_raw(piece)) };
+            let mut nstm_bitboard = if board.side_to_move() == Side::WHITE { board.get_piece_mask_for_side::<false>(Piece::from_raw(piece)) } else { board.get_piece_mask_for_side::<true>(Piece::from_raw(piece)) };
+
+            if flip {
+                stm_bitboard = stm_bitboard.flip();
+                nstm_bitboard = nstm_bitboard.flip();
             }
 
-            if defences.get_bit(Square::from_raw(square as u8)) {
-                input += 768 * 2;
-            }
+            stm_bitboard.map(|square| {
+                let mut feat = piece_index + (square.get_raw() as usize ^ horizontal_mirror);
 
-            f(input, input)
+                if threats.get_bit(square) {
+                    feat += 768;
+                }
+
+                if defences.get_bit(square) {
+                    feat += 768 * 2;
+                }
+
+                f(feat, feat)
+            });
+
+            nstm_bitboard.map(|square| {
+                let mut feat = 384 + piece_index + (square.get_raw() as usize ^ horizontal_mirror);
+
+                if threats.get_bit(square) {
+                    feat += 768;
+                }
+
+                if defences.get_bit(square) {
+                    feat += 768 * 2;
+                }
+
+                f(feat, feat)
+            });
         }
     }
 
