@@ -10,7 +10,7 @@ use bullet::{
 };
 use jackal::{Bitboard, Piece, Side, Square};
 
-const HL_SIZE: usize = 2304;
+const HL_SIZE: usize = 1024;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
@@ -24,7 +24,7 @@ impl PolicyTrainer {
     let num_inputs = inputs.num_inputs();
     let num_outputs = buckets.num_buckets() * move_maps::UNIQUE_CHESS_MOVES;
 
-    let l1_shape = Shape::new(num_outputs, HL_SIZE / 2);
+    let l1_shape = Shape::new(num_outputs, HL_SIZE);
 
     let save_format = [
         SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
@@ -41,21 +41,21 @@ impl PolicyTrainer {
         .save_format(&save_format)
         .build(|builder, stm| {
             let l0 = builder.new_affine("l0", num_inputs, HL_SIZE);
-            let l1 = builder.new_affine("l1", HL_SIZE / 2, num_outputs);
+            let l1 = builder.new_affine("l1", HL_SIZE, num_outputs);
 
-            let out = l0.forward(stm).crelu();
-            let out = out.pairwise_mul();
+            let out = l0.forward(stm).screlu();
+            //let out = out.pairwise_mul();
             l1.forward(out)
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007-tdp2304see_200",
-        lr_scheduler: lr::ExponentialDecayLR { initial_lr: 0.001, final_lr: 0.00001, final_superbatch: 200 },
+        net_id: "policy_007-tdp1024see_100",
+        lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 100 },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
-            start_superbatch: 11,
-            end_superbatch: 200 ,
+            start_superbatch: 1,
+            end_superbatch: 100 ,
         },
         save_rate: 10,
     };
@@ -64,14 +64,14 @@ impl PolicyTrainer {
 
     let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
-    trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp2304see_200-10");
+    //trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp2304see_200-10");
 
     trainer.run(&schedule, &settings, &data_loader);
 
-    // trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    // trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
-    // trainer.display_eval("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-    // trainer.display_eval("8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
+    trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
+    trainer.display_eval("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    trainer.display_eval("8/8/p5p1/2bk1p1p/5P1P/1P3PK1/8/4B3 b - - 3 48");
 }
 }
 

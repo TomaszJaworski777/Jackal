@@ -8,22 +8,22 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/p200exp2304ptd_see005q.network"
+        "../../../resources/networks/policy_007-tdp1024see_10.network"
     ))
 };
 
-const HL_SIZE: usize = 2304;
+const HL_SIZE: usize = 1024;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
 #[repr(C)]
 pub struct PolicyNetwork {
     l1: NetworkLayer<i16, {768 * 4}, HL_SIZE>,
-    l2: TransposedNetworkLayer<i16, { HL_SIZE / 2 }, { 1880 * 2 }>,
+    l2: TransposedNetworkLayer<i16, { HL_SIZE }, { 1880 * 2 }>,
 }
 
 impl PolicyNetwork {
-    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<i16, { HL_SIZE / 2 }> {
+    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<i16, { HL_SIZE }> {
         let mut l1_out = *self.l1.biases();
 
         map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(board, |weight_index| {
@@ -36,25 +36,27 @@ impl PolicyNetwork {
             }
         });
 
-        let mut out: Accumulator<i16, { HL_SIZE / 2 }> = Accumulator::default();
+        l1_out
 
-        for (i, (&first, &second)) in out
-            .values_mut()
-            .iter_mut()
-            .zip(l1_out.values().iter().take(HL_SIZE / 2).zip(l1_out.values().iter().skip(HL_SIZE / 2)))
-        {
-            let first = i32::from(first).clamp(0, i32::from(QA));
-            let second = i32::from(second).clamp(0, i32::from(QA));
-            *i = ((first * second) / i32::from(QA)) as i16;
-        }
+        //let mut out: Accumulator<i16, { HL_SIZE / 2 }> = Accumulator::default();
 
-        out
+        // for (i, (&first, &second)) in out
+        //     .values_mut()
+        //     .iter_mut()
+        //     .zip(l1_out.values().iter().take(HL_SIZE / 2).zip(l1_out.values().iter().skip(HL_SIZE / 2)))
+        // {
+        //     let first = i32::from(first).clamp(0, i32::from(QA));
+        //     let second = i32::from(second).clamp(0, i32::from(QA));
+        //     *i = ((first * second) / i32::from(QA)) as i16;
+        // }
+
+        // out
     }
 
     pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         board: &ChessBoard,
-        base: &Accumulator<i16, { HL_SIZE / 2 }>,
+        base: &Accumulator<i16, { HL_SIZE }>,
         mv: Move,
     ) -> f32 {
         let idx = map_move_to_index::<STM_WHITE, NSTM_WHITE>(board, mv);
@@ -62,10 +64,11 @@ impl PolicyNetwork {
         let mut result = 0;
 
         for (&weight, &value) in weights.values().iter().zip(base.values()) {
-            result += i32::from(weight) * i32::from(value);
+            let acc = i32::from(value).clamp(0, i32::from(QA)).pow(2);
+            result += i32::from(weight) * i32::from(acc);
         }
 
-        (result as f32 + f32::from(self.l2.biases().values()[idx])) / f32::from(QA * QB)
+        (result as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[idx])) / f32::from(QA * QB)
     }
 }
 
