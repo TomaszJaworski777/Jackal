@@ -8,7 +8,7 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/policy_007-tdp1024see_10.network"
+        "../../../resources/networks/1024-150.bin"
     ))
 };
 
@@ -18,12 +18,12 @@ const QB: i16 = 64;
 
 #[repr(C)]
 pub struct PolicyNetwork {
-    l1: NetworkLayer<i16, {768 * 4}, HL_SIZE>,
-    l2: TransposedNetworkLayer<i16, { HL_SIZE }, { 1880 * 2 }>,
+    l1: NetworkLayer<f32, {768 * 4}, HL_SIZE>,
+    l2: TransposedNetworkLayer<f32, { HL_SIZE }, { 1880 * 2 }>,
 }
 
 impl PolicyNetwork {
-    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<i16, { HL_SIZE }> {
+    pub fn create_base<const STM_WHITE: bool, const NSTM_WHITE: bool>( &self, board: &ChessBoard ) -> Accumulator<f32, { HL_SIZE }> {
         let mut l1_out = *self.l1.biases();
 
         map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(board, |weight_index| {
@@ -56,19 +56,19 @@ impl PolicyNetwork {
     pub fn forward<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         &self,
         board: &ChessBoard,
-        base: &Accumulator<i16, { HL_SIZE }>,
+        base: &Accumulator<f32, { HL_SIZE }>,
         mv: Move,
     ) -> f32 {
         let idx = map_move_to_index::<STM_WHITE, NSTM_WHITE>(board, mv);
         let weights = self.l2.weights()[idx];
-        let mut result = 0;
+        let mut result = 0.0;
 
         for (&weight, &value) in weights.values().iter().zip(base.values()) {
-            let acc = i32::from(value).clamp(0, i32::from(QA)).pow(2);
-            result += i32::from(weight) * i32::from(acc);
+            let acc = value.clamp(0.0, 1.0).powi(2);
+            result += weight * acc;
         }
 
-        (result as f32 / f32::from(QA) + f32::from(self.l2.biases().values()[idx])) / f32::from(QA * QB)
+        result + self.l2.biases().values()[idx]
     }
 }
 

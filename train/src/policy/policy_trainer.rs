@@ -27,10 +27,10 @@ impl PolicyTrainer {
     let l1_shape = Shape::new(num_outputs, HL_SIZE);
 
     let save_format = [
-        SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
-        SavedFormat::new("l0b", QuantTarget::I16(QA), Layout::Normal),
-        SavedFormat::new("l1w", QuantTarget::I16(QB), Layout::Transposed(l1_shape)),
-        SavedFormat::new("l1b", QuantTarget::I16(QA * QB), Layout::Normal),
+        SavedFormat::new("l0w", QuantTarget::Float, Layout::Normal),
+        SavedFormat::new("l0b", QuantTarget::Float, Layout::Normal),
+        SavedFormat::new("l1w", QuantTarget::Float, Layout::Transposed(l1_shape)),
+        SavedFormat::new("l1b", QuantTarget::Float, Layout::Normal),
     ];
 
     let mut trainer = PolicyTrainerBuilder::default()
@@ -49,22 +49,22 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007-tdp1024see_100",
-        lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 100 },
+        net_id: "policy_007cos-tdp1024see_100",
+        lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 300 },
         steps: TrainingSteps {
             batch_size: 16_384,
-            batches_per_superbatch: 6104,
+            batches_per_superbatch: 1024,
             start_superbatch: 1,
-            end_superbatch: 100 ,
+            end_superbatch: 300,
         },
         save_rate: 10,
     };
 
     let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
+    let data_loader = PolicyDataLoader::new("conv_policy_data_2.bin", 48000);
 
-    //trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp2304see_200-10");
+    //trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp3072see_150-70");
 
     trainer.run(&schedule, &settings, &data_loader);
 
