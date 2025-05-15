@@ -64,9 +64,9 @@ impl PolicyTrainer {
 
     let data_loader = PolicyDataLoader::new("conv_policy_data_2.bin", 48000);
 
-    //trainer.load_from_checkpoint("policy_checkpoints/policy_007-tdp3072see_150-70");
+    trainer.load_from_checkpoint("policy_checkpoints/policy_007cos-tdp1024see_100-300");
 
-    trainer.run(&schedule, &settings, &data_loader);
+    //trainer.run(&schedule, &settings, &data_loader);
 
     trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");

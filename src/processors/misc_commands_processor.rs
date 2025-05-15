@@ -120,7 +120,7 @@ impl MiscCommandsProcessor {
             .unwrap()
             .1;
 
-        moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal));
+        //moves.sort_by(|&(_, a), &(_, b)| b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal));
 
         for (index, &(mv, policy)) in moves.iter().enumerate() {
             let arrow = if index == moves.len() - 1 {
