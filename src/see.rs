@@ -3,7 +3,7 @@ use crate::spear::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, S
 
 pub struct SEE;
 impl SEE {
-    pub const PIECE_VALUES: [i32; 6] = [100, 300, 300, 500, 900, 0];
+    pub const PIECE_VALUES: [i32; 6] = [100, 450, 450, 650, 1250, 0];
 
     pub fn static_exchange_evaluation<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         board: &ChessBoard,
@@ -54,7 +54,7 @@ impl SEE {
         let mut attackers = (Attacks::get_knight_attacks_for_square(to_square)
             & board.get_piece_mask(Piece::KNIGHT))
             | (Attacks::get_king_attacks_for_square(to_square) & board.get_piece_mask(Piece::KING))
-            | (Attacks::get_pawn_attacks_for_square::<true>(to_square)
+            | (Attacks::get_pawn_attacks_for_square::<false>(to_square)
                 & board.get_piece_mask(Piece::PAWN)
                 & board.get_occupancy_for_side::<true>())
             | (Attacks::get_pawn_attacks_for_square::<true>(to_square)
