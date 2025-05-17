@@ -10,14 +10,14 @@ use bullet::{
 };
 use jackal::{Bitboard, Piece, Side, Square};
 
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 512;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
 pub struct PolicyTrainer;
 impl PolicyTrainer {
     pub fn execute() {
-    let inputs = ThreatsDefencesMirroredInputs;
+    let inputs = inputs::Chess768;
     let transform = move_maps::HorizontalMirror;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
@@ -49,7 +49,7 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007cos-tdp1024see_100",
+        net_id: "policy_007cos-512see_300",
         lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 300 },
         steps: TrainingSteps {
             batch_size: 16_384,
@@ -62,11 +62,11 @@ impl PolicyTrainer {
 
     let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("conv_policy_data_2.bin", 48000);
+    let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
 
-    trainer.load_from_checkpoint("policy_checkpoints/policy_007cos-tdp1024see_100-300");
+    //trainer.load_from_checkpoint("policy_checkpoints/policy_007cos-tdp1024see_100-300");
 
-    //trainer.run(&schedule, &settings, &data_loader);
+    trainer.run(&schedule, &settings, &data_loader);
 
     trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");

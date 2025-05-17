@@ -8,17 +8,17 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/1024-300.bin"
+        "../../../resources/networks/512-230.bin"
     ))
 };
 
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 512;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
 #[repr(C)]
 pub struct PolicyNetwork {
-    l1: NetworkLayer<f32, {768 * 4}, HL_SIZE>,
+    l1: NetworkLayer<f32, {768 * 1}, HL_SIZE>,
     l2: TransposedNetworkLayer<f32, { HL_SIZE }, { 1880 * 2 }>,
 }
 
@@ -76,64 +76,32 @@ fn map_policy_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: b
     board: &ChessBoard,
     mut method: F,
 ) {
-    let horizontal_mirror = if board.get_king_square::<STM_WHITE>().get_file() > 3 {
-        7
-    } else {
-        0
-    };
-
     let flip = board.side_to_move() == Side::BLACK;
 
-    let mut threats = board.generate_attack_map::<STM_WHITE, NSTM_WHITE>();
-    let mut defences = board.generate_attack_map::<NSTM_WHITE, STM_WHITE>();
+        for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
+            let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
 
-    if flip {
-        threats = threats.flip();
-        defences = defences.flip();
-    }
+            let mut stm_bitboard =
+                board.get_piece_mask_for_side::<STM_WHITE>(Piece::from_raw(piece));
+            let mut nstm_bitboard =
+                board.get_piece_mask_for_side::<NSTM_WHITE>(Piece::from_raw(piece));
 
-    for piece in Piece::PAWN.get_raw()..=Piece::KING.get_raw() {
-        let piece_index = 64 * (piece - Piece::PAWN.get_raw()) as usize;
+            if flip {
+                stm_bitboard = stm_bitboard.flip();
+                nstm_bitboard = nstm_bitboard.flip();
+            }
 
-        let mut stm_bitboard =
-            board.get_piece_mask_for_side::<STM_WHITE>(Piece::from_raw(piece));
-        let mut nstm_bitboard =
-            board.get_piece_mask_for_side::<NSTM_WHITE>(Piece::from_raw(piece));
+            stm_bitboard.map(|square| {
+                let feat = piece_index + (square.get_raw() as usize);
+                method(feat)
+            });
 
-        if flip {
-            stm_bitboard = stm_bitboard.flip();
-            nstm_bitboard = nstm_bitboard.flip();
+            nstm_bitboard.map(|square| {
+                let feat = 384 + piece_index + (square.get_raw() as usize);
+                method(feat)
+            });
         }
-
-        stm_bitboard.map(|square| {
-            let mut feat = piece_index + (square.get_raw() as usize ^ horizontal_mirror);
-
-            if threats.get_bit(square) {
-                feat += 768;
-            }
-
-            if defences.get_bit(square) {
-                feat += 768 * 2;
-            }
-
-            method(feat)
-        });
-
-        nstm_bitboard.map(|square| {
-            let mut feat = 384 + piece_index + (square.get_raw() as usize ^ horizontal_mirror);
-
-            if threats.get_bit(square) {
-                feat += 768;
-            }
-
-            if defences.get_bit(square) {
-                feat += 768 * 2;
-            }
-
-            method(feat)
-        });
     }
-}
 
 fn map_move_to_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(board: &ChessBoard, mv: Move) -> usize {
     let horizontal_mirror = if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
