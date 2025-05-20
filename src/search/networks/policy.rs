@@ -8,7 +8,7 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/monty-90.network"
+        "../../../resources/networks/m150.network"
     ))
 };
 
@@ -104,7 +104,7 @@ fn map_policy_inputs<F: FnMut(usize), const STM_WHITE: bool, const NSTM_WHITE: b
     }
 
 fn map_move_to_index<const STM_WHITE: bool, const NSTM_WHITE: bool>(board: &ChessBoard, mv: Move) -> usize {
-    let horizontal_mirror = if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
+    let horizontal_mirror = 0;// if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
     let good_see = (OFFSETS[64] + PROMOS) * usize::from(SEE::static_exchange_evaluation::<STM_WHITE, NSTM_WHITE>(board, mv, -108,));
 
     let idx = if mv.is_promotion() {

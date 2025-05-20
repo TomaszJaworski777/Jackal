@@ -18,7 +18,7 @@ pub struct PolicyTrainer;
 impl PolicyTrainer {
     pub fn execute() {
     let inputs = inputs::Chess768;
-    let transform = move_maps::HorizontalMirror;
+    let transform = move_maps::NoTransform;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
     let num_inputs = inputs.num_inputs();
@@ -49,13 +49,13 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007cos-512see_300-monty",
-        lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 300 },
+        net_id: "policy_007cos-512see_150-monty",
+        lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.00001, final_superbatch: 150 },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 1024,
             start_superbatch: 1,
-            end_superbatch: 90,
+            end_superbatch: 150,
         },
         save_rate: 10,
     };
