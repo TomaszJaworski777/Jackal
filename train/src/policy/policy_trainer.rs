@@ -1,20 +1,21 @@
 use std::{
     f32::consts::PI,
     fs::File,
-    io::{BufRead, BufReader, Write},
+    io::{BufReader, Write},
     path::PathBuf,
-    time::Instant,
+    time::{Instant, SystemTime, UNIX_EPOCH},
 };
 
+use bullet::{game::formats::montyformat::{chess::Move, MontyFormat}, policy::{loader::DecompressedData, move_maps::MAX_MOVES}};
 use goober::{
     activation,
     layer::{DenseConnected, SparseConnected},
     FeedForwardNetwork, Matrix, OutputLayer, SparseVector, Vector,
 };
-use jackal::{PolicyNetwork, SEE, ChessBoard, PolicyPacked, Side};
-use rand::{seq::SliceRandom, Rng};
+use jackal::{ChessBoard, PolicyNetwork, PolicyPacked, Side, Square, SEE};
+use rand::Rng;
 
-const NAME: &'static str = "policy_007-32x32see_300";
+const NAME: &'static str = "policy_007-16x16see_300-monty";
 
 const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 300;
@@ -24,7 +25,7 @@ const WARMUP_BATCHES: usize = 200;
 
 const BATCH_SIZE: usize = 16_384;
 const BATCHES_PER_SUPERBATCH: usize = 1024;
-const TRAINING_DATA_PATH: &'static str = "policy_data.bin";
+const TRAINING_DATA_PATH: &'static str = "monty.binpack";
 
 pub struct PolicyTrainer;
 impl PolicyTrainer {
@@ -40,7 +41,7 @@ impl PolicyTrainer {
             .metadata()
             .expect("Cannot obtain training metadata");
 
-        let entry_count = training_metadata.len() as usize / std::mem::size_of::<PolicyPacked>();
+        let entry_count = training_metadata.len() as usize / std::mem::size_of::<MontyFormat>();
 
         let mut policy = TrainerPolicyNet::rand_init();
         let throughput = SUPERBATCHES_COUNT * BATCHES_PER_SUPERBATCH * BATCH_SIZE;
@@ -67,103 +68,160 @@ impl PolicyTrainer {
         let mut superbatch_index = 0;
         let mut batch_index = 0;
 
-        const BUFFER_SIZE: usize = 512;
+        const BUFFER_SIZE: usize = 48000 * 1024 * 1024 / 512 / 2;
+
+        let mut reusable_buffer = Vec::new();
+        let mut shuffle_buffer = Vec::new();
+        shuffle_buffer.reserve_exact(BUFFER_SIZE);
+
         'training: loop {
-            let training_data =
-                File::open(training_data_path).expect("Cannot open training data file");
-            let mut training_data_reader = BufReader::with_capacity(
-                BUFFER_SIZE * BATCH_SIZE * std::mem::size_of::<PolicyPacked>(),
-                training_data,
-            );
-            while let Ok(buffer) = training_data_reader.fill_buf() {
-                if buffer.is_empty() {
-                    break;
-                }
+            let mut reader = BufReader::new( File::open(training_data_path).unwrap());
 
-                let mut superbatch: Vec<PolicyPacked> = unsafe {
-                    std::slice::from_raw_parts(buffer.as_ptr().cast(), BUFFER_SIZE * BATCH_SIZE)
-                }
-                .to_vec();
-
-                let mut rng = rand::thread_rng();
-                superbatch.shuffle(&mut rng);
+            while let Ok(game) = MontyFormat::deserialise_from(&mut reader) {
 
                 let timer = Instant::now();
 
-                for (idx, batch) in superbatch.chunks(BATCH_SIZE).enumerate() {
-                    let mut gradient = boxed_and_zeroed::<TrainerPolicyNet>();
-                    running_error += gradient_batch(&policy, &mut gradient, batch);
-                    let adjustment = 1.0 / batch.len() as f32;
+                parse_into_buffer(game, &mut reusable_buffer);    
 
-                    let used_lr = if superbatch_index == 0 && batch_index < WARMUP_BATCHES {
-                        START_LR / (WARMUP_BATCHES - batch_index) as f32
-                    } else {
-                        learning_rate
-                    };
+                if shuffle_buffer.len() + reusable_buffer.len() < shuffle_buffer.capacity() {
+                    shuffle_buffer.extend_from_slice(&reusable_buffer);
+                } else {
+                    let diff = shuffle_buffer.capacity() - shuffle_buffer.len();
+                    shuffle_buffer.extend_from_slice(&reusable_buffer[..diff]);
 
-                    update(
-                        &mut policy,
-                        &gradient,
-                        adjustment,
-                        used_lr,
-                        &mut momentum,
-                        &mut velocity,
-                    );
-                    batch_index += 1;
-                    print!(
-                        "> Superbatch {}/{} Batch {}/{}   Speed {:.0}                     \r",
-                        superbatch_index + 1,
-                        SUPERBATCHES_COUNT,
-                        batch_index,
-                        BATCHES_PER_SUPERBATCH,
-                        (idx * BATCH_SIZE) as f32 / timer.elapsed().as_secs_f32()
-                    );
-                    let _ = std::io::stdout().flush();
-                }
+                    shuffle(&mut shuffle_buffer);
 
-                if batch_index % BATCHES_PER_SUPERBATCH == 0 {
-                    superbatch_index += 1;
-                    batch_index = 0;
-                    let superbatches_left = SUPERBATCHES_COUNT - superbatch_index;
-                    let time_in_seconds = timer.elapsed().as_secs_f32()
-                        * (BATCHES_PER_SUPERBATCH as f32 / BUFFER_SIZE as f32);
-                    let time_left_in_seconds =
-                        (superbatches_left as f32 * time_in_seconds).ceil() as usize;
-                    let hh = time_left_in_seconds / 3600;
-                    let mm = (time_left_in_seconds - hh * 3600) / 60;
-                    let ss = time_left_in_seconds - hh * 3600 - mm * 60;
+                    for (idx, batch) in shuffle_buffer.chunks(BATCH_SIZE).enumerate() {
+                        let mut gradient = boxed_and_zeroed::<TrainerPolicyNet>();
+                        running_error += gradient_batch(&policy, &mut gradient, batch);
+                        let adjustment = 1.0 / batch.len() as f32;
 
-                    println!(
-                        "> Superbatch {superbatch_index}/{} Running Loss {} Estimated training time: {}h {}m {}s        ",
-                        SUPERBATCHES_COUNT,
-                        running_error / (BATCHES_PER_SUPERBATCH * BATCH_SIZE) as f32,
-                        hh, mm, ss
-                    );
+                        let used_lr = if superbatch_index == 0 && batch_index < WARMUP_BATCHES {
+                            START_LR / (WARMUP_BATCHES - batch_index) as f32
+                        } else {
+                            learning_rate
+                        };
 
-                    running_error = 0.0;
+                        update(
+                            &mut policy,
+                            &gradient,
+                            adjustment,
+                            used_lr,
+                            &mut momentum,
+                            &mut velocity,
+                        );
+                        batch_index += 1;
+                        print!(
+                            "> Superbatch {}/{} Batch {}/{}    Speed {:.0}                     \r",
+                            superbatch_index + 1,
+                            SUPERBATCHES_COUNT,
+                            batch_index,
+                            BATCHES_PER_SUPERBATCH,
+                            (idx * BATCH_SIZE) as f32 / timer.elapsed().as_secs_f32()
+                        );
+                        let _ = std::io::stdout().flush();
 
-                    let training_percentage = superbatch_index as f32 / SUPERBATCHES_COUNT as f32;
-                    let cosine_decay = 1.0 - (1.0 + (PI * training_percentage).cos()) / 2.0;
-                    learning_rate = START_LR + (END_LR - START_LR) * cosine_decay;
-                    println!("Dropping LR to {learning_rate}");
+                        if batch_index % BATCHES_PER_SUPERBATCH == 0 {
+                            superbatch_index += 1;
+                            batch_index = 0;
+                            let superbatches_left = SUPERBATCHES_COUNT - superbatch_index;
+                            let time_in_seconds = timer.elapsed().as_secs_f32()
+                                * (BATCHES_PER_SUPERBATCH as f32 / BUFFER_SIZE as f32);
+                            let time_left_in_seconds =
+                                (superbatches_left as f32 * time_in_seconds).ceil() as usize;
+                            let hh = time_left_in_seconds / 3600;
+                            let mm = (time_left_in_seconds - hh * 3600) / 60;
+                            let ss = time_left_in_seconds - hh * 3600 - mm * 60;
 
-                    let mut export_path = PathBuf::new();
-                    export_path.push(root_dictionary);
-                    export_path.push("..");
-                    export_path.push("policy_checkpoints");
-                    export_path.push(format!("{}-{}.bin", NAME, superbatch_index));
+                            println!(
+                                "> Superbatch {superbatch_index}/{} Running Loss {} Estimated training time: {}h {}m {}s        ",
+                                SUPERBATCHES_COUNT,
+                                running_error / (BATCHES_PER_SUPERBATCH * BATCH_SIZE) as f32,
+                                hh, mm, ss
+                            );
 
-                    policy.export(export_path.to_str().unwrap());
+                            running_error = 0.0;
 
-                    if superbatch_index == SUPERBATCHES_COUNT {
-                        break 'training;
+                            let training_percentage = superbatch_index as f32 / SUPERBATCHES_COUNT as f32;
+                            let cosine_decay = 1.0 - (1.0 + (PI * training_percentage).cos()) / 2.0;
+                            learning_rate = START_LR + (END_LR - START_LR) * cosine_decay;
+                            println!("Dropping LR to {learning_rate}");
+
+                            let mut export_path = PathBuf::new();
+                            export_path.push(root_dictionary);
+                            export_path.push("..");
+                            export_path.push("policy_checkpoints");
+                            export_path.push(format!("{}-{}.bin", NAME, superbatch_index));
+
+                            policy.export(export_path.to_str().unwrap());
+
+                            if superbatch_index == SUPERBATCHES_COUNT {
+                                break 'training;
+                            }
+                        }
                     }
-                }
 
-                let len = buffer.len();
-                training_data_reader.consume(len);
+                    shuffle_buffer = Vec::new();
+                    shuffle_buffer.reserve_exact(BUFFER_SIZE);
+                }
             }
         }
+    }
+}
+
+fn shuffle(data: &mut [DecompressedData]) {
+    let mut rng = Rand::with_seed();
+
+    for i in (0..data.len()).rev() {
+        let idx = rng.rng() as usize % (i + 1);
+        data.swap(idx, i);
+    }
+}
+
+fn parse_into_buffer(game: MontyFormat, buffer: &mut Vec<DecompressedData>) {
+    buffer.clear();
+
+    let mut pos = game.startpos;
+    let castling = game.castling;
+
+    for data in game.moves {
+        if let Some(dist) = data.visit_distribution.as_ref() {
+            if dist.len() > 1 && dist.len() <= MAX_MOVES {
+                let mut policy_data = DecompressedData {
+                    pos,
+                    moves: [(0, 0); 108],
+                    num: dist.len(),
+                };
+
+                for (i, (mov, visits)) in dist.iter().enumerate() {
+                    policy_data.moves[i] = (u16::from(*mov), *visits as u16);
+                }
+
+                buffer.push(policy_data);
+            }
+        }
+
+        pos.make(data.best_move, &castling);
+    }
+}
+
+pub struct Rand(u64);
+impl Rand {
+    pub fn with_seed() -> Self {
+        let seed = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Guaranteed increasing.")
+            .as_micros() as u64
+            & 0xFFFF_FFFF;
+
+        Self(seed)
+    }
+
+    pub fn rng(&mut self) -> u64 {
+        self.0 ^= self.0 << 13;
+        self.0 ^= self.0 >> 7;
+        self.0 ^= self.0 << 17;
+        self.0
     }
 }
 
@@ -189,7 +247,7 @@ fn update(
 fn gradient_batch(
     policy: &TrainerPolicyNet,
     grad: &mut TrainerPolicyNet,
-    batch: &[PolicyPacked],
+    batch: &[DecompressedData],
 ) -> f32 {
     let size = (batch.len() / THREADS).max(1);
     let mut errors = vec![0.0; THREADS];
@@ -217,13 +275,23 @@ fn gradient_batch(
 }
 
 fn update_single_grad(
-    entry: &PolicyPacked,
+    entry: &DecompressedData,
     policy: &TrainerPolicyNet,
     grad: &mut TrainerPolicyNet,
     error: &mut f32,
 ) {
-    let mut policies = Vec::with_capacity(entry.move_count() as usize);
-    let board = ChessBoard::from_policy_pack(entry);
+
+    let board = ChessBoard::from_decompressed_data(entry);
+    let mut policy_pack = PolicyPacked::from_board(&board);
+
+    for idx in 0..entry.num {
+        let (mv, visits)= entry.moves[idx];
+        let mv = Move::from(mv);
+        let mv = jackal::Move::from_squares(Square::from_raw(mv.src() as u8), Square::from_raw(mv.to() as u8), mv.flag());
+        policy_pack.push_move(mv, visits);
+    }
+
+    let mut policies = Vec::with_capacity(policy_pack.move_count() as usize);
     let mut inputs = SparseVector::with_capacity(32);
 
     if board.side_to_move() == Side::WHITE {
@@ -232,7 +300,7 @@ fn update_single_grad(
         PolicyNetwork::map_policy_inputs::<_, false, true>(&board, |feat| inputs.push(feat));
     }
 
-    let vertical_flip = if entry.get_side_to_move() == Side::WHITE {
+    let vertical_flip = if board.side_to_move() == Side::WHITE {
         0
     } else {
         56
@@ -242,7 +310,7 @@ fn update_single_grad(
     let mut total = 0.0;
     let mut total_expected = 0;
 
-    for move_data in &entry.moves()[..entry.move_count() as usize] {
+    for move_data in &policy_pack.moves()[..policy_pack.move_count() as usize] {
         total_expected += move_data.visits;
 
         let see_index = if board.side_to_move() == Side::WHITE {
@@ -311,8 +379,8 @@ fn update_single_grad(
 #[repr(C)]
 #[derive(Clone, Copy, FeedForwardNetwork)]
 struct TrainerPolicySubnet {
-    l0: SparseConnected<activation::ReLU, 768, 32>,
-    l1: DenseConnected<activation::ReLU, 32, 32>,
+    l0: SparseConnected<activation::ReLU, 768, 16>,
+    l1: DenseConnected<activation::ReLU, 16, 16>,
 }
 
 impl TrainerPolicySubnet {

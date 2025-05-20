@@ -1,6 +1,7 @@
+use bullet::policy::loader::DecompressedData;
 use colored::Colorize;
 
-use crate::spear::{CastleRights, ChessBoardPacked, Piece, PolicyPacked, Side, Square, FEN};
+use crate::{spear::{CastleRights, ChessBoardPacked, Piece, PolicyPacked, Side, Square, FEN}, Bitboard};
 
 use super::{
     chess_board_pieces::ChessBoardPieces,
@@ -201,6 +202,27 @@ impl ChessBoard {
 
         *result.state.get_side_to_move_mut() = pack.get_side_to_move();
         result
+    }
+
+    pub fn from_decompressed_data(data: &DecompressedData) -> Self {
+        let occupancy: [Bitboard; 2] = [Bitboard::from_raw(data.pos.bbs()[0]), Bitboard::from_raw(data.pos.bbs()[1])];
+        let pieces: [Bitboard; 6] = [
+            Bitboard::from_raw(data.pos.bbs()[2]), 
+            Bitboard::from_raw(data.pos.bbs()[3]),
+            Bitboard::from_raw(data.pos.bbs()[4]),
+            Bitboard::from_raw(data.pos.bbs()[5]),
+            Bitboard::from_raw(data.pos.bbs()[6]),
+            Bitboard::from_raw(data.pos.bbs()[7]),
+        ];
+
+        let pieces = ChessBoardPieces { occupancy, pieces };
+
+        let mut state = ChessBoardState::default();
+        *state.get_en_passant_mut() = Square::from_raw(data.pos.enp_sq());
+        *state.get_side_to_move_mut() = Side::from_raw(data.pos.stm() as u8);
+        *state.get_half_move_counter_mut() = data.pos.halfm();
+
+        ChessBoard { pieces, state }
     }
 
     pub fn get_fen(&self) -> FEN {

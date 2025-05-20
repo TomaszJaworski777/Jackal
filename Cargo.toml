@@ -16,6 +16,7 @@ console = "=0.15.8"
 term_cursor = "0.2.1"
 term_size = "0.3.2"
 bytemuck = "1.18.0"
+bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features=["hip"] }
 
 [workspace]
 members = ["datagen", "train"]

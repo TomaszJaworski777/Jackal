@@ -2,8 +2,8 @@ use crate::spear::{base_structures::Side, Bitboard, ChessBoard, Piece, Square};
 
 #[derive(Clone, Copy, Default, PartialEq, Hash)]
 pub struct ChessBoardPieces {
-    occupancy: [Bitboard; 2],
-    pieces: [Bitboard; 6],
+    pub occupancy: [Bitboard; 2],
+    pub pieces: [Bitboard; 6],
 }
 impl ChessBoardPieces {
     #[inline]
