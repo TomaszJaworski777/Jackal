@@ -8,7 +8,7 @@ use super::{Accumulator, NetworkLayer};
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/512-230.bin"
+        "../../../resources/networks/monty-90.network"
     ))
 };
 

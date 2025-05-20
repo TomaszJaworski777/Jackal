@@ -49,20 +49,20 @@ impl PolicyTrainer {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_007cos-512see_300",
+        net_id: "policy_007cos-512see_300-monty",
         lr_scheduler: lr::CosineDecayLR { initial_lr: 0.001, final_lr: 0.000001, final_superbatch: 300 },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 1024,
             start_superbatch: 1,
-            end_superbatch: 300,
+            end_superbatch: 90,
         },
         save_rate: 10,
     };
 
     let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("conv_policy_data.bin", 48000);
+    let data_loader = PolicyDataLoader::new("monty.binpack", 48000);
 
     //trainer.load_from_checkpoint("policy_checkpoints/policy_007cos-tdp1024see_100-300");
 
