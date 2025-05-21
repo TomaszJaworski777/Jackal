@@ -19,20 +19,20 @@ const NAME: &'static str = "policy_007-32x32see_300";
 const THREADS: usize = 6;
 const SUPERBATCHES_COUNT: usize = 300;
 const START_LR: f32 = 0.001;
-const END_LR: f32 = 0.000001;
+const END_LR: f32 = 0.00001;
 const WARMUP_BATCHES: usize = 200;
 
 const BATCH_SIZE: usize = 16_384;
 const BATCHES_PER_SUPERBATCH: usize = 1024;
-const TRAINING_DATA_PATH: &'static str = "policy_data.bin";
+const TRAINING_DATA_PATH: &'static str = "D:\\policy_data.bin";
 
 pub struct PolicyTrainer;
 impl PolicyTrainer {
     pub fn execute() {
         let root_dictionary = env!("CARGO_MANIFEST_DIR");
         let mut training_data_path = PathBuf::new();
-        training_data_path.push(root_dictionary);
-        training_data_path.push("..");
+        // training_data_path.push(root_dictionary);
+        // training_data_path.push("..");
         training_data_path.push(TRAINING_DATA_PATH);
         let training_data_path = training_data_path.to_str().unwrap();
         let training_data = File::open(training_data_path).expect("Cannot open training data file");
@@ -71,10 +71,12 @@ impl PolicyTrainer {
         'training: loop {
             let training_data =
                 File::open(training_data_path).expect("Cannot open training data file");
+
             let mut training_data_reader = BufReader::with_capacity(
                 BUFFER_SIZE * BATCH_SIZE * std::mem::size_of::<PolicyPacked>(),
                 training_data,
             );
+
             while let Ok(buffer) = training_data_reader.fill_buf() {
                 if buffer.is_empty() {
                     break;

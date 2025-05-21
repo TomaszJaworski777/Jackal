@@ -54,7 +54,7 @@ impl SEE {
         let mut attackers = (Attacks::get_knight_attacks_for_square(to_square)
             & board.get_piece_mask(Piece::KNIGHT))
             | (Attacks::get_king_attacks_for_square(to_square) & board.get_piece_mask(Piece::KING))
-            | (Attacks::get_pawn_attacks_for_square::<true>(to_square)
+            | (Attacks::get_pawn_attacks_for_square::<false>(to_square)
                 & board.get_piece_mask(Piece::PAWN)
                 & board.get_occupancy_for_side::<true>())
             | (Attacks::get_pawn_attacks_for_square::<true>(to_square)

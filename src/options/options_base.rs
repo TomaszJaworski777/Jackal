@@ -52,8 +52,8 @@ macro_rules! create_option_structs {
 
 create_option_structs!(
     "Hash"            => hash:          SpinOptionInt, 32, 1, 131072;
-    "Threads"         => threads:       SpinOptionInt, 1, 1, 1024;
-    "MoveOverhead"    => move_overhead: SpinOptionInt, 20, 0, 500;
+    "Threads"         => threads:       SpinOptionInt, 1, 1, 2;
+    "MoveOverhead"    => move_overhead: SpinOptionInt, 100, 0, 500;
     "MultiPV"         => multi_pv:      SpinOptionInt, 1, 1, 256;
     "UCI_ShowWDL"     => show_wdl:      CheckBool,     false;
     "UCI_AnalyseMode" => analyse_mode:  CheckBool,     false;
