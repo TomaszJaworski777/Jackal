@@ -57,7 +57,7 @@ impl ValueConverter {
             let position: ChessBoardPacked = unsafe { std::ptr::read(buffer.as_ptr() as *const _) };
             entries_processed += 1;
 
-             let score = position.get_white_perspective_score();
+            let score = position.get_white_perspective_score();
             // if score <= 0.0 || score >= 1.0 {
             //     mate_scores += 1;
             //     continue;

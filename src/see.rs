@@ -1,6 +1,5 @@
 use crate::spear::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
 
-
 pub struct SEE;
 impl SEE {
     pub const PIECE_VALUES: [i32; 6] = [100, 300, 300, 500, 900, 0];
@@ -22,7 +21,7 @@ impl SEE {
 
         // Balance is the value of the move minus threshold. Function
         // call takes care for Enpass, Promotion and Castling moves.
-        let mut balance = estimate_move_value(&board, mv) - threshold;
+        let mut balance = estimate_move_value(board, mv) - threshold;
 
         // Best case still fails to beat the threshold
         if balance < 0 {
@@ -46,7 +45,7 @@ impl SEE {
         let mut occupied = board.get_occupancy();
         occupied = (occupied ^ from_square.get_bit()) | to_square.get_bit();
         if mv.is_en_passant() {
-            occupied = occupied ^ board.en_passant_square().get_bit();
+            occupied ^= board.en_passant_square().get_bit();
         }
 
         // Get all pieces which attack the target square. And with occupied
@@ -81,6 +80,7 @@ impl SEE {
         board.side_to_move() != side_to_move
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn see_internal<const STM_WHITE: bool, const NSTM_WHITE: bool>(
         board: &ChessBoard,
         next_victim: &mut Piece,
@@ -111,11 +111,10 @@ impl SEE {
         }
 
         // Remove this attacker from the occupied
-        *occupied = *occupied
-            ^ (1u64
-                << (my_attackers & board.get_piece_mask(*next_victim))
-                    .ls1b_square()
-                    .get_raw());
+        *occupied ^= 1u64
+            << (my_attackers & board.get_piece_mask(*next_victim))
+                .ls1b_square()
+                .get_raw();
 
         // A diagonal move may reveal bishop or queen attackers
         if *next_victim == Piece::PAWN
@@ -192,5 +191,5 @@ fn estimate_move_value(board: &ChessBoard, mv: Move) -> i32 {
         value = 0;
     }
 
-    return value;
+    value
 }

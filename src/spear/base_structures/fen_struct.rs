@@ -25,6 +25,7 @@ impl FEN {
         Self::from_str(fen_string.as_str())
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(fen_string: &str) -> Self {
         let fen_parts: Vec<&str> = fen_string.split_whitespace().collect();
         let mut result: Self = Self::default();

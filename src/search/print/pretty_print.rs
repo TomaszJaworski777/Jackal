@@ -1,6 +1,6 @@
+use crate::spear::{ChessPosition, Move, StringUtils};
 use colored::Colorize;
 use console::pad_str;
-use crate::spear::{ChessPosition, Move, StringUtils};
 
 use crate::{
     clear_terminal_screen,
@@ -56,7 +56,7 @@ impl SearchDisplay for PrettyPrint {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        pvs: &Vec<(Score, GameState, Vec<Move>)>,
+        pvs: &[(Score, GameState, Vec<Move>)],
     ) {
         let (mut score, state, pv) = &pvs[0];
         score = match *state {

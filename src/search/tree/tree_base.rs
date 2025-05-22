@@ -141,7 +141,11 @@ impl Tree {
         }
     }
 
-    pub fn get_pvs(&self, multi_pv: i32, options: &EngineOptions) -> Vec<(Score, GameState, Vec<Move>)> {
+    pub fn get_pvs(
+        &self,
+        multi_pv: i32,
+        options: &EngineOptions,
+    ) -> Vec<(Score, GameState, Vec<Move>)> {
         let mut results = Vec::new();
 
         for pv_idx in 0..multi_pv {
@@ -151,7 +155,11 @@ impl Tree {
         results
     }
 
-    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(&self, idx: usize, options: &EngineOptions) -> (Score, GameState, Vec<Move>) {
+    pub fn get_pv_by_index<const US: bool, const NOT_US: bool>(
+        &self,
+        idx: usize,
+        options: &EngineOptions,
+    ) -> (Score, GameState, Vec<Move>) {
         let mut result = Vec::new();
         let mut moves = self[self.root_index()].actions().clone();
 
@@ -213,8 +221,12 @@ impl Tree {
         (moves[idx].score(), self[node_idx].state(), result)
     }
 
-    fn get_pv_internal<const US: bool, const NOT_US: bool>(&self, node_index: NodeIndex, result: &mut Vec<Move>, options: &EngineOptions) {
-
+    fn get_pv_internal<const US: bool, const NOT_US: bool>(
+        &self,
+        node_index: NodeIndex,
+        result: &mut Vec<Move>,
+        options: &EngineOptions,
+    ) {
         let draw_score = if US {
             options.draw_score()
         } else {
@@ -231,7 +243,9 @@ impl Tree {
         result.push(best_action.mv());
 
         let new_node_index = best_action.node_index();
-        if !new_node_index.is_null() && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed) {
+        if !new_node_index.is_null()
+            && new_node_index.segment() == self.current_segment.load(Ordering::Relaxed)
+        {
             self.get_pv_internal::<NOT_US, US>(new_node_index, result, options)
         }
     }

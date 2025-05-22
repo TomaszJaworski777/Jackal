@@ -1,5 +1,5 @@
-use rand::Rng;
 use jackal::{ChessPosition, Move, FEN};
+use rand::Rng;
 
 pub struct DataGenUtils;
 impl DataGenUtils {

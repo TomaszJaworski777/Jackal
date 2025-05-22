@@ -1,9 +1,9 @@
+use crate::spear::{ChessPosition, Move, Piece, Side};
 use crate::{
     options::EngineOptions,
     search::{print::SearchDisplay, utils::ContemptParams, Score},
     SearchLimits, SearchStats, Tree,
 };
-use crate::spear::{ChessPosition, Move, Piece, Side};
 use std::sync::atomic::AtomicBool;
 
 pub struct Mcts<'a> {
@@ -43,7 +43,7 @@ impl<'a> Mcts<'a> {
     }
 
     pub fn search<PRINTER: SearchDisplay>(&self) -> (Move, Score) {
-        let mut printer = PRINTER::new(&self.root_position, self.options, &self.tree);
+        let mut printer = PRINTER::new(&self.root_position, self.options, self.tree);
 
         //Check if root node is expanded, and if not then expand it
         let root_index = self.tree.root_index();
@@ -54,14 +54,12 @@ impl<'a> Mcts<'a> {
             } else {
                 self.tree[root_index].expand::<false, true, true>(&self.root_position, self.options)
             }
+        } else if side_to_move == Side::WHITE {
+            self.tree[root_index]
+                .recalculate_policy::<true, false, true>(&self.root_position, self.options)
         } else {
-            if side_to_move == Side::WHITE {
-                self.tree[root_index]
-                    .recalculate_policy::<true, false, true>(&self.root_position, self.options)
-            } else {
-                self.tree[root_index]
-                    .recalculate_policy::<false, true, true>(&self.root_position, self.options)
-            }
+            self.tree[root_index]
+                .recalculate_policy::<false, true, true>(&self.root_position, self.options)
         }
 
         //Start mcts search loop
@@ -73,14 +71,15 @@ impl<'a> Mcts<'a> {
 
         //At the end of the search print the last search update raport and then print
         //end of search message containing search result
-        let (best_move, best_score) = self.tree[self.tree.root_index()].get_best_move(self.tree, self.options.draw_score());
+        let (best_move, best_score) =
+            self.tree[self.tree.root_index()].get_best_move(self.tree, self.options.draw_score());
         self.stats.update_time_passed();
         printer.print_search_raport::<true>(
             self.stats,
             self.options,
             self.limits,
             self.tree.total_usage(),
-            &self.tree.get_pvs(self.options.multi_pv(), self.options)
+            &self.tree.get_pvs(self.options.multi_pv(), self.options),
         );
         printer.print_search_result(best_move, best_score);
         (best_move, best_score)

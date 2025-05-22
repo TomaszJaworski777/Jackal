@@ -1,5 +1,5 @@
-use crate::{search::Score, GameState, Tree};
 use crate::spear::{ChessPosition, Move};
+use crate::{search::Score, GameState, Tree};
 
 use crate::{
     options::EngineOptions,
@@ -18,7 +18,7 @@ pub trait SearchDisplay: Send + Sync {
         engine_options: &EngineOptions,
         search_limits: &SearchLimits,
         usage: f32,
-        pvs: &Vec<(Score, GameState, Vec<Move>)>,
+        pvs: &[(Score, GameState, Vec<Move>)],
     ) {
     }
     fn print_search_result(&self, mv: Move, score: Score) {}

@@ -8,7 +8,7 @@ impl Rays {
     }
 }
 
-const RAYS: [[Bitboard; 64]; 64] = {
+static RAYS: [[Bitboard; 64]; 64] = {
     let mut result = [[Bitboard::EMPTY; 64]; 64];
     let mut from_square_index = 0;
     while from_square_index < 64 {

@@ -11,7 +11,7 @@ use goober::{
     layer::{DenseConnected, SparseConnected},
     FeedForwardNetwork, Matrix, OutputLayer, SparseVector, Vector,
 };
-use jackal::{PolicyNetwork, SEE, ChessBoard, PolicyPacked, Side};
+use jackal::{ChessBoard, PolicyNetwork, PolicyPacked, Side, SEE};
 use rand::{seq::SliceRandom, Rng};
 
 const NAME: &'static str = "policy_007-32x32see_300";

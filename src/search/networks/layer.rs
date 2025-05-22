@@ -25,7 +25,9 @@ pub struct QunatisedNetworkLayer<T: Copy, const INPUTS: usize, const OUTPUTS: us
     pub biases: QuantizedAccumulator<T, OUTPUTS>,
 }
 
-impl<T: Copy + Default, const INPUTS: usize, const OUTPUTS: usize> Default for QunatisedNetworkLayer<T, INPUTS, OUTPUTS> {
+impl<T: Copy + Default, const INPUTS: usize, const OUTPUTS: usize> Default
+    for QunatisedNetworkLayer<T, INPUTS, OUTPUTS>
+{
     fn default() -> Self {
         Self {
             weights: [QuantizedAccumulator::default(); INPUTS],
@@ -57,7 +59,12 @@ impl<const INPUTS: usize, const OUTPUTS: usize> NetworkLayer<INPUTS, OUTPUTS> {
     }
 }
 
-impl<T: Copy + AddAssign<T> + Mul<T, Output = T> + Default, const INPUTS: usize, const OUTPUTS: usize> QunatisedNetworkLayer<T, INPUTS, OUTPUTS> {
+impl<
+        T: Copy + AddAssign<T> + Mul<T, Output = T> + Default,
+        const INPUTS: usize,
+        const OUTPUTS: usize,
+    > QunatisedNetworkLayer<T, INPUTS, OUTPUTS>
+{
     #[inline]
     pub fn weights(&self) -> &[QuantizedAccumulator<T, OUTPUTS>; INPUTS] {
         &self.weights

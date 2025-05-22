@@ -4,10 +4,11 @@ use std::arch::x86_64::_pext_u64;
 use crate::spear::{Bitboard, Square};
 
 #[cfg(not(feature = "pext"))]
-const BISHOP_ATTACKS: [[Bitboard; 512]; 64] = unsafe {
- std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks.spear")) };
+static BISHOP_ATTACKS: [[Bitboard; 512]; 64] =
+    unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks.spear")) };
 #[cfg(feature = "pext")]
-const BISHOP_ATTACKS: [[Bitboard; 512]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks_pext.spear")) };
+static BISHOP_ATTACKS: [[Bitboard; 512]; 64] =
+    unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/bishop_attacks_pext.spear")) };
 
 pub struct BishopAttacks;
 impl BishopAttacks {
@@ -19,10 +20,7 @@ impl BishopAttacks {
         let (mask, shift, magic) = BISHOP_MAGICS[square];
 
         #[cfg(not(feature = "pext"))]
-        let index = ((occupancy & mask)
-            .wrapping_mul(magic)
-            >> shift)
-            .get_raw() as usize;
+        let index = ((occupancy & mask).wrapping_mul(magic) >> shift).get_raw() as usize;
 
         #[cfg(feature = "pext")]
         let index =
@@ -37,7 +35,11 @@ const BISHOP_MAGICS: [(Bitboard, u32, Bitboard); 64] = {
     let mut result = [(Bitboard::EMPTY, 0, Bitboard::EMPTY); 64];
     let mut square_index = 0usize;
     while square_index < 64 {
-        result[square_index] = (BISHOP_MASKS[square_index], 64 - BISHOP_OCCUPANCY_COUNT[square_index] as u32, Bitboard::from_raw(MAGIC_NUMBERS_BISHOP[square_index]));
+        result[square_index] = (
+            BISHOP_MASKS[square_index],
+            64 - BISHOP_OCCUPANCY_COUNT[square_index] as u32,
+            Bitboard::from_raw(MAGIC_NUMBERS_BISHOP[square_index]),
+        );
         square_index += 1;
     }
 

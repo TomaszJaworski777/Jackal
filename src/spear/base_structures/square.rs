@@ -133,7 +133,7 @@ impl Square {
 
     pub fn from_string(square: &str) -> Square {
         let signatures: Vec<char> = square.chars().collect();
-        let file = signatures[0] as u8 - 'a' as u8;
+        let file = signatures[0] as u8 - b'a';
         let rank = signatures[1].to_string().parse::<u8>().unwrap() - 1;
         Square::from_coords(rank, file)
     }
@@ -183,6 +183,6 @@ impl Display for Square {
 
         let file = self.get_raw() % 8;
         let rank = ((self.get_raw() as f32) / 8_f32).floor() as u8 + 1;
-        write!(formatter, "{}{}", ('a' as u8 + file) as char, rank)
+        write!(formatter, "{}{}", (b'a' + file) as char, rank)
     }
 }

@@ -52,8 +52,7 @@ impl ValueTrainer {
             batch_queue_size: 512,
         };
 
-        let data_loader =
-            loader::DirectSequentialDataLoader::new(&["./finetune_data.bin"]);
+        let data_loader = loader::DirectSequentialDataLoader::new(&["./finetune_data.bin"]);
 
         trainer.load_from_checkpoint("checkpoints/value_014_2048_wdl-600");
         trainer.run(&schedule, &settings, &data_loader);
@@ -68,7 +67,7 @@ impl ValueTrainer {
             let raw = trainer.eval_raw_output(fen);
             let (mut w, mut d, mut l) = (raw[2], raw[1], raw[0]);
             let max = w.max(d).max(l);
-            
+
             w = (w - max).exp();
             d = (d - max).exp();
             l = (l - max).exp();
