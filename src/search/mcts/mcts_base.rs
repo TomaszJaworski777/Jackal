@@ -50,16 +50,16 @@ impl<'a> Mcts<'a> {
         let side_to_move = self.root_position.board().side_to_move();
         if !self.tree[root_index].has_children() {
             if side_to_move == Side::WHITE {
-                self.tree[root_index].expand::<true, false, true>(&self.root_position, self.options)
+                self.tree[root_index].expand::<true, false, true, true>(&self.root_position, self.options)
             } else {
-                self.tree[root_index].expand::<false, true, true>(&self.root_position, self.options)
+                self.tree[root_index].expand::<false, true, true, true>(&self.root_position, self.options)
             }
         } else if side_to_move == Side::WHITE {
             self.tree[root_index]
-                .recalculate_policy::<true, false, true>(&self.root_position, self.options)
+                .recalculate_policy::<true, false, true, true>(&self.root_position, self.options)
         } else {
             self.tree[root_index]
-                .recalculate_policy::<false, true, true>(&self.root_position, self.options)
+                .recalculate_policy::<false, true, true, true>(&self.root_position, self.options)
         }
 
         //Start mcts search loop

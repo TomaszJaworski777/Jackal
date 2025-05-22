@@ -151,7 +151,7 @@ impl Node {
         best_action_index
     }
 
-    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool, const ROOT: bool>(
         &self,
         position: &ChessPosition,
         options: &EngineOptions,
@@ -175,6 +175,12 @@ impl Node {
             options.common_pst()
         };
 
+        let mva_lvv_scalar = if US {
+            options.policy_sac_bonus()
+        } else {
+            0.0
+        };
+
         let mut max = f32::NEG_INFINITY;
         let mut total = 0.0;
 
@@ -191,7 +197,7 @@ impl Node {
                     mv,
                     vertical_flip,
                     &mut cache,
-                ) + mva_lvv(mv, position.board(), options);
+                ) + mva_lvv(mv, position.board(), mva_lvv_scalar);
                 actions.push(Edge::new(
                     NodeIndex::from_raw((policy * MULTIPLIER) as u32),
                     mv,
@@ -225,7 +231,7 @@ impl Node {
         self.set_gini_impurity(gini_impurity);
     }
 
-    pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const ROOT: bool>(
+    pub fn recalculate_policy<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool, const ROOT: bool>(
         &self,
         position: &ChessPosition,
         options: &EngineOptions,
@@ -245,6 +251,12 @@ impl Node {
 
         let pst = if ROOT { options.root_pst() } else { 1.0 };
 
+        let mva_lvv_scalar = if US {
+            options.policy_sac_bonus()
+        } else {
+            options.common_pst()
+        };
+
         //Network output cache to prevent processing the same subnet twice
         let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
@@ -259,7 +271,7 @@ impl Node {
                 action.mv(),
                 vertical_flip,
                 &mut cache,
-            ) + mva_lvv(action.mv(), position.board(), options);
+            ) + mva_lvv(action.mv(), position.board(), mva_lvv_scalar);
             policies.push(policy);
             max = max.max(policy);
         }
@@ -288,7 +300,7 @@ impl Node {
 }
 
 const MVA_LVV_PIECE_VALUES: [f32; 5] = [1.0, 3.0, 3.0, 5.0, 9.0];
-fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
+fn mva_lvv(mv: Move, board: &ChessBoard, scalar: f32) -> f32 {
     let attacker = board.get_piece_on_square(mv.get_from_square());
     let victim = board.get_piece_on_square(mv.get_to_square());
 
@@ -298,5 +310,5 @@ fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f32 {
 
     (MVA_LVV_PIECE_VALUES[attacker.get_raw() as usize]
         - MVA_LVV_PIECE_VALUES[victim.get_raw() as usize])
-        * options.policy_sac_bonus()
+        * scalar
 }
