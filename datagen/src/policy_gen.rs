@@ -1,9 +1,9 @@
 use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
+use jackal::{ChessPosition, Move, PolicyPacked, Side};
 use jackal::{
     ContemptParams, EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree,
 };
-use jackal::{ChessPosition, Move, PolicyPacked, Side};
 use std::sync::atomic::AtomicBool;
 
 pub struct PolicyGen;

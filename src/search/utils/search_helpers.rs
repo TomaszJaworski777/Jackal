@@ -33,7 +33,8 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 } else {
-                    let (win_chance, draw_chance, _) = ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
+                    let (win_chance, draw_chance, _) =
+                        ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
                     let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);

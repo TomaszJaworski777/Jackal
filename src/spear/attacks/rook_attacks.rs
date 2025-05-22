@@ -4,9 +4,11 @@ use std::arch::x86_64::_pext_u64;
 use crate::spear::{Bitboard, Square};
 
 #[cfg(not(feature = "pext"))]
-const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks.spear")) };
+static ROOK_ATTACKS: [[Bitboard; 4096]; 64] =
+    unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks.spear")) };
 #[cfg(feature = "pext")]
-const ROOK_ATTACKS: [[Bitboard; 4096]; 64] = unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks_pext.spear")) };
+static ROOK_ATTACKS: [[Bitboard; 4096]; 64] =
+    unsafe { std::mem::transmute(*include_bytes!("attack_binpacks/rook_attacks_pext.spear")) };
 
 pub struct RookAttacks;
 impl RookAttacks {
@@ -14,15 +16,11 @@ impl RookAttacks {
     pub fn get_rook_attacks(square: Square, occupancy: Bitboard) -> Bitboard {
         let square = usize::from(square);
 
-        
         #[cfg(not(feature = "pext"))]
         let (mask, shift, magic) = ROOK_MAGICS[square];
 
         #[cfg(not(feature = "pext"))]
-        let index = ((occupancy & mask)
-            .wrapping_mul(magic)
-            >> shift)
-            .get_raw() as usize;
+        let index = ((occupancy & mask).wrapping_mul(magic) >> shift).get_raw() as usize;
 
         #[cfg(feature = "pext")]
         let index =
@@ -37,13 +35,16 @@ const ROOK_MAGICS: [(Bitboard, u32, Bitboard); 64] = {
     let mut result = [(Bitboard::EMPTY, 0, Bitboard::EMPTY); 64];
     let mut square_index = 0usize;
     while square_index < 64 {
-        result[square_index] = (ROOK_MASKS[square_index], 64 - ROOK_OCCUPANCY_COUNT[square_index] as u32, Bitboard::from_raw(MAGIC_NUMBERS_ROOK[square_index]));
+        result[square_index] = (
+            ROOK_MASKS[square_index],
+            64 - ROOK_OCCUPANCY_COUNT[square_index] as u32,
+            Bitboard::from_raw(MAGIC_NUMBERS_ROOK[square_index]),
+        );
         square_index += 1;
     }
 
     result
 };
-
 
 const ROOK_MASKS: [Bitboard; 64] = {
     let mut result = [Bitboard::EMPTY; 64];

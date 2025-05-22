@@ -6,7 +6,7 @@ use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
 
 use super::Mcts;
 
-impl<'a> Mcts<'a> {
+impl Mcts<'_> {
     pub(super) fn process_deeper_node<
         const STM_WHITE: bool,
         const NSTM_WHITE: bool,
@@ -26,7 +26,7 @@ impl<'a> Mcts<'a> {
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
             let current_material = Self::calculate_stm_material(
-                &current_position,
+                current_position,
                 self.root_position.board().side_to_move(),
             );
             SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, NOT_US>(
@@ -54,11 +54,8 @@ impl<'a> Mcts<'a> {
             };
 
             //We then select the best action to evaluate and advance the position to the move of this action
-            let best_action_index = self.select_action::<ROOT>(
-                current_node_index,
-                action_cpy,
-                draw_score
-            );
+            let best_action_index =
+                self.select_action::<ROOT>(current_node_index, action_cpy, draw_score);
 
             let new_edge_cpy = self
                 .tree
@@ -109,7 +106,7 @@ impl<'a> Mcts<'a> {
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
-        draw_score: f32
+        draw_score: f32,
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 

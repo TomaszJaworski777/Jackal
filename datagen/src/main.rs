@@ -8,8 +8,8 @@ use std::{
 
 use crossbeam_queue::SegQueue;
 use display::Printer;
-use policy_gen::PolicyGen;
 use jackal::{ChessBoardPacked, PolicyPacked};
+use policy_gen::PolicyGen;
 use value_gen::ValueGen;
 
 mod display;

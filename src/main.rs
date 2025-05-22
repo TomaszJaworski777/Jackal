@@ -1,7 +1,8 @@
 use std::{env, io::stdin, sync::atomic::AtomicBool};
 
 use jackal::{
-    EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, Tree, UciProcessor, ChessPosition, FEN
+    ChessPosition, EngineOptions, MiscCommandsProcessor, ParamsProcessor, SearchEngine, Tree,
+    UciProcessor, FEN,
 };
 
 fn main() {

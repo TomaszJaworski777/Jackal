@@ -213,14 +213,32 @@ impl MiscCommandsProcessor {
 
         position.board().draw_board();
         println!("For me");
-        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
-        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
+        println!(
+            "Score: {} ({:.2})",
+            score.single(draw_score),
+            score.as_cp_f32(draw_score)
+        );
+        println!(
+            "WDL: [{:.2}%, {:.2}%, {:.2}%]\n",
+            score.win_chance() * 100.0,
+            score.draw_chance() * 100.0,
+            score.lose_chance() * 100.0
+        );
 
         let draw_score = search_engine.engine_options().draw_score_opp();
 
         println!("For them");
-        println!("Score: {} ({:.2})", score.single(draw_score), score.as_cp_f32(draw_score));
-        println!("WDL: [{:.2}%, {:.2}%, {:.2}%]\n", score.win_chance() * 100.0, score.draw_chance() * 100.0, score.lose_chance() * 100.0);
+        println!(
+            "Score: {} ({:.2})",
+            score.single(draw_score),
+            score.as_cp_f32(draw_score)
+        );
+        println!(
+            "WDL: [{:.2}%, {:.2}%, {:.2}%]\n",
+            score.win_chance() * 100.0,
+            score.draw_chance() * 100.0,
+            score.lose_chance() * 100.0
+        );
     }
 }
 

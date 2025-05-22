@@ -15,3 +15,5 @@ resources/sprt.txt
 *.pgn
 resources/explansion_plan.txt
 /scaling
+monty.binpack
+/policy_checkpoints

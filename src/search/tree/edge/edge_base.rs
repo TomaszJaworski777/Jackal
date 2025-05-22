@@ -108,8 +108,13 @@ impl Edge {
         self.score
             .store(Score::new(new_win_chance as f32, new_draw_chance as f32));
 
-        let new_squared_score = (self.squared_score() * previous_visits + f64::from(score.single(0.5)).powi(2)) / (previous_visits + 1.0);
-        self.squared_score.store((new_squared_score * f64::from(u32::MAX)) as u32, Ordering::Relaxed);
+        let new_squared_score = (self.squared_score() * previous_visits
+            + f64::from(score.single(0.5)).powi(2))
+            / (previous_visits + 1.0);
+        self.squared_score.store(
+            (new_squared_score * f64::from(u32::MAX)) as u32,
+            Ordering::Relaxed,
+        );
     }
 
     #[inline]

@@ -97,7 +97,9 @@ impl<'a> Mcts<'a> {
                 }
 
                 //Update best move
-                let new_best_move = self.tree[self.tree.root_index()].get_best_move(self.tree, draw_score).0;
+                let new_best_move = self.tree[self.tree.root_index()]
+                    .get_best_move(self.tree, draw_score)
+                    .0;
                 if new_best_move != *best_move {
                     *best_move = new_best_move;
                     *best_move_changes += 1;
@@ -105,16 +107,16 @@ impl<'a> Mcts<'a> {
             }
 
             //Check soft time every larger chunk of iterations
-            if self.stats.iters() % 16384 == 0 {
-                if self.limits.is_soft_time_limit_reached(
+            if self.stats.iters() % 16384 == 0
+                && self.limits.is_soft_time_limit_reached(
                     self.stats,
                     self.options,
                     best_move_changes,
                     previous_score,
-                    &self.tree,
-                ) {
-                    self.interruption_token.store(true, Ordering::Relaxed)
-                }
+                    self.tree,
+                )
+            {
+                self.interruption_token.store(true, Ordering::Relaxed)
             }
 
             //Check for end of the search
@@ -138,7 +140,7 @@ impl<'a> Mcts<'a> {
                     self.options,
                     self.limits,
                     self.tree.total_usage(),
-                    &self.tree.get_pvs(self.options.multi_pv(), self.options)
+                    &self.tree.get_pvs(self.options.multi_pv(), self.options),
                 )
             }
         }

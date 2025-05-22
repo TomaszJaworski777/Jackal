@@ -4,8 +4,8 @@ mod options;
 mod processors;
 mod search;
 mod see;
-mod utils;
 mod spear;
+mod utils;
 
 pub use options::EngineOptions;
 pub use processors::{MiscCommandsProcessor, ParamsProcessor, UciProcessor};
@@ -14,5 +14,8 @@ pub use search::{
     SearchStats, Tree,
 };
 pub use see::SEE;
+pub use spear::{
+    Bitboard, ChessBoard, ChessBoardPacked, ChessPosition, Move, Piece, PolicyPacked, Side, Square,
+    StringUtils, FEN,
+};
 pub use utils::clear_terminal_screen;
-pub use spear::{ChessPosition, FEN, ChessBoardPacked, PolicyPacked, Side, ChessBoard, StringUtils, Move, Piece, Bitboard, Square};

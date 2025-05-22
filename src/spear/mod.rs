@@ -25,9 +25,9 @@ pub use base_structures::Side;
 #[allow(unused)]
 pub use base_structures::Square;
 #[allow(unused)]
-pub use base_structures::FEN;
-#[allow(unused)]
 pub use base_structures::ZobristKey;
+#[allow(unused)]
+pub use base_structures::FEN;
 #[allow(unused)]
 pub use binpacks::ChessBoardPacked;
 #[allow(unused)]

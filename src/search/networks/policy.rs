@@ -7,7 +7,7 @@ use super::NetworkLayer;
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/p300cos32x32see004.network"
+        "../../../resources/networks/p300cos32x32see005.network"
     ))
 };
 
@@ -51,7 +51,7 @@ impl PolicyNetwork {
         vertical_flip: u8,
         cache: &mut [Option<Vec<f32>>; 192],
     ) -> f32 {
-        let see_index = usize::from(SEE::static_exchange_evaluation::<true, false>(
+        let see_index = usize::from(SEE::static_exchange_evaluation::<STM_WHITE, NSTM_WHITE>(
             board, mv, -108,
         ));
 

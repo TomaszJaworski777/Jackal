@@ -16,8 +16,16 @@ impl MoveGen {
         ortographic_pins: Bitboard,
         method: &mut F,
     ) {
-        let promotion_rank = if STM_WHITE { Bitboard::RANK_7 } else { Bitboard::RANK_2 };
-        let double_push_rank = if STM_WHITE { Bitboard::RANK_2 } else { Bitboard::RANK_7 };
+        let promotion_rank = if STM_WHITE {
+            Bitboard::RANK_7
+        } else {
+            Bitboard::RANK_2
+        };
+        let double_push_rank = if STM_WHITE {
+            Bitboard::RANK_2
+        } else {
+            Bitboard::RANK_7
+        };
         let pawns = board.get_piece_mask_for_side::<STM_WHITE>(Piece::PAWN);
 
         let pushable_pawns = pawns & !diagonal_pins;
@@ -66,31 +74,79 @@ fn handle_pawn_pushes<F: FnMut(Move), const STM_WHITE: bool>(
     let pushable_pawns = (pushable_pawns & !ortographic_pins) | pinned_pawns;
     let promotion_pawns = pushable_pawns & promotion_rank;
     let double_pushable_pawns = pushable_pawns & double_push_rank;
-    
+
     let empty_spaces = !board.get_occupancy();
-    let single_shifted_push_map = if STM_WHITE { push_map.shift_right(8) } else { push_map.shift_left(8) };
-    let double_shifted_push_map = if STM_WHITE { push_map.shift_right(16) } else { push_map.shift_left(16) };
-    let single_shifted_empty = if STM_WHITE { empty_spaces.shift_right(8) } else { empty_spaces.shift_left(8) };
+    let single_shifted_push_map = if STM_WHITE {
+        push_map.shift_right(8)
+    } else {
+        push_map.shift_left(8)
+    };
+    let double_shifted_push_map = if STM_WHITE {
+        push_map.shift_right(16)
+    } else {
+        push_map.shift_left(16)
+    };
+    let single_shifted_empty = if STM_WHITE {
+        empty_spaces.shift_right(8)
+    } else {
+        empty_spaces.shift_left(8)
+    };
 
     let single_push_pawns = pushable_pawns & !promotion_pawns & single_shifted_push_map;
-    let targets = if STM_WHITE { single_push_pawns.shift_left(8) } else { single_push_pawns.shift_right(8) };
+    let targets = if STM_WHITE {
+        single_push_pawns.shift_left(8)
+    } else {
+        single_push_pawns.shift_right(8)
+    };
     for (from_square, to_square) in single_push_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::QUIET_MOVE))
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::QUIET_MOVE,
+        ))
     }
 
     let double_push_pawns = double_pushable_pawns & single_shifted_empty & double_shifted_push_map;
-    let targets = if STM_WHITE { double_push_pawns.shift_left(16) } else { double_push_pawns.shift_right(16) };
+    let targets = if STM_WHITE {
+        double_push_pawns.shift_left(16)
+    } else {
+        double_push_pawns.shift_right(16)
+    };
     for (from_square, to_square) in double_push_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::DOUBLE_PUSH))
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::DOUBLE_PUSH,
+        ))
     }
 
     let promotion_pawns = promotion_pawns & single_shifted_push_map;
-    let targets = if STM_WHITE { promotion_pawns.shift_left(8) } else { promotion_pawns.shift_right(8) };
+    let targets = if STM_WHITE {
+        promotion_pawns.shift_left(8)
+    } else {
+        promotion_pawns.shift_right(8)
+    };
     for (from_square, to_square) in promotion_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::KNIGHT_PROMOTION));
-        method(Move::from_squares(from_square, to_square, MoveFlag::BISHOP_PROMOTION));
-        method(Move::from_squares(from_square, to_square, MoveFlag::ROOK_PROMOTION));
-        method(Move::from_squares(from_square, to_square, MoveFlag::QUEEN_PROMOTION));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::KNIGHT_PROMOTION,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::BISHOP_PROMOTION,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::ROOK_PROMOTION,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::QUEEN_PROMOTION,
+        ));
     }
 }
 
@@ -109,42 +165,108 @@ fn handle_pawn_captures<F: FnMut(Move), const STM_WHITE: bool>(
     let right_pin = diagonal_pins & diagonal_pins.shift_left(shift_amount);
     let right_pin = right_pin | right_pin.shift_right(shift_amount);
 
-    let left_shifted_captures = if STM_WHITE { capture_map.shift_right(7) } else { capture_map.shift_left(9) };
-    let right_shifted_captures = if STM_WHITE { capture_map.shift_right(9) } else { capture_map.shift_left(7) };
-    
-    let left_attack_pawns = ((attack_pawns & !diagonal_pins) | (attack_pawns & left_pin)) & !Bitboard::FILE_A;
-    let right_attack_pawns = ((attack_pawns & !diagonal_pins) | (attack_pawns & right_pin)) & !Bitboard::FILE_H;
+    let left_shifted_captures = if STM_WHITE {
+        capture_map.shift_right(7)
+    } else {
+        capture_map.shift_left(9)
+    };
+    let right_shifted_captures = if STM_WHITE {
+        capture_map.shift_right(9)
+    } else {
+        capture_map.shift_left(7)
+    };
+
+    let left_attack_pawns =
+        ((attack_pawns & !diagonal_pins) | (attack_pawns & left_pin)) & !Bitboard::FILE_A;
+    let right_attack_pawns =
+        ((attack_pawns & !diagonal_pins) | (attack_pawns & right_pin)) & !Bitboard::FILE_H;
     let left_promotion_pawns = left_attack_pawns & promotion_rank;
     let right_promotion_pawns = right_attack_pawns & promotion_rank;
 
     let left_capture_pawns = left_attack_pawns & !left_promotion_pawns & left_shifted_captures;
-    let targets = if STM_WHITE { left_capture_pawns.shift_left(7) } else { left_capture_pawns.shift_right(9) };
+    let targets = if STM_WHITE {
+        left_capture_pawns.shift_left(7)
+    } else {
+        left_capture_pawns.shift_right(9)
+    };
     for (from_square, to_square) in left_capture_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::CAPTURE))
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::CAPTURE,
+        ))
     }
 
     let right_capture_pawns = right_attack_pawns & !right_promotion_pawns & right_shifted_captures;
-    let targets = if STM_WHITE { right_capture_pawns.shift_left(9) } else { right_capture_pawns.shift_right(7) };
+    let targets = if STM_WHITE {
+        right_capture_pawns.shift_left(9)
+    } else {
+        right_capture_pawns.shift_right(7)
+    };
     for (from_square, to_square) in right_capture_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::CAPTURE))
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::CAPTURE,
+        ))
     }
 
     let left_promotion_pawns = left_promotion_pawns & left_shifted_captures;
-    let targets = if STM_WHITE { left_promotion_pawns.shift_left(7) } else { left_promotion_pawns.shift_right(9) };
+    let targets = if STM_WHITE {
+        left_promotion_pawns.shift_left(7)
+    } else {
+        left_promotion_pawns.shift_right(9)
+    };
     for (from_square, to_square) in left_promotion_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::KNIGHT_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::BISHOP_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::ROOK_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::QUEEN_PROMOTION_CAPTURE));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::KNIGHT_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::BISHOP_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::ROOK_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::QUEEN_PROMOTION_CAPTURE,
+        ));
     }
 
     let right_promotion_pawns = right_promotion_pawns & right_shifted_captures;
-    let targets = if STM_WHITE { right_promotion_pawns.shift_left(9) } else { right_promotion_pawns.shift_right(7) };
+    let targets = if STM_WHITE {
+        right_promotion_pawns.shift_left(9)
+    } else {
+        right_promotion_pawns.shift_right(7)
+    };
     for (from_square, to_square) in right_promotion_pawns.into_iter().zip(targets) {
-        method(Move::from_squares(from_square, to_square, MoveFlag::KNIGHT_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::BISHOP_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::ROOK_PROMOTION_CAPTURE));
-        method(Move::from_squares(from_square, to_square, MoveFlag::QUEEN_PROMOTION_CAPTURE));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::KNIGHT_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::BISHOP_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::ROOK_PROMOTION_CAPTURE,
+        ));
+        method(Move::from_squares(
+            from_square,
+            to_square,
+            MoveFlag::QUEEN_PROMOTION_CAPTURE,
+        ));
     }
 }
 
