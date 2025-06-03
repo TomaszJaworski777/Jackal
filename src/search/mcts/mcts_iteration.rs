@@ -43,7 +43,7 @@ impl Mcts<'_> {
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
                 self.tree[current_node_index]
-                    .expand::<STM_WHITE, NSTM_WHITE, false>(current_position, self.options)
+                    .expand::<STM_WHITE, NSTM_WHITE, US, false>(current_position, self.options)
             }
 
             //Calculate asymetrical draw contempt
