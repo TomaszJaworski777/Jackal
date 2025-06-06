@@ -1,6 +1,6 @@
 use super::{display::Printer, utils::DataGenUtils};
 use crossbeam_queue::SegQueue;
-use jackal::{ChessBoardPacked, ChessPosition, Move, Side};
+use jackal::{ChessBoard, ChessBoardPacked, ChessPosition, Move, Side};
 use jackal::{
     ContemptParams, EngineOptions, GameState, Mcts, NoPrint, SearchLimits, SearchStats, Tree,
 };
@@ -16,8 +16,10 @@ impl ValueGen {
     ) {
         let mut options = EngineOptions::new();
         let contempt_parms = ContemptParams::calculate_params(&options);
-        options.set("DrawScore", "30");
-        options.set("MaterialReductionBonus", "20");
+        options.set("Contempt", "0");
+        options.set("DrawScore", "50");
+        options.set("MaterialReductionBonus", "0");
+        options.set("PolicySacBonus", "5");
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new(0);
         limits.add_iters(iter_count);
@@ -66,10 +68,12 @@ impl ValueGen {
                 packed_positions.push(packed_position);
             }
 
-            if state != GameState::Drawn {
-                for pos in &mut packed_positions {
-                    pos.apply_result(position.board().side_to_move().flipped())
+            for (idx, pos) in packed_positions.iter_mut().rev().enumerate() {
+                if state != GameState::Drawn {
+                    pos.apply_result(position.board().side_to_move().flipped());
                 }
+
+                pos.apply_moves_left(idx as u16 + 1);
             }
 
             printer.add_position(packed_positions.len() as u64);

@@ -9,6 +9,7 @@ pub struct ChessBoardPacked {
     side_to_move: Side,
     score: u16,
     result: i8,
+    moves_left: u16,
 }
 
 #[allow(unused)]
@@ -25,6 +26,7 @@ impl ChessBoardPacked {
             side_to_move: board.side_to_move(),
             score: (score * u16::MAX as f32) as u16,
             result: 0,
+            moves_left: 0,
         }
     }
 
@@ -43,6 +45,11 @@ impl ChessBoardPacked {
         self.result
     }
 
+        #[inline]
+    pub fn get_moves_left(&self) -> u16 {
+        self.moves_left
+    }
+
     #[inline]
     pub fn get_white_perspective_score(&self) -> f32 {
         let stm_score = self.score as f32 / u16::MAX as f32;
@@ -56,6 +63,11 @@ impl ChessBoardPacked {
     #[inline]
     pub fn apply_result(&mut self, winner: Side) {
         self.result = if winner == Side::WHITE { 1 } else { -1 }
+    }
+
+        #[inline]
+    pub fn apply_moves_left(&mut self, moves_left: u16) {
+        self.moves_left = moves_left
     }
 }
 
