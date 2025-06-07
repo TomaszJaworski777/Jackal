@@ -39,16 +39,10 @@ impl Edge {
             )
         };
 
-        let score = if flip_score {
-            self.score().reversed()
-        } else {
-            self.score()
-        };
-
         let score = if self.visits() == 0 {
             Score::DRAW
         } else {
-            score
+            self.score()
         };
         let score_cp = score.as_cp_f32(0.5);
         let score_cp_string = if score_cp >= 0.0 {
@@ -60,7 +54,7 @@ impl Edge {
         println!(
             "{}",
             format!(
-                "{}   {} score   {} visits   {} policy{}",
+                "{}   {} score   {} visits   {} policy{} {}",
                 index_text,
                 pad_str(
                     heat_color(score_cp_string.as_str(), score.single(0.5), 0.0, 1.0).as_str(),
@@ -86,7 +80,8 @@ impl Edge {
                     console::Alignment::Right,
                     None
                 ),
-                terminal_string
+                terminal_string,
+                self.max_score().as_cp_f32(0.5)
             )
             .label()
         )

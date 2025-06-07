@@ -113,6 +113,11 @@ impl Tree {
         self[node_index].actions()[action_index].add_score(score)
     }
 
+        #[inline]
+    pub fn set_edge_max_score(&self, node_index: NodeIndex, action_index: usize, score: Score) {
+        self[node_index].actions()[action_index].set_max_score(score)
+    }
+
     pub fn backpropagate_mates(&self, parent_node_index: NodeIndex, child_state: GameState) {
         match child_state {
             GameState::Lost(x) => self[parent_node_index].set_state(GameState::Won(x + 1)),

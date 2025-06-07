@@ -9,6 +9,7 @@ pub struct Edge {
     policy: AtomicI16,
     visits: AtomicU32,
     score: AtomicScore,
+    max_score: AtomicScore,
     squared_score: AtomicU32,
 }
 
@@ -20,6 +21,7 @@ impl Clone for Edge {
             policy: AtomicI16::new(self.policy.load(Ordering::Relaxed)),
             visits: AtomicU32::new(self.visits()),
             score: self.score.clone(),
+            max_score: self.max_score.clone(),
             squared_score: AtomicU32::new(self.squared_score.load(Ordering::Relaxed)),
         }
     }
@@ -39,6 +41,7 @@ impl Edge {
             policy: AtomicI16::new((policy * f32::from(i16::MAX)) as i16),
             visits: AtomicU32::new(0),
             score: AtomicScore::default(),
+            max_score: AtomicScore::default(),
             squared_score: AtomicU32::new(0),
         }
     }
@@ -87,6 +90,11 @@ impl Edge {
         self.score.load()
     }
 
+    #[inline]
+    pub fn max_score(&self) -> Score {
+        self.max_score.load()
+    }
+
     pub fn squared_score(&self) -> f64 {
         f64::from(self.squared_score.load(Ordering::Relaxed)) / f64::from(u32::MAX)
     }
@@ -108,6 +116,10 @@ impl Edge {
         self.score
             .store(Score::new(new_win_chance as f32, new_draw_chance as f32));
 
+        if previous_visits == 0.0 {
+            self.max_score.store(score);
+        }
+
         let new_squared_score = (self.squared_score() * previous_visits
             + f64::from(score.single(0.5)).powi(2))
             / (previous_visits + 1.0);
@@ -115,6 +127,11 @@ impl Edge {
             (new_squared_score * f64::from(u32::MAX)) as u32,
             Ordering::Relaxed,
         );
+    }
+
+    #[inline]
+    pub fn set_max_score(&self, score: Score) {
+        self.max_score.store(score);
     }
 
     #[inline]

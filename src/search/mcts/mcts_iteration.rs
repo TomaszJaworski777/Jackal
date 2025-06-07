@@ -90,6 +90,23 @@ impl Mcts<'_> {
             self.tree
                 .add_edge_score(current_node_index, best_action_index, score);
 
+            //Backpropagate minmax 
+            let node_idx = self.tree.get_edge_clone(current_node_index, best_action_index).node_index();
+            if node_idx != NodeIndex::NULL {
+                let action_idx = self.tree[node_idx].get_best_action_by_key(|action| {
+                    if action.visits() == 0 {
+                        return f32::NEG_INFINITY;
+                    }
+
+                    return action.max_score().single(draw_score);
+                });
+                
+                if action_idx != usize::MAX {
+                    let max_score = self.tree[node_idx].actions()[action_idx].max_score().reversed();
+                    self.tree.set_edge_max_score(current_node_index, best_action_index, max_score);
+                }
+            }
+
             //Backpropagate mates to assure our engine avoids/follows mating line
             self.tree
                 .backpropagate_mates(current_node_index, self.tree[new_node_index].state());
@@ -137,9 +154,11 @@ impl Mcts<'_> {
         self.tree[node_idx].get_best_action_by_key(|action| {
             let visits = action.visits();
 
+            let mut max_score_variance = 0.0;
             let mut score = if visits == 0 {
                 parent.score().reversed()
             } else {
+                max_score_variance = (action.score().single(draw_score) - action.max_score().single(draw_score)).abs();
                 action.score()
             };
 
@@ -157,7 +176,7 @@ impl Mcts<'_> {
                 }
             }
 
-            let score = score.single(draw_score);
+            let score = score.single(draw_score) + max_score_variance * -0.01;
             score + (explore_value * action.policy() / (visits as f32 + 1.0))
         })
     }
