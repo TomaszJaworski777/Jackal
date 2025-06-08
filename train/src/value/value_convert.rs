@@ -4,7 +4,7 @@ use std::{
     time::Instant,
 };
 
-use bullet::format::ChessBoard;
+use bullet::game::formats::bulletformat::ChessBoard;
 use jackal::{ChessBoardPacked, Move, Piece, Side};
 
 use crate::value::ValueConvertDisplay;
