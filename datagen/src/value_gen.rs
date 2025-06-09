@@ -15,11 +15,13 @@ impl ValueGen {
         interruption_token: &AtomicBool,
     ) {
         let mut options = EngineOptions::new();
-        let contempt_parms = ContemptParams::calculate_params(&options);
-        options.set("Contempt", "0");
+        options.set("Contempt", "250");
         options.set("DrawScore", "50");
         options.set("MaterialReductionBonus", "0");
-        options.set("PolicySacBonus", "5");
+        options.set("PolicySacBonus", "0");
+
+        let contempt_parms = ContemptParams::calculate_params(&options);
+
         let mut tree = Tree::new(options.hash(), options.hash_percentage() / 10.0);
         let mut limits = SearchLimits::new(0);
         limits.add_iters(iter_count);
