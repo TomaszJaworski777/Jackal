@@ -158,6 +158,10 @@ impl Node {
     ) {
         let mut actions = self.actions_mut();
 
+        if !actions.is_empty() {
+            return;
+        }
+
         let mut inputs: Vec<usize> = Vec::with_capacity(32);
         PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
             inputs.push(idx)
