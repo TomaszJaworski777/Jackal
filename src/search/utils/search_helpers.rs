@@ -15,6 +15,7 @@ impl SearchHelpers {
         state: GameState,
         key: u64,
         tree: &Tree,
+        depth: u32,
         material_difference: i32,
         options: &EngineOptions,
         contempt_parms: &ContemptParams,
@@ -49,8 +50,21 @@ impl SearchHelpers {
 
         Contempt::wdl_rescale::<US>(&mut v, &mut d, options, contempt_parms);
 
-        let w_new = (1.0 + v - d) / 2.0;
-        let d_new = d;
+        let half_move_scalar = current_position.board().half_move_counter() as f32 / options.move_count_scale();
+        let depth_value_scalar = (depth as f32 / options.depth_value_scale()).min(1.0);
+        let scalar = 0.0; //half_move_scalar + depth_value_scalar;
+
+        let mut w_new = (1.0 + v - d) / 2.0;
+        let mut d_new = d;
+        
+        if US {
+            let virtual_l = 1.0 - w_new - d_new;
+            let sw = w_new * scalar;
+            let sl = virtual_l * scalar;
+
+            w_new = w_new - sw;
+            d_new = d + sw + sl;
+        }
 
         Score::new(w_new, d_new)
     }

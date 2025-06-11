@@ -34,6 +34,7 @@ impl Mcts<'_> {
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
                 self.tree,
+                *depth,
                 self.start_material - current_material,
                 self.options,
                 self.contempt_parms,

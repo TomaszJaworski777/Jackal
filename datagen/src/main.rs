@@ -67,7 +67,7 @@ fn main() {
         .len()
         / position_size;
     let target = target * 1_000_000;
-    let printer = Printer::new(saved_positions, target, threads, iter_count, mode);
+    let mut printer = Printer::new(saved_positions, target, threads, iter_count, mode);
 
     let save_queue: SegQueue<Vec<u8>> = SegQueue::new();
     let interruption_token = AtomicBool::new(false);
@@ -106,7 +106,7 @@ fn main() {
 fn update_loop(
     file: &mut File,
     save_queue: &SegQueue<Vec<u8>>,
-    printer: &Printer,
+    printer: & Printer,
     target: u64,
     interruption_token: &AtomicBool,
 ) {
