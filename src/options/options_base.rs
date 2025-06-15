@@ -80,6 +80,6 @@ create_option_structs!(
     "RootPST"             => root_pst:              SpinOptionFloatTunable, 3.25, 0.1, 10.0, 0.4, 0.002;
     "CommonPST"           => common_pst:            SpinOptionFloatTunable, 1.23, 0.1, 10.0, 0.4, 0.002;
     "HashPercentage"      => hash_percentage:       SpinOptionFloatTunable, 0.11, 0.01, 5.0, 0.025, 0.002;
-    "MoveCountScale"      => move_count_scale:      SpinOptionFloatTunable, 800.0, 100.0, 10000.0, 150.0, 0.002;
-    "DepthValueScale"     => depth_value_scale:     SpinOptionFloatTunable, 600.0, 50.0, 2000.0, 60.0, 0.002;
+    "MoveCountScale"      => move_count_scale:      SpinOptionFloatTunable, 1500.0, 100.0, 10000.0, 150.0, 0.002;
+    "DepthValueScale"     => depth_value_scale:     SpinOptionFloatTunable, 1000.0, 50.0, 2000.0, 100.0, 0.002;
 );
