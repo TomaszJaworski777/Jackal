@@ -1,16 +1,10 @@
-use bullet::{
-    default::{
+use bullet::{default::{
             formats::bulletformat::ChessBoard,
             inputs::{self, SparseInputType},
             loader,
-    },
-    nn::{optimiser::{self, AdamWOptimiser, AdamWParams}, NetworkBuilder, Activation, ExecutionContext, Graph, Node, Shape},
-    trainer::{
-        default::{outputs, Trainer},
-        schedule::{ lr, wdl, TrainingSchedule, TrainingSteps },
-        settings::LocalSettings,
-        save::{Layout, QuantTarget, SavedFormat},
-    },
+    }, game::outputs::MaterialCount, nn::{optimiser::{self, AdamW, AdamWOptimiser, AdamWParams}, Activation, ExecutionContext, Graph, NetworkBuilder, Node, Shape}, trainer::{
+        default::{outputs, Trainer}, save::{Layout, QuantTarget, SavedFormat}, schedule::{ lr, wdl, TrainingSchedule, TrainingSteps }, settings::LocalSettings
+    }, value::ValueTrainerBuilder
 };
 use jackal::{Bitboard, Piece, Square};
 
@@ -18,13 +12,37 @@ const HIDDEN_SIZE: usize = 2048;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
+const NUM_OUTPUT_BUCKETS: usize = 4;
+
 pub struct ValueTrainer;
 impl ValueTrainer {
     pub fn execute() {
-        let mut trainer = make_trainer(HIDDEN_SIZE);
+        let mut trainer = ValueTrainerBuilder::default()
+            .single_perspective()
+            .wdl_output()
+            .optimiser(AdamW)
+            .inputs(ThreatsDefencesMirroredInputs)
+            .output_buckets(MaterialCount::<NUM_OUTPUT_BUCKETS>)
+            .save_format(&[
+                SavedFormat::id("l0w").quantise::<i16>(QA),
+                SavedFormat::id("l0b").quantise::<i16>(QA),
+                SavedFormat::id("l1w").quantise::<i16>(QB).transpose(),
+                SavedFormat::id("l1b").quantise::<i16>(QA * QB),
+            ])
+            .loss_fn(|output, target| output.softmax_crossentropy_loss(target))
+            .build(|builder, inputs, output_buckets| {
+                // weights
+                let l0 = builder.new_affine("l0", ThreatsDefencesMirroredInputs.num_inputs(), HIDDEN_SIZE);
+                let l1 = builder.new_affine("l1", HIDDEN_SIZE, 3 * NUM_OUTPUT_BUCKETS);
+
+                // inference
+                let out = l0.forward(inputs).activate(Activation::SCReLU);
+                l1.forward(out).select(output_buckets)
+            });
+
 
         let schedule: TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> = TrainingSchedule {
-            net_id: "v600cos2048td007wdlq".to_string(),
+            net_id: "v600cos2048WDL-TD-OB-007a-Q".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
@@ -153,56 +171,4 @@ impl inputs::SparseInputType for ThreatsDefencesMirroredInputs {
     fn description(&self) -> String {
         "Threat & Defences inputs".to_string()
     }
-}
-
-fn make_trainer(
-    l1: usize,
-) -> Trainer<AdamWOptimiser, ThreatsDefencesMirroredInputs, outputs::Single> {
-    let num_inputs = ThreatsDefencesMirroredInputs.num_inputs();
-
-    let (mut graph, output_node) = build_network(num_inputs, l1, ThreatsDefencesMirroredInputs.max_active());
-
-    let sizes = [num_inputs, l1];
-
-    for (i, &size) in sizes.iter().enumerate() {
-        graph
-            .get_weights_mut(&format!("l{i}w"))
-            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true).unwrap();
-
-        graph
-            .get_weights_mut(&format!("l{i}b"))
-            .seed_random(0.0, 1.0 / (size as f32).sqrt(), true).unwrap();
-    }
-
-    Trainer::new(
-        graph,
-        output_node,
-        AdamWParams::default(),
-        ThreatsDefencesMirroredInputs,
-        outputs::Single,
-        vec![
-            SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
-            SavedFormat::new("l0b", QuantTarget::I16(QA), Layout::Normal),
-            SavedFormat::new("l1w", QuantTarget::I16(QB), Layout::Normal),
-            SavedFormat::new("l1b", QuantTarget::I16(QA * QB), Layout::Normal),
-        ],
-        false,
-    )
-}
-
-fn build_network(inputs: usize, l1: usize, max_inputs: usize) -> (Graph, Node) {
-    let builder = NetworkBuilder::default();
-
-    let stm = builder.new_sparse_input("stm", Shape::new(inputs, 1), max_inputs);
-    let targets = builder.new_dense_input("targets", Shape::new(3, 1));
-
-    let l0 = builder.new_affine("l0", inputs, l1);
-    let l1 = builder.new_affine("l1", l1, 3);
-
-    let out = l0.forward(stm).activate(Activation::SCReLU);
-    let out = l1.forward(out);
-    out.softmax_crossentropy_loss(targets);
-
-    let output_node = out.node();
-    (builder.build(ExecutionContext::default()), output_node)
 }
