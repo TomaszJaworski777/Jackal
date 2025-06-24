@@ -52,7 +52,7 @@ impl SearchHelpers {
 
         let half_move_scalar = current_position.board().half_move_counter() as f32 / options.move_count_scale();
         let depth_value_scalar = (depth as f32 / options.depth_value_scale()).min(1.0);
-        let scalar = 0.0; // half_move_scalar + depth_value_scalar;
+        let scalar = half_move_scalar + depth_value_scalar;
 
         let mut w_new = (1.0 + v - d) / 2.0;
         let mut d_new = d;
