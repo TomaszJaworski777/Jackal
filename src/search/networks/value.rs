@@ -2,20 +2,20 @@ use crate::{search::networks::{layer::TransposedNetworkLayer, Accumulator, Netwo
 
 use super::{QA, QB};
 
-const NUM_OUTPUT_BUCKETS: usize = 4;
+const NUM_OUTPUT_BUCKETS: usize = 8;
 
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v600cos2048WDL-TD-OB-007a-Q.network"
+        "../../../resources/networks/v600cos3072WDL-TD-OB-007b-Q.network"
     ))
 };
 
 #[repr(C)]
 #[repr(align(64))]
 pub struct ValueNetwork {
-    l1: NetworkLayer<i16, { 768 * 4 }, 2048>,
-    l2: TransposedNetworkLayer<i16, 2048, { 3 * NUM_OUTPUT_BUCKETS }>,
+    l1: NetworkLayer<i16, { 768 * 4 }, 3072>,
+    l2: TransposedNetworkLayer<i16, 3072, { 3 * NUM_OUTPUT_BUCKETS }>,
 }
 
 impl ValueNetwork {

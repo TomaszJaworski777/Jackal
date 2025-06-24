@@ -8,11 +8,11 @@ use bullet::{default::{
 };
 use jackal::{Bitboard, Piece, Square};
 
-const HIDDEN_SIZE: usize = 2048;
+const HIDDEN_SIZE: usize = 3072;
 const QA: i16 = 255;
 const QB: i16 = 64;
 
-const NUM_OUTPUT_BUCKETS: usize = 4;
+const NUM_OUTPUT_BUCKETS: usize = 8;
 
 pub struct ValueTrainer;
 impl ValueTrainer {
@@ -42,7 +42,7 @@ impl ValueTrainer {
 
 
         let schedule: TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> = TrainingSchedule {
-            net_id: "v600cos2048WDL-TD-OB-007a-Q".to_string(),
+            net_id: "v600cos3072WDL-TD-OB-007b-Q".to_string(),
             eval_scale: 400.0,
             steps: TrainingSteps {
                 batch_size: 16_384,
