@@ -1,19 +1,21 @@
-use crate::spear::{ChessBoard, Piece, Side};
+use crate::{search::networks::{layer::TransposedNetworkLayer, Accumulator, NetworkLayer}, spear::{ChessBoard, Piece, Side}};
 
-use super::{accumulator::QuantizedAccumulator, layer::QunatisedNetworkLayer, QA, QB};
+use super::{QA, QB};
+
+const NUM_OUTPUT_BUCKETS: usize = 8;
 
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../../resources/networks/v600cos2048td006wdlq-ft2.network"
+        "../../../resources/networks/v600cos3072WDL-TD-OB-007b-Q.network"
     ))
 };
 
 #[repr(C)]
 #[repr(align(64))]
 pub struct ValueNetwork {
-    l1: QunatisedNetworkLayer<i16, { 768 * 4 }, 2048>,
-    l2: QunatisedNetworkLayer<i16, 2048, 3>,
+    l1: NetworkLayer<i16, { 768 * 4 }, 3072>,
+    l2: TransposedNetworkLayer<i16, 3072, { 3 * NUM_OUTPUT_BUCKETS }>,
 }
 
 impl ValueNetwork {
@@ -33,23 +35,30 @@ impl ValueNetwork {
             }
         });
 
-        let mut out = QuantizedAccumulator::<i32, 3>::default();
+        let mut out = Accumulator::<i32, 3>::default();
 
-        for (&neuron, weights) in l1_out.values().iter().zip(self.l2.weights.iter()) {
-            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
-            for (i, &j) in out.vals.iter_mut().zip(weights.vals.iter()) {
-                *i += act * i32::from(j);
+        let output_bucket = {
+            let divisor = 32usize.div_ceil(NUM_OUTPUT_BUCKETS);
+            (board.get_occupancy().pop_count() as usize - 2) / divisor
+        } * 3;
+
+        for (idx, output) in out.values_mut().iter_mut().enumerate() {
+            let weights = self.l2.weights()[output_bucket + idx];
+
+            for (&weight, &value) in weights.values().iter().zip(l1_out.values()) {
+                let act = i32::from(value).clamp(0, i32::from(QA)).pow(2);
+                *output += act * i32::from(weight);
             }
         }
 
         let mut win_chance = (out.values()[2] as f32 / f32::from(QA)
-            + f32::from(self.l2.biases().values()[2]))
+            + f32::from(self.l2.biases().values()[output_bucket + 2]))
             / f32::from(QA * QB);
         let mut draw_chance = (out.values()[1] as f32 / f32::from(QA)
-            + f32::from(self.l2.biases().values()[1]))
+            + f32::from(self.l2.biases().values()[output_bucket + 1]))
             / f32::from(QA * QB);
         let mut loss_chance = (out.values()[0] as f32 / f32::from(QA)
-            + f32::from(self.l2.biases().values()[0]))
+            + f32::from(self.l2.biases().values()[output_bucket + 0]))
             / f32::from(QA * QB);
 
         let max = win_chance.max(draw_chance).max(loss_chance);

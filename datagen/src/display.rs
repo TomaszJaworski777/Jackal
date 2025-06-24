@@ -8,6 +8,8 @@ use jackal::StringUtils;
 
 use crate::DataGenMode;
 
+static mut history: Vec<f32> = Vec::new();
+
 pub struct Printer {
     positions: AtomicU64,
     positions_since_last_raport: AtomicU64,
@@ -15,7 +17,7 @@ pub struct Printer {
     target: u64,
     threads: u8,
     nodes: u32,
-    mode: DataGenMode,
+    mode: DataGenMode
 }
 
 impl Printer {
@@ -33,7 +35,7 @@ impl Printer {
             target,
             threads,
             nodes,
-            mode,
+            mode
         }
     }
 
@@ -58,6 +60,22 @@ impl Printer {
 
         let positions_per_second =
             positions_since_last_raport as f32 * 1000.0 / time_since_last_raport_in_ms as f32;
+
+        let positions_per_second = unsafe {
+            history.push(positions_per_second);
+
+            if history.len() > 60 {
+                history.remove(0);
+            }
+
+            let mut avg = 0.0f32;
+
+            for pos in &history {
+                avg += *pos;
+            }
+
+            avg / history.len() as f32
+        };
 
         let e_time = ((self.target - positions.min(self.target)) as f32
             / positions_per_second.max(1.0)) as u64;

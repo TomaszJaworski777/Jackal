@@ -13,8 +13,8 @@ pub static PolicyNetwork: PolicyNetwork = unsafe {
 
 #[repr(C)]
 struct PolicySubNetwork {
-    l0: NetworkLayer<768, 32>,
-    l1: NetworkLayer<32, 32>,
+    l0: NetworkLayer<f32, 768, 32>,
+    l1: NetworkLayer<f32, 32, 32>,
 }
 
 impl PolicySubNetwork {
@@ -31,7 +31,11 @@ impl PolicySubNetwork {
             }
         }
 
-        let out = self.l1.forward_relu(&l0_out);
+        let mut out = *self.l1.biases();
+        for (neuron, weights) in l0_out.values().iter().zip(self.l1.weights().iter()) {
+            let activated = neuron.max(0.0);
+            out.madd(activated, weights);
+        }
 
         out.values().to_vec()
     }

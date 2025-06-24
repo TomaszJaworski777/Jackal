@@ -30,7 +30,7 @@ release: create_version_dir
 	cargo rustc --release --bin jackal --features=pext -- -C target-cpu=x86-64-v4 --emit link=$(X86_64_V4)
 
 gen:
-	cargo rustc --release --package datagen --bin datagen --features=pext -- -C target-cpu=native --emit link=$(DATAGEN)
+	cargo rustc --release --package datagen --bin datagen -- -C target-cpu=native --emit link=$(DATAGEN)
 
 trainer:
 	cargo rustc --release --package train --bin train -- -C target-cpu=native --emit link=$(TRAINER)

@@ -106,7 +106,7 @@ fn main() {
 fn update_loop(
     file: &mut File,
     save_queue: &SegQueue<Vec<u8>>,
-    printer: &Printer,
+    printer: & Printer,
     target: u64,
     interruption_token: &AtomicBool,
 ) {
