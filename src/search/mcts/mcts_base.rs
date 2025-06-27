@@ -49,11 +49,7 @@ impl<'a> Mcts<'a> {
         let root_index = self.tree.root_index();
         let side_to_move = self.root_position.board().side_to_move();
         if !self.tree[root_index].has_children() {
-            if side_to_move == Side::WHITE {
-                self.tree[root_index].expand::<true, false, true, true>(&self.root_position, self.options)
-            } else {
-                self.tree[root_index].expand::<false, true, true, true>(&self.root_position, self.options)
-            }
+            self.tree[root_index].expand(&self.root_position, self.options, side_to_move, true, true)
         } else if side_to_move == Side::WHITE {
             self.tree[root_index]
                 .recalculate_policy::<true, false, true, true>(&self.root_position, self.options)
@@ -63,11 +59,7 @@ impl<'a> Mcts<'a> {
         }
 
         //Start mcts search loop
-        if self.root_position.board().side_to_move() == Side::WHITE {
-            self.search_loop::<PRINTER, true, false>(&mut printer)
-        } else {
-            self.search_loop::<PRINTER, false, true>(&mut printer)
-        }
+        self.search_loop::<PRINTER>(&mut printer, self.root_position.board().side_to_move());
 
         //At the end of the search print the last search update raport and then print
         //end of search message containing search result

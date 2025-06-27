@@ -3,17 +3,15 @@ use std::{sync::atomic::Ordering, thread, time::Instant};
 use crate::spear::Move;
 
 use crate::search::print::SearchDisplay;
+use crate::Side;
 
 use super::Mcts;
 
 impl<'a> Mcts<'a> {
-    pub(super) fn search_loop<
-        PRINTER: SearchDisplay,
-        const STM_WHITE: bool,
-        const NSTM_WHITE: bool,
-    >(
+    pub(super) fn search_loop<PRINTER: SearchDisplay>(
         &self,
         printer: &'a mut PRINTER,
+        side: Side
     ) {
         let mut best_move = Move::NULL;
         let mut best_move_changes = 0;
@@ -25,18 +23,19 @@ impl<'a> Mcts<'a> {
         loop {
             thread::scope(|s| {
                 s.spawn(|| {
-                    self.main_loop::<PRINTER, STM_WHITE, NSTM_WHITE>(
+                    self.main_loop::<PRINTER>(
                         printer,
                         &mut best_move,
                         &mut best_move_changes,
                         &mut previous_score,
                         &mut last_raport_time,
                         &mut last_avg_depth,
+                        side
                     );
                 });
 
                 for _ in 0..self.options.threads() - 1 {
-                    s.spawn(|| self.worker_loop::<STM_WHITE, NSTM_WHITE>());
+                    s.spawn(|| self.worker_loop(side));
                 }
             });
 
@@ -48,7 +47,7 @@ impl<'a> Mcts<'a> {
         }
     }
 
-    fn main_loop<PRINTER: SearchDisplay, const STM_WHITE: bool, const NSTM_WHITE: bool>(
+    fn main_loop<PRINTER: SearchDisplay>(
         &self,
         printer: &'a mut PRINTER,
         best_move: &'a mut Move,
@@ -56,17 +55,21 @@ impl<'a> Mcts<'a> {
         previous_score: &'a mut f32,
         last_raport_time: &'a mut Instant,
         last_avg_depth: &'a mut u32,
+        side: Side
     ) {
         loop {
             //Start tree descend
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
+            let result = self.process_deeper_node(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,
                 &mut depth,
+                true,
+                true,
+                side
             );
 
             let draw_score = self.options.draw_score();
@@ -146,17 +149,20 @@ impl<'a> Mcts<'a> {
         }
     }
 
-    fn worker_loop<const STM_WHITE: bool, const NSTM_WHITE: bool>(&self) {
+    fn worker_loop(&self, side: Side) {
         loop {
             //Start tree descend
             let mut depth = 0;
             let mut position = self.root_position;
             let root_index = self.tree.root_index();
-            let result = self.process_deeper_node::<STM_WHITE, NSTM_WHITE, true, true, false>(
+            let result = self.process_deeper_node(
                 root_index,
                 self.tree.root_edge(),
                 &mut position,
                 &mut depth,
+                true,
+                true,
+                side,
             );
 
             if let Some(score) = result {

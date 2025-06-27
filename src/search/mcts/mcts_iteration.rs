@@ -3,33 +3,31 @@ use core::f32;
 use crate::spear::ChessPosition;
 
 use crate::search::{tree::Edge, NodeIndex, Score, SearchHelpers};
+use crate::Side;
 
 use super::Mcts;
 
 impl Mcts<'_> {
-    pub(super) fn process_deeper_node<
-        const STM_WHITE: bool,
-        const NSTM_WHITE: bool,
-        const ROOT: bool,
-        const US: bool,
-        const NOT_US: bool,
-    >(
+    pub(super) fn process_deeper_node(
         &self,
         current_node_index: NodeIndex,
         action_cpy: &Edge,
         current_position: &mut ChessPosition,
         depth: &mut u32,
+        us: bool,
+        root: bool,
+        side: Side
     ) -> Option<Score> {
         //If current non-root node is terminal or it's first visit, we don't want to go deeper into the tree
         //therefore we just evaluate the node and thats where recursion ends
-        let score = if !ROOT
+        let score = if !root
             && (self.tree[current_node_index].is_terminal() || action_cpy.visits() == 0)
         {
             let current_material = Self::calculate_stm_material(
                 current_position,
                 self.root_position.board().side_to_move(),
             );
-            SearchHelpers::get_node_score::<STM_WHITE, NSTM_WHITE, NOT_US>(
+            SearchHelpers::get_node_score(
                 current_position,
                 self.tree[current_node_index].state(),
                 self.tree[current_node_index].key(),
@@ -38,17 +36,18 @@ impl Mcts<'_> {
                 self.start_material - current_material,
                 self.options,
                 self.contempt_parms,
+                side,
+                !us,
             )
         } else {
             //On second visit we expand the node, if it wasn't already expanded.
             //This allows us to reduce amount of time we evaluate policy net
             if !self.tree[current_node_index].has_children() {
-                self.tree[current_node_index]
-                    .expand::<STM_WHITE, NSTM_WHITE, US, false>(current_position, self.options)
+                self.tree[current_node_index].expand(current_position, self.options, side, us, false)
             }
 
             //Calculate asymetrical draw contempt
-            let draw_score = if US {
+            let draw_score = if us {
                 self.options.draw_score()
             } else {
                 self.options.draw_score_opp()
@@ -56,31 +55,49 @@ impl Mcts<'_> {
 
             //We then select the best action to evaluate and advance the position to the move of this action
             let best_action_index =
-                self.select_action::<ROOT>(current_node_index, action_cpy, draw_score);
+                self.select_action(current_node_index, action_cpy, draw_score, root);
 
             let new_edge_cpy = self
                 .tree
                 .get_edge_clone(current_node_index, best_action_index);
-            current_position.make_move::<STM_WHITE, NSTM_WHITE>(new_edge_cpy.mv());
+
+            if side == Side::WHITE {
+                current_position.make_move::<true, false>(new_edge_cpy.mv());
+            } else {
+                current_position.make_move::<false, true>(new_edge_cpy.mv());
+            }
+            
 
             //Process the new action on the tree and obtain it's updated index
-            let new_node_index = self.tree.get_node_index::<NSTM_WHITE, STM_WHITE>(
-                current_position,
-                new_edge_cpy.node_index(),
-                current_node_index,
-                best_action_index,
-            )?;
+            let new_node_index = if side == Side::WHITE {
+                self.tree.get_node_index::<false, true>(
+                    current_position,
+                    new_edge_cpy.node_index(),
+                    current_node_index,
+                    best_action_index,
+                )
+            } else {
+                self.tree.get_node_index::<true, false>(
+                    current_position,
+                    new_edge_cpy.node_index(),
+                    current_node_index,
+                    best_action_index,
+                )
+            } ?;
 
             //Increase amount of threads visiting this node
             self.tree[new_node_index].inc_threads();
 
             //Descend deeper into the tree
             *depth += 1;
-            let opt_score = self.process_deeper_node::<NSTM_WHITE, STM_WHITE, false, NOT_US, US>(
+            let opt_score = self.process_deeper_node(
                 new_node_index,
                 &new_edge_cpy,
                 current_position,
                 depth,
+                !us,
+                false,
+                side.flipped(),
             );
 
             //When thread leaves the node, decrease the counter
@@ -103,17 +120,18 @@ impl Mcts<'_> {
 
     //PUCT formula V + C * P * (N.max(1).sqrt()/n + 1) where N = number of visits to parent node, n = number of visits to a child
     #[inline]
-    fn select_action<const ROOT: bool>(
+    fn select_action(
         &self,
         node_idx: NodeIndex,
         parent: &Edge,
         draw_score: f32,
+        root: bool,
     ) -> usize {
         assert!(self.tree[node_idx].has_children());
 
         let parent_visits = parent.visits();
 
-        let mut cpuct = if ROOT {
+        let mut cpuct = if root {
             self.options.root_cpuct_value()
         } else {
             self.options.cpuct_value()

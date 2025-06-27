@@ -1,5 +1,6 @@
 use crate::spear::ChessPosition;
 
+use crate::Side;
 use crate::{
     search::{Score, ValueNetwork},
     EngineOptions, GameState, Tree,
@@ -10,7 +11,7 @@ use super::contempt::{Contempt, ContemptParams};
 pub struct SearchHelpers;
 impl SearchHelpers {
     #[inline]
-    pub fn get_node_score<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool>(
+    pub fn get_node_score(
         current_position: &mut ChessPosition,
         state: GameState,
         key: u64,
@@ -19,6 +20,8 @@ impl SearchHelpers {
         material_difference: i32,
         options: &EngineOptions,
         contempt_parms: &ContemptParams,
+        side: Side,
+        us: bool,
     ) -> Score {
         let score_bonus = if material_difference != 0 && current_position.board().get_phase() > 5 {
             options.material_reduction_bonus() / 10.0
@@ -34,8 +37,12 @@ impl SearchHelpers {
                 if let Some(score) = tree.hash_table().probe(key) {
                     Score::new(score.win_chance() + score_bonus, score.draw_chance())
                 } else {
-                    let (win_chance, draw_chance, _) =
-                        ValueNetwork.forward::<STM_WHITE, NSTM_WHITE>(current_position.board());
+                    let (win_chance, draw_chance, _) = if side == Side::WHITE {
+                        ValueNetwork.forward::<true, false>(current_position.board())
+                    } else {
+                        ValueNetwork.forward::<false, true>(current_position.board())
+                    };
+
                     let score = Score::new(win_chance, draw_chance);
 
                     tree.hash_table().store(key, score);
@@ -48,7 +55,11 @@ impl SearchHelpers {
         let (w, mut d, l) = (score.win_chance(), score.draw_chance(), score.lose_chance());
         let mut v = w - l;
 
-        Contempt::wdl_rescale::<US>(&mut v, &mut d, options, contempt_parms);
+        if us {
+            Contempt::wdl_rescale::<true>(&mut v, &mut d, options, contempt_parms);
+        } else {
+            Contempt::wdl_rescale::<false>(&mut v, &mut d, options, contempt_parms);
+        }
 
         let half_move_scalar = current_position.board().half_move_counter() as f32 / options.move_count_scale();
         let depth_value_scalar = (depth as f32 / options.depth_value_scale()).min(1.0);
@@ -57,7 +68,7 @@ impl SearchHelpers {
         let mut w_new = (1.0 + v - d) / 2.0;
         let mut d_new = d;
         
-        if US {
+        if us {
             let virtual_l = 1.0 - w_new - d_new;
             let sw = w_new * scalar;
             let sl = virtual_l * scalar;

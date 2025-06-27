@@ -151,10 +151,13 @@ impl Node {
         best_action_index
     }
 
-    pub fn expand<const STM_WHITE: bool, const NSTM_WHITE: bool, const US: bool, const ROOT: bool>(
+    pub fn expand(
         &self,
         position: &ChessPosition,
         options: &EngineOptions,
+        side: Side,
+        us: bool,
+        root: bool,
     ) {
         let mut actions = self.actions_mut();
 
@@ -163,9 +166,15 @@ impl Node {
         }
 
         let mut inputs: Vec<usize> = Vec::with_capacity(32);
-        PolicyNetwork::map_policy_inputs::<_, STM_WHITE, NSTM_WHITE>(position.board(), |idx| {
-            inputs.push(idx)
-        });
+        if side == Side::WHITE {
+            PolicyNetwork::map_policy_inputs::<_, true, false>(position.board(), |idx| {
+                inputs.push(idx)
+            });
+        } else {
+            PolicyNetwork::map_policy_inputs::<_, false, true>(position.board(), |idx| {
+                inputs.push(idx)
+            });
+        }
 
         let vertical_flip = if position.board().side_to_move() == Side::WHITE {
             0
@@ -173,13 +182,13 @@ impl Node {
             56
         };
 
-        let pst = if ROOT {
+        let pst = if root {
             options.root_pst()
         } else {
             options.common_pst()
         };
 
-        let mva_lvv_scalar = if US {
+        let mva_lvv_scalar = if us {
             options.policy_sac_bonus()
         } else {
             0.0
@@ -192,23 +201,44 @@ impl Node {
         let mut cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
         const MULTIPLIER: f32 = 1000.0;
-        position
-            .board()
-            .map_moves::<_, STM_WHITE, NSTM_WHITE>(|mv| {
-                let policy = PolicyNetwork.forward::<STM_WHITE, NSTM_WHITE>(
-                    position.board(),
-                    &inputs,
-                    mv,
-                    vertical_flip,
-                    &mut cache,
-                ) + mva_lvv(mv, position.board(), mva_lvv_scalar);
-                actions.push(Edge::new(
-                    NodeIndex::from_raw((policy * MULTIPLIER) as u32),
-                    mv,
-                    0.0,
-                ));
-                max = max.max(policy);
-            });
+
+        if side == Side::WHITE {
+            position
+                .board()
+                .map_moves::<_, true, false>(|mv| {
+                    let policy = PolicyNetwork.forward::<true, false>(
+                        position.board(),
+                        &inputs,
+                        mv,
+                        vertical_flip,
+                        &mut cache,
+                    ) + mva_lvv(mv, position.board(), mva_lvv_scalar);
+                    actions.push(Edge::new(
+                        NodeIndex::from_raw((policy * MULTIPLIER) as u32),
+                        mv,
+                        0.0,
+                    ));
+                    max = max.max(policy);
+                });
+        } else {
+            position
+                .board()
+                .map_moves::<_, false, true>(|mv| {
+                    let policy = PolicyNetwork.forward::<false, true>(
+                        position.board(),
+                        &inputs,
+                        mv,
+                        vertical_flip,
+                        &mut cache,
+                    ) + mva_lvv(mv, position.board(), mva_lvv_scalar);
+                    actions.push(Edge::new(
+                        NodeIndex::from_raw((policy * MULTIPLIER) as u32),
+                        mv,
+                        0.0,
+                    ));
+                    max = max.max(policy);
+                });
+        }
 
         for action in actions.iter_mut() {
             let policy = action.node_index().get_raw() as f32 / MULTIPLIER;
