@@ -171,6 +171,11 @@ impl Bitboard {
         Self(self.get_raw().wrapping_mul(rhs.get_raw()))
     }
 
+    #[inline]
+    pub const fn wrapping_sub(self, rhs: Bitboard) -> Self {
+        Self(self.get_raw().wrapping_sub(rhs.get_raw()))
+    }
+
     pub fn draw_bitboard(&self) {
         println!("{}", self.get_bitboard_string());
     }
