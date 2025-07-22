@@ -1,43 +1,52 @@
 EXE = jackal
 VER = X.X.X
 
+RELEASE_DIR = releases/$(VER)
+
+# Define binary path
+X86_64_V2 := $(RELEASE_DIR)/$(EXE)-$(VER)-x86-64-v2
+X86_64_V3 := $(RELEASE_DIR)/$(EXE)-$(VER)-x86-64-v3
+X86_64_V4 := $(RELEASE_DIR)/$(EXE)-$(VER)-x86-64-v4
+
+# Make sure to end binaries with .exe on windows
 ifeq ($(OS),Windows_NT)
-	DATAGEN := datagen.exe
-	TRAINER := trainer.exe
-	DEV_NAME := $(EXE)-dev.exe
-	X86_64_V2 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v2.exe
-	X86_64_V3 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v3.exe
-	X86_64_V4 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v4.exe
-	DIR = releases\$(VER)
-	MKDIR = mkdir $(DIR)
-else
-	DATAGEN := datagen
-	TRAINER := trainer
-	DEV_NAME := $(EXE)-dev
-	X86_64_V2 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v2
-	X86_64_V3 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v3
-	X86_64_V4 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v4
-	DIR = releases/$(VER)
-	MKDIR = mkdir -p $(DIR)
+	EXT := .exe
+else 
+	EXT = 
 endif
 
-rule:
-	cargo rustc --release --bin jackal --features=pext -- -C target-cpu=native --emit link=$(DEV_NAME)
+# Define correct RUSTFLAGS header
+NATIVE_HEADER := RUSTFLAGS="-Ctarget-cpu=native" cargo rustc -r
+X86_64_v2_HEADER := RUSTFLAGS="-Ctarget-cpu=x86-64-v2" cargo rustc -r
+X86_64_v3_HEADER := RUSTFLAGS="-Ctarget-cpu=x86-64-v3" cargo rustc -r
+X86_64_v4_HEADER := RUSTFLAGS="-Ctarget-cpu=x86-64-v4" cargo rustc -r
+
+ifeq ($(OS),Windows_NT)
+  ifneq ($(IS_MINGW),1)
+    NATIVE_HEADER := cmd /C "set RUSTFLAGS=-Ctarget-cpu=native && cargo rustc -r"
+	X86_64_v2_HEADER := cmd /C "set RUSTFLAGS=-Ctarget-cpu=x86-64-v2 && cargo rustc -r"
+	X86_64_v3_HEADER := cmd /C "set RUSTFLAGS=-Ctarget-cpu=x86-64-v3 && cargo rustc -r"
+	X86_64_v4_HEADER := cmd /C "set RUSTFLAGS=-Ctarget-cpu=x86-64-v4 && cargo rustc -r"
+  endif
+endif
+
+default:
+	$(NATIVE_HEADER) --bin jackal --features=pext -- --emit link=$(EXE)$(EXT)
 
 release: create_version_dir
-	cargo rustc --release --bin jackal -- -C target-cpu=x86-64-v2 --emit link=$(X86_64_V2)
-	cargo rustc --release --bin jackal --features=pext -- -C target-cpu=x86-64-v3 --emit link=$(X86_64_V3)
-	cargo rustc --release --bin jackal --features=pext -- -C target-cpu=x86-64-v4 --emit link=$(X86_64_V4)
+	$(X86_64_v2_HEADER) -p terminal -- --emit link=$(X86_64_V2)$(EXT)
+	$(X86_64_v3_HEADER) -p terminal -- --emit link=$(X86_64_V3)$(EXT)
+	$(X86_64_v4_HEADER) -p terminal -- --emit link=$(X86_64_V4)$(EXT)
 
 gen:
-	cargo rustc --release --package datagen --bin datagen -- -C target-cpu=native --emit link=$(DATAGEN)
+	$(NATIVE_HEADER) -p datagen --features=datagen -- --emit link=datagen$(EXT)
 
 trainer:
-	cargo rustc --release --package train --bin train -- -C target-cpu=native --emit link=$(TRAINER)
+	$(NATIVE_HEADER) -p trainer -- --emit link=trainer$(EXT)
 
-ifneq ("$(wildcard $(DIR))","")
+ifneq ("$(wildcard $(RELEASE_DIR))","")
 create_version_dir:
 else
 create_version_dir:
-	$(MKDIR) 
+	mkdir -p $(RELEASE_DIR)
 endif
