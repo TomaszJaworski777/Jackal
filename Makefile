@@ -4,7 +4,7 @@ VER = X.X.X
 ifeq ($(OS),Windows_NT)
 	DATAGEN := datagen.exe
 	TRAINER := trainer.exe
-	DEV_NAME := $(EXE)-dev.exe
+	DEV_NAME := $(EXE).exe
 	X86_64_V2 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v2.exe
 	X86_64_V3 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v3.exe
 	X86_64_V4 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v4.exe
@@ -13,7 +13,7 @@ ifeq ($(OS),Windows_NT)
 else
 	DATAGEN := datagen
 	TRAINER := trainer
-	DEV_NAME := $(EXE)-dev
+	DEV_NAME := $(EXE)
 	X86_64_V2 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v2
 	X86_64_V3 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v3
 	X86_64_V4 := releases/$(VER)/$(EXE)-$(VER)-x86-64-v4
