@@ -64,6 +64,7 @@ fn get_position_score(position: &ChessPosition, node_state: GameState, contempt:
         _ => ValueNetwork.forward(position.board())
     };
 
+    score.apply_material_scaling(position.board(), options);
     score.apply_50mr(position.board().half_moves(), depth, options);
     
     let mut draw_chance= score.draw_chance();
@@ -75,9 +76,5 @@ fn get_position_score(position: &ChessPosition, node_state: GameState, contempt:
     
     let new_win_chance = (1.0 + win_lose_delta - draw_chance) / 2.0;
     
-    let mut score = WDLScore::new(new_win_chance, draw_chance);
-
-    score.apply_material_scaling(position.board(), options);
-    
-    score
+    WDLScore::new(new_win_chance, draw_chance)
 }
