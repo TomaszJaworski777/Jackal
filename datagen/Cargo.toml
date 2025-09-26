@@ -1,10 +1,9 @@
 [package]
-name = "datagen"
+name    = "datagen"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = "1.18.0"
-rand = "0.8.5"
-crossbeam-queue = "0.3.11"
-jackal = { path = "../" }
+engine = { path = "../engine", features=['datagen']}
+chess  = { path = "../chess" }
+utils  = { path = "../utils" }

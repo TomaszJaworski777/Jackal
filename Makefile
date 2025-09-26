@@ -31,7 +31,7 @@ ifeq ($(OS),Windows_NT)
 endif
 
 default:
-	$(NATIVE_HEADER) --bin jackal --features=pext -- --emit link=$(EXE)$(EXT)
+	$(NATIVE_HEADER) -p terminal --features=dev -- --emit link=$(EXE)$(EXT)
 
 release: create_version_dir
 	$(X86_64_v2_HEADER) -p terminal -- --emit link=$(X86_64_V2)$(EXT)
