@@ -1,7 +1,12 @@
-[package]
-name = "jackal"
-version = "1.2.0"
-edition = "2021"
+[workspace]
+members = [
+  "chess",
+  "engine",
+  "terminal",
+  "datagen",
+  "trainer",
+]
+resolver = "1"
 
 [profile.release]
 panic = 'abort'
@@ -9,17 +14,3 @@ strip = true
 lto = true
 codegen-units = 1
 opt-level = 3
-
-[dependencies]
-colored = "=2.1.0"
-console = "=0.15.8"
-term_cursor = "0.2.1"
-term_size = "0.3.2"
-bytemuck = "1.18.0"
-
-[workspace]
-members = ["datagen", "train"]
-resolver = "2"
-
-[features]
-pext = []

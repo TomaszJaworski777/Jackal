@@ -1,0 +1,14 @@
+[package]
+name    = "terminal"
+version = "2.0.0"
+edition = "2021"
+
+[dependencies]
+engine = { path = "../engine" }
+chess  = { path = "../chess" }
+utils  = { path = "../utils" }
+term_size = "0.3.2"
+term_cursor = "0.2.1"
+
+[features]
+dev = ["engine/dev"]

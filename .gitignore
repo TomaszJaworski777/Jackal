@@ -2,18 +2,13 @@ debug/
 /target
 
 Cargo.lock
-**/*.rs.bk
-*.pdb
-
-*.exe
-jackal-dev
-resources/sprt.txt
-*.bin
-/checkpoints
-/.vs
+/resources/checkpoints
 /resources/books
+/.vs
+
+**/*.rs.bk
+
+*.pdb
+*.exe
+*.bin
 *.pgn
-resources/explansion_plan.txt
-/scaling
-monty.binpack
-/policy_checkpoints
