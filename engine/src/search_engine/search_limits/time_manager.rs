@@ -56,7 +56,7 @@ impl TimeManager {
         let hard_constant = (options.hard_constant() + options.hard_constant_multi() * log_time).max(options.hard_constant_cap());
         let hard_scale = (hard_constant + game_ply as f64 / options.hard_ply_div()).min(options.hard_scale_cap());
 
-        let bonus = 1.0 + options.bonus_scale() * (1.0 + options.bonus_move_factor() * (-(game_ply as f64 / options.bonus_ply_div()).powf(options.bonus_power())).exp()).log10();
+        let bonus = 1.0 + options.tm_bonus_scale() * (1.0 + options.tm_bonus_move_factor() * (-(game_ply as f64 / options.tm_bonus_ply_div()).powf(options.tm_bonus_power())).exp()).log10();
 
         let soft_time = (soft_scale * bonus * time_left) as u128;
         let hard_time = (hard_scale * soft_time as f64).min(time_remaining as f64 * 0.850) as u128;

@@ -65,6 +65,7 @@ fn get_position_score(position: &ChessPosition, node_state: GameState, contempt:
     };
 
     score.apply_50mr(position.board().half_moves(), depth, options);
+    score.apply_material_scaling(position.board(), options);
 
     let mut draw_chance= score.draw_chance();
     let mut win_lose_delta = score.win_chance() - score.lose_chance();
