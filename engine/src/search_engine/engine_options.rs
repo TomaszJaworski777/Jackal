@@ -41,6 +41,15 @@ create_options! {
             draw_scaling_cap:   f64  =>  0.9,     0.0,  1.0,   0.08,    0.002;
             depth_scaling:      f64  =>  0.0015,  0.0,  1.0,   0.0001,  0.002;
 
+            //Material Scaling
+            knight_value: f64          =>  400.0,   150.0,  750.0,   25.0,  0.002;
+            bishop_value: f64          =>  400.0,   150.0,  750.0,   25.0,  0.002;
+            rook_value: f64            =>  750.0,   400.0,  1000.0,  30.0,  0.002;
+            queen_value: f64           =>  1500.0,  900.0,  2000.0,  35.0,  0.002;
+            material_offset: f64       =>  600.0,   400.0,  1200.0,  40.0,  0.002;
+            material_scale: f64        =>  36.0,    16.0,    64.0,    3.0,   0.002;
+            material_bonus_scale: f64  =>  1230.0,  500.0,  1500.0,  64.0,  0.002;
+
             //Time Manager
             default_moves_to_go:    f64  =>  30.0,         10.0,  50.0,  3.0,      0.002;
             phase_power:            f64  =>  2.0,          0.0,   10.0,  0.2,      0.002;
@@ -56,10 +65,10 @@ create_options! {
             hard_constant_cap:      f64  =>  2.93,         0.0,   10.0,  0.293,    0.002;
             hard_ply_div:           f64  =>  12.0,         0.0,   50.0,  1.2,      0.002;
             hard_scale_cap:         f64  =>  4.0,          0.0,   10.0,  0.4,      0.002;
-            bonus_scale:            f64  =>  0.5,          0.0,   1.0,   0.05,     0.002;
-            bonus_move_factor:      f64  =>  10.0,         0.0,   50.0,  1.0,      0.002;
-            bonus_ply_div:          f64  =>  6.0,          0.0,   20.0,  0.6,      0.002;
-            bonus_power:            f64  =>  1.2,          0.0,   10.0,  0.12,     0.002;
+            tm_bonus_scale:         f64  =>  0.5,          0.0,   1.0,   0.05,     0.002;
+            tm_bonus_move_factor:   f64  =>  10.0,         0.0,   50.0,  1.0,      0.002;
+            tm_bonus_ply_div:       f64  =>  6.0,          0.0,   20.0,  0.6,      0.002;
+            tm_bonus_power:         f64  =>  1.2,          0.0,   10.0,  0.12,     0.002;
             time_fraction:          f64  =>  0.85,         0.0,   1.0,   0.085,    0.002;
             visit_distr_threshold:  f64  =>  0.677245,     0.0,   1.0,   0.07,     0.002;
             visit_penalty_scale:    f64  =>  0.671748,     0.0,   2.0,   0.07,     0.002;

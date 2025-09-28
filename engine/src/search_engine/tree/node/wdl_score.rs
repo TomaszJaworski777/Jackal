@@ -1,5 +1,7 @@
 use std::{ops::Mul, sync::atomic::{AtomicU64, Ordering}};
 
+use chess::{ChessBoard, Piece};
+
 use crate::search_engine::engine_options::EngineOptions;
 
 pub const SCORE_SCALE: u32 = 1024 * 64;
@@ -125,6 +127,26 @@ impl WDLScore {
 
         self.0 -= win_delta;
         self.1 += win_delta + lose_delta;
+    }
+
+    #[inline]
+    pub fn apply_material_scaling(&mut self, board: &ChessBoard, options: &EngineOptions) {
+        let material_balance = 
+            board.piece_mask(Piece::KNIGHT).pop_count() as f64 * options.knight_value() +
+            board.piece_mask(Piece::BISHOP).pop_count() as f64 * options.bishop_value() +
+            board.piece_mask(Piece::ROOK).pop_count() as f64 * options.rook_value() +
+            board.piece_mask(Piece::QUEEN).pop_count() as f64 * options.queen_value();
+
+        let scale = ((options.material_offset() + material_balance / options.material_scale()) / options.material_bonus_scale()).clamp(0.0, 1.0);
+        let scale = 1.0 / (1.0 + (-scale * (self.single() / (1.0 - self.single())).ln()).exp());
+
+        let q = (self.win_chance() + self.lose_chance()).clamp(0.0001, 1.0);
+        let p = self.win_chance() / q;
+
+        let new_q = (scale - 0.5) / (p - 0.5);
+
+        self.0 = p * new_q;
+        self.1 = 1.0 - new_q;
     }
 }
 

@@ -64,16 +64,17 @@ fn get_position_score(position: &ChessPosition, node_state: GameState, contempt:
         _ => ValueNetwork.forward(position.board())
     };
 
+    score.apply_material_scaling(position.board(), options);
     score.apply_50mr(position.board().half_moves(), depth, options);
-
+    
     let mut draw_chance= score.draw_chance();
     let mut win_lose_delta = score.win_chance() - score.lose_chance();
-
+    
     let sign = if is_stm { 1.0 } else { -1.0 };
-
+    
     contempt.rescale(&mut win_lose_delta, &mut draw_chance, sign, false, options);
-
+    
     let new_win_chance = (1.0 + win_lose_delta - draw_chance) / 2.0;
-
+    
     WDLScore::new(new_win_chance, draw_chance)
 }

@@ -214,6 +214,10 @@ fn eval(search_engine: &SearchEngine) {
     half_moves.apply_50mr(board.half_moves(), 0.0, search_engine.options());
     let half_moves_cp = half_moves.cp();
 
+    let mut material_scaling = wdl_score;
+    material_scaling.apply_material_scaling(board, search_engine.options());
+    let material_scaling_cp = material_scaling.cp();
+
     let mut info: [String; 33] = [const { String::new() }; 33];
     info[1] = format!("Raw:      {}", 
         format!("[{}, {}, {}] ({}{})",
@@ -242,6 +246,15 @@ fn eval(search_engine: &SearchEngine) {
             heat_color(format!("{:.2}", half_moves_cp.abs() as f32 / 100.0).as_str(), half_moves_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(3.0/32.0)
     ).primary(3.0/32.0);
+    info[4] = format!("Material: {}", 
+        format!("[{}, {}, {}] ({}{})",
+            format!("{:.2}%", material_scaling.win_chance() * 100.0).custom_color(WIN_COLOR),
+            format!("{:.2}%", material_scaling.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+            format!("{:.2}%", material_scaling.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+            heat_color(if material_scaling_cp > 0 { "+" } else { "-" }, material_scaling_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(format!("{:.2}", material_scaling_cp.abs() as f32 / 100.0).as_str(), material_scaling_cp as f32 / 100.0, -20.0, 20.0),
+        ).secondary(4.0/32.0)
+    ).primary(4.0/32.0);
 
     let mut evals = [0; 64];
     board.occupancy().map(|square| {
