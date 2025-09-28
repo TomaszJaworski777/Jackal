@@ -1,4 +1,4 @@
-use chess::ChessBoard;
+use chess::{ChessBoard, Move, Piece};
 
 use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwork, Tree};
 
@@ -32,7 +32,7 @@ impl Tree {
 
         board.map_legal_moves(|mv| {
             moves.push(mv);
-            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64;
+            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64 + mva_lvv(mv, board, engine_options);
             policy.push(p);
             max = max.max(p);
         });
@@ -110,7 +110,7 @@ impl Tree {
 
         self[node_idx].map_children(|child_idx| {
             let mv = self[child_idx].mv();
-            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64;
+            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64 + mva_lvv(mv, board, engine_options);
             policy.push(p);
             max = max.max(p);
         });
@@ -143,4 +143,23 @@ fn calculate_pst(options: &EngineOptions, parent_score: f64, depth: f64) -> f64 
     let base_pst = 1.0 - options.base_pst()
         + (depth - options.root_pst()).powf(-options.depth_pst_adjustment());
     base_pst + (options.winning_pst_max() - base_pst) * t
+}
+
+fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
+    let attacker = board.piece_on_square(mv.get_from_square());
+    let victim = board.piece_on_square(mv.get_to_square());
+
+    if !mv.is_capture() || victim == Piece::NONE || attacker == Piece::KING {
+        return 0.0;
+    }
+
+    let piece_values = [
+        options.sac_pawn_value(), 
+        options.sac_knight_value(),
+        options.sac_bishop_value(),
+        options.sac_rook_value(),
+        options.sac_queen_value()
+        ];
+
+    ((piece_values[usize::from(attacker)] - piece_values[usize::from(victim)]) * (options.policy_sac() as f64 / 10000.0)).max(0.0)
 }
