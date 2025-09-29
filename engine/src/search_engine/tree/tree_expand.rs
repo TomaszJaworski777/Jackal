@@ -32,7 +32,8 @@ impl Tree {
 
         board.map_legal_moves(|mv| {
             moves.push(mv);
-            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64 + mva_lvv(mv, board, engine_options);
+            let see = board.see(mv, -108);
+            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             policy.push(p);
             max = max.max(p);
         });
@@ -110,7 +111,8 @@ impl Tree {
 
         self[node_idx].map_children(|child_idx| {
             let mv = self[child_idx].mv();
-            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache) as f64 + mva_lvv(mv, board, engine_options);
+            let see = board.see(mv, -108);
+            let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             policy.push(p);
             max = max.max(p);
         });
