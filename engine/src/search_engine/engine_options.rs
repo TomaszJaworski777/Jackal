@@ -17,6 +17,7 @@ create_options! {
             //======== EAS ========
             ["Contempt"]  contempt:   i64  =>  1000,  -10000,  10000;
             ["DrawScore"] draw_score: i64  =>  30,    -100,    100;
+            ["PolicySac"] policy_sac: i64  =>  10,    0,       100;
         }
         Tunables {
             //PST
@@ -42,13 +43,20 @@ create_options! {
             depth_scaling:      f64  =>  0.0015,  0.0,  1.0,   0.0001,  0.002;
 
             //Material Scaling
-            knight_value: f64          =>  400.0,   150.0,  750.0,   25.0,  0.002;
-            bishop_value: f64          =>  400.0,   150.0,  750.0,   25.0,  0.002;
-            rook_value: f64            =>  750.0,   400.0,  1000.0,  30.0,  0.002;
-            queen_value: f64           =>  1500.0,  900.0,  2000.0,  35.0,  0.002;
-            material_offset: f64       =>  600.0,   400.0,  1200.0,  40.0,  0.002;
-            material_scale: f64        =>  36.0,    16.0,    64.0,    3.0,   0.002;
+            knight_value:         f64  =>  400.0,   150.0,  750.0,   25.0,  0.002;
+            bishop_value:         f64  =>  400.0,   150.0,  750.0,   25.0,  0.002;
+            rook_value:           f64  =>  750.0,   400.0,  1000.0,  30.0,  0.002;
+            queen_value:          f64  =>  1500.0,  900.0,  2000.0,  35.0,  0.002;
+            material_offset:      f64  =>  600.0,   400.0,  1200.0,  40.0,  0.002;
+            material_scale:       f64  =>  36.0,    16.0,    64.0,    3.0,  0.002; 
             material_bonus_scale: f64  =>  1230.0,  500.0,  1500.0,  64.0,  0.002;
+
+            //Policy Sac
+            sac_pawn_value:   f64  =>  100.0,  50.0,  200.0,  5.0,  0.002;
+            sac_knight_value: f64  =>  300.0,  50.0,  200.0,  5.0,  0.002;
+            sac_bishop_value: f64  =>  300.0,  50.0,  200.0,  5.0,  0.002;
+            sac_rook_value:   f64  =>  500.0,  50.0,  200.0,  5.0,  0.002;
+            sac_queen_value:  f64  =>  900.0,  50.0,  200.0,  5.0,  0.002;
 
             //Time Manager
             default_moves_to_go:    f64  =>  30.0,         10.0,  50.0,  3.0,      0.002;

@@ -24,12 +24,11 @@ impl PolicyNetwork {
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, cache: &mut [Option<Vec<f32>>; 192]) -> f32 {
-        let see_idx = usize::from(board.see(mv, -108));
+    pub fn forward(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, cache: &mut [Option<Vec<f32>>; 192], see: bool) -> f32 {
         let vertical_flip = (usize::from(board.side() == Side::BLACK) * 56) as u8;
 
         let from_idx = usize::from(mv.get_from_square() ^ vertical_flip);
-        let to_idx = usize::from(mv.get_to_square() ^ vertical_flip) + 64 + see_idx * 64;
+        let to_idx = usize::from(mv.get_to_square() ^ vertical_flip) + 64 + usize::from(see) * 64;
 
         let from = if let Some(from) = &cache[from_idx] {
             from.clone()

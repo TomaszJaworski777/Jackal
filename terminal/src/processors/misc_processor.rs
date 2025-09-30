@@ -167,7 +167,8 @@ fn draw_policy(search_engine: &SearchEngine) {
     let mut policy_cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
 
     board.map_legal_moves(|mv| {
-        let p = PolicyNetwork.forward(board, &inputs, mv, &mut policy_cache);
+        let see = board.see(mv, -108);
+        let p = PolicyNetwork.forward(board, &inputs, mv, &mut policy_cache, see);
         max = max.max(p);
         moves.push((mv, p));
     });
