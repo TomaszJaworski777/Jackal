@@ -43,7 +43,7 @@ impl SearchReport for UciSearchReport {
             };
             
             let time = search_stats.time_passesd_ms();
-            let nodes = if search_engine.options().report_iters() {
+            let nodes = if search_engine.options().iters_as_nodes() {
                 search_stats.iterations()
             } else {
                 search_stats.cumulative_depth()
