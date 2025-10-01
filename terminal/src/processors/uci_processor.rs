@@ -2,7 +2,7 @@ use chess::{ChessBoard, ChessPosition, Side, FEN};
 use engine::{SearchEngine, SearchLimits};
 use utils::clear_terminal_screen;
 
-use crate::{displays::{PrettySearchReport, UciSearchReport}, InputWrapper};
+use crate::{displays::{PrettySearchReport, UciMinimalReport, UciSearchReport}, InputWrapper};
 
 pub struct UciProcessor {
     uci_initialized: bool,
@@ -58,7 +58,7 @@ impl UciProcessor {
         match args.iter().map(|s| s.as_str()).collect::<Vec<&str>>().as_slice() {
             ["name", name, "value", value] => {
                 if let Err(msg) = search_engine.set_option(*name, *value) {
-                    eprintln!("{msg}");
+                    self.uci_print(msg.as_str(), search_engine.options().minimal_print());
                     return;
                 }
 
@@ -68,7 +68,8 @@ impl UciProcessor {
 
                 search_engine.reinit_contempt();
 
-                println!("Option {name} has been set to {value}");
+                let str = format!("Option {name} has been set to {value}");
+                self.uci_print(str.as_str(), search_engine.options().minimal_print());
             },
             _ => {}
         }
@@ -104,7 +105,7 @@ impl UciProcessor {
         }
 
         if !FEN::validate_fen(&fen) {
-            println!("Provided fen is invalid.");
+            self.uci_print("Provided fen is invalid.", search_engine.options().minimal_print());
             return;
         }
 
@@ -120,7 +121,7 @@ impl UciProcessor {
         search_engine.tree().try_reuse(search_engine.root_position(), &chess_position, search_engine.options());
 
         search_engine.set_position(&chess_position, moves.len() as u16);
-        println!("Position has been set.");
+        self.uci_print("Position has been set.", search_engine.options().minimal_print());
     }
 
     fn go(
@@ -135,7 +136,11 @@ impl UciProcessor {
         std::thread::scope(|s| {
             s.spawn(|| {
                 let _ = if self.uci_initialized { 
-                    search_engine.search::<UciSearchReport>(&search_limits)
+                    if search_engine.options().minimal_print() {
+                        search_engine.search::<UciMinimalReport>(&search_limits)
+                    } else {
+                        search_engine.search::<UciSearchReport>(&search_limits)
+                    }
                 } else { 
                     search_engine.search::<PrettySearchReport>(&search_limits)
                 };
@@ -163,6 +168,18 @@ impl UciProcessor {
                 }
             }
         });
+    }
+
+    fn uci_print(&self, value: &str, minimal: bool) {
+        if minimal {
+            return;
+        }
+
+        if self.uci_initialized {
+            println!("info string {value}")
+        } else {
+            println!("{value}")
+        }
     }
 }
 

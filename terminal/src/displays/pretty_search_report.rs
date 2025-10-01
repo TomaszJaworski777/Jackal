@@ -109,7 +109,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     height_used += 3;
 
     if t_height >= 21 {
-        let nodes = if search_engine.options().report_iters() {
+        let nodes = if search_engine.options().iters_as_nodes() {
             search_stats.iterations()
         } else {
             search_stats.cumulative_depth()
