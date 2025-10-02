@@ -47,7 +47,7 @@ impl SearchEngine {
 
         Self {
             position: ChessPosition::from(ChessBoard::from(&FEN::start_position())),
-            tree: Tree::from_bytes(options.hash() as usize, options.hash_size()),
+            tree: Tree::from_bytes(options.hash() as usize, &options),
             options,
             interruption_token: AtomicBool::new(false),
             game_ply: 0,
@@ -67,7 +67,7 @@ impl SearchEngine {
 
     #[inline]
     pub fn resize_tree(&mut self) {
-        self.tree = Tree::from_bytes(self.options.hash() as usize, self.options().hash_size())
+        self.tree = Tree::from_bytes(self.options.hash() as usize, self.options())
     }
 
     #[inline]

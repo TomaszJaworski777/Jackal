@@ -35,8 +35,18 @@ impl IndexMut<NodeIndex> for TreeHalf {
 
 impl TreeHalf {
     pub fn new(index: u32, size: usize) -> Self {
+        let nodes = unsafe {
+            let layout = std::alloc::Layout::array::<Node>(size).unwrap();
+            let ptr = std::alloc::alloc_zeroed(layout);
+            if ptr.is_null() {
+                std::alloc::handle_alloc_error(layout);
+            }
+
+            Vec::from_raw_parts(ptr.cast::<Node>(), size, size)
+        };
+
         Self { 
-            nodes: vec![Node::new(); size], 
+            nodes, 
             idx: AtomicUsize::new(0),
             half_index: index
         }
