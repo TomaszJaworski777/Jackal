@@ -1,4 +1,4 @@
-use std::{ops::{Index, IndexMut}, sync::atomic::{AtomicU32, Ordering}};
+use std::{ops::{Index, IndexMut}, sync::atomic::{AtomicU64, Ordering}};
 
 use chess::Move;
 
@@ -21,7 +21,7 @@ use crate::search_engine::{engine_options::EngineOptions, hash_table::HashTable}
 #[derive(Debug)]
 pub struct Tree {
     halves: [TreeHalf; 2],
-    current_half: AtomicU32,
+    current_half: AtomicU64,
     hash_table: HashTable,
 }
 
@@ -29,7 +29,7 @@ impl Clone for Tree {
     fn clone(&self) -> Self {
         Self {
             halves: self.halves.clone(),
-            current_half: AtomicU32::from(self.current_half.load(Ordering::Relaxed)),
+            current_half: AtomicU64::from(self.current_half.load(Ordering::Relaxed)),
             hash_table: self.hash_table.clone()
         }
     }
@@ -64,7 +64,7 @@ impl Tree {
 
         Self {
             halves,
-            current_half: AtomicU32::new(0),
+            current_half: AtomicU64::new(0),
             hash_table: HashTable::new(hash_bytes),
         }
     }
@@ -82,7 +82,7 @@ impl Tree {
     }
 
     #[inline]
-    pub fn current_half_index(&self) -> u32 {
+    pub fn current_half_index(&self) -> u64 {
         self.current_half.load(Ordering::Relaxed)
     }
 
