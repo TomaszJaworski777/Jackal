@@ -155,6 +155,10 @@ fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
         return 0.0;
     }
 
+    if board.phase() <= 8 {
+        return 0.0;
+    }
+
     let piece_values = [
         options.sac_pawn_value(), 
         options.sac_knight_value(),

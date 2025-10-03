@@ -72,7 +72,9 @@ fn get_position_score(position: &ChessPosition, node_state: GameState, contempt:
     
     let sign = if is_stm { 1.0 } else { -1.0 };
     
-    contempt.rescale(&mut win_lose_delta, &mut draw_chance, sign, false, options);
+    if position.board().phase() > 8 {
+        contempt.rescale(&mut win_lose_delta, &mut draw_chance, sign, false, options);
+    }
     
     let new_win_chance = (1.0 + win_lose_delta - draw_chance) / 2.0;
     
