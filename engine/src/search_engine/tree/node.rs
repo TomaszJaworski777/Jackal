@@ -1,12 +1,13 @@
-use std::sync::{atomic::{AtomicU16, AtomicU32, AtomicU64, AtomicU8, Ordering}, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::atomic::{AtomicU16, AtomicU32, AtomicU64, AtomicU8, Ordering};
 
 use chess::Move;
 
-use crate::search_engine::tree::node::{game_state::AtomicGameState, wdl_score::SCORE_SCALE};
+use crate::search_engine::tree::node::{game_state::AtomicGameState, lock::{IndexLock, IndexLockGuard}, wdl_score::SCORE_SCALE};
 
 mod game_state;
 mod wdl_score;
 mod node_index;
+mod lock;
 
 pub use game_state::GameState;
 pub use wdl_score::{WDLScore, AtomicWDLScore};
@@ -18,7 +19,7 @@ pub struct Node {
     visit_count: AtomicU32,
     cumulative_score: AtomicWDLScore,
     squared_score: AtomicU64,
-    children_start_index: RwLock<NodeIndex>,
+    children_start_index: IndexLock,
     children_count: AtomicU8,
     policy: AtomicU16,
     state: AtomicGameState,
@@ -33,7 +34,7 @@ impl Clone for Node {
             visit_count: AtomicU32::new(self.visit_count.load(Ordering::Relaxed)),
             cumulative_score: self.cumulative_score.clone(),
             squared_score: AtomicU64::new(self.squared_score.load(Ordering::Relaxed)),
-            children_start_index: RwLock::new(*self.children_index()),
+            children_start_index: self.children_start_index.clone(),
             children_count: AtomicU8::new(self.children_count.load(Ordering::Relaxed)),
             state: self.state.clone(),
             policy: AtomicU16::new(self.policy.load(Ordering::Relaxed)),
@@ -50,7 +51,7 @@ impl Node {
             visit_count: AtomicU32::new(0),
             cumulative_score: AtomicWDLScore::default(),
             squared_score: AtomicU64::new(0),
-            children_start_index: RwLock::new(NodeIndex::NULL),
+            children_start_index: IndexLock::new(NodeIndex::NULL),
             children_count: AtomicU8::new(0),
             state: AtomicGameState::new(GameState::Ongoing),
             policy: AtomicU16::new(0),
@@ -85,7 +86,7 @@ impl Node {
     }
 
     pub fn clear_children(&self) { 
-        *self.children_index_mut() = NodeIndex::NULL;
+        self.children_index_mut().store(NodeIndex::NULL);
         self.children_count.store(0, Ordering::Relaxed);
     }
 
@@ -110,13 +111,13 @@ impl Node {
     }
 
     #[inline]
-    pub fn children_index(&self) -> RwLockReadGuard<NodeIndex> {
-        self.children_start_index.read().unwrap()
+    pub fn children_index(&self) -> NodeIndex {
+        self.children_start_index.read()
     }
 
     #[inline]
-    pub fn children_index_mut(&self) -> RwLockWriteGuard<NodeIndex> {
-        self.children_start_index.write().unwrap()
+    pub fn children_index_mut(&self) -> IndexLockGuard<'_> {
+        self.children_start_index.write()
     }
 
     #[inline]
@@ -192,7 +193,7 @@ impl Node {
         let children_idx = self.children_index();
 
         for child_idx in 0..self.children_count() {
-            func(*children_idx + child_idx)
+            func(children_idx + child_idx)
         }
     }
 }

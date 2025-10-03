@@ -4,7 +4,7 @@ use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwo
 
 impl Tree {
     pub fn expand_node(&self, node_idx: NodeIndex, depth: f64, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
-        let mut children_idx = self[node_idx].children_index_mut();
+        let children_idx = self[node_idx].children_index_mut();
 
         if self[node_idx].children_count() > 0 {
             return Some(());
@@ -45,7 +45,7 @@ impl Tree {
             total += *p;
         }
 
-        *children_idx = start_index;
+        children_idx.store(start_index);
         self[node_idx].set_children_count(moves.len());
 
         let mut squares = 0.0;
@@ -90,7 +90,7 @@ impl Tree {
     }
 
     fn relabel_node(&self, node_idx: NodeIndex, depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
-        let children_idx = *self[node_idx].children_index();
+        let children_idx = self[node_idx].children_index();
 
         if self[node_idx].children_count() == 0 {
             return;

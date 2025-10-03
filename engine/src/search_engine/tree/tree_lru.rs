@@ -21,18 +21,18 @@ impl Tree {
             return Some(());
         }
 
-        let mut children_idx = self[node_idx].children_index_mut();
+        let children_idx = self[node_idx].children_index_mut();
 
-        if children_idx.half() == self.current_half_index() {
+        if children_idx.value().half() == self.current_half_index() {
             return Some(());
         }
 
         let children_count = self[node_idx].children_count();
         let new_idx = self.current_half().reserve_nodes(children_count)?;
 
-        self.copy_across(*children_idx, children_count, new_idx);
+        self.copy_across(children_idx.value(), children_count, new_idx);
 
-        *children_idx = new_idx;
+        children_idx.store(new_idx);
 
         Some(())
     }
@@ -47,11 +47,11 @@ impl Tree {
             let to = &self[to_idx + child_idx];
 
             let from_children = from.children_index_mut();
-            let mut to_children = to.children_index_mut();
+            let to_children = to.children_index_mut();
 
             to.set_to(&from);
             to.set_children_count(from.children_count());
-            *to_children = *from_children;
+            to_children.store(from_children.value());
         }
     }
 }

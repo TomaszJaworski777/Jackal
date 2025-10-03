@@ -6,7 +6,7 @@ use crate::{Node, NodeIndex};
 pub struct TreeHalf {
     nodes: Vec<Node>,
     idx: AtomicUsize,
-    half_index: u32
+    half_index: u64
 }
 
 impl Clone for TreeHalf {
@@ -34,7 +34,7 @@ impl IndexMut<NodeIndex> for TreeHalf {
 }
 
 impl TreeHalf {
-    pub fn new(index: u32, size: usize) -> Self {
+    pub fn new(index: u64, size: usize) -> Self {
         let nodes = unsafe {
             let layout = std::alloc::Layout::array::<Node>(size).unwrap();
             let ptr = std::alloc::alloc_zeroed(layout);
@@ -53,7 +53,7 @@ impl TreeHalf {
     }
 
     #[inline]
-    pub fn half_index(&self) -> u32 {
+    pub fn half_index(&self) -> u64 {
         self.half_index
     }
 
@@ -85,7 +85,7 @@ impl TreeHalf {
             return None;
         }
 
-        Some(NodeIndex::new(self.half_index, current_idx as u32))
+        Some(NodeIndex::new(self.half_index, current_idx as u64))
     }
 
     pub fn clear(&self) {

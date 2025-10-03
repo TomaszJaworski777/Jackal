@@ -23,8 +23,8 @@ impl MiscProcessor {
                     None
                 };
                 let node_idx = if args.len() >= 3 {
-                    let half = args[1].replace("(", "").replace(",", "").parse::<u32>().ok();
-                    let idx = args[2].replace(")", "").parse::<u32>().ok();
+                    let half = args[1].replace("(", "").replace(",", "").parse::<u64>().ok();
+                    let idx = args[2].replace(")", "").parse::<u64>().ok();
 
                     if half.is_none() || idx.is_none() {
                         None
@@ -44,8 +44,8 @@ impl MiscProcessor {
                     None
                 };
                 let node_idx = if args.len() >= 3 {
-                    let half = args[1].replace("(", "").replace(",", "").parse::<u32>().ok();
-                    let idx = args[2].replace(")", "").parse::<u32>().ok();
+                    let half = args[1].replace("(", "").replace(",", "").parse::<u64>().ok();
+                    let idx = args[2].replace(")", "").parse::<u64>().ok();
 
                     if half.is_none() || idx.is_none() {
                         None

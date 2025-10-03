@@ -5,20 +5,20 @@ pub struct NodeIndex(u32);
 impl NodeIndex {
     pub const NULL: Self = Self(u32::MAX);
 
-    pub fn new(half: u32, index: u32) -> Self {
-        Self((half << 31) | (index & 0x7FFFFFFF))
+    pub fn new(half: u64, index: u64) -> Self {
+        Self((half << 31) as u32 | (index & 0x7FFFFFFF) as u32)
     }
 
     pub fn is_null(&self) -> bool {
         *self == Self::NULL
     }
 
-    pub fn half(&self) -> u32 {
-        self.0 >> 31
+    pub fn half(&self) -> u64 {
+        (self.0 as u64) >> 31
     }
 
-    pub fn idx(&self) -> u32 {
-        self.0 & 0x7FFFFFFF
+    pub fn idx(&self) -> u64 {
+        (self.0 as u64) & 0x7FFFFFFF
     }
 }
 
@@ -38,7 +38,7 @@ impl Add<usize> for NodeIndex {
     type Output = NodeIndex;
 
     fn add(self, rhs: usize) -> Self::Output {
-        NodeIndex::new(self.half(), self.idx() + rhs as u32)
+        NodeIndex::new(self.half(), self.idx() + rhs as u64)
     }
 }
 

@@ -17,7 +17,7 @@ impl Tree {
         let result = result.unwrap();
 
         let new_root = &self[result];
-        let children_idx = *new_root.children_index();
+        let children_idx = new_root.children_index();
         let count = new_root.children_count();
 
         if children_idx.is_null() {
@@ -25,7 +25,7 @@ impl Tree {
             return None;
         }
 
-        let old_root_children_idx = *self.root_node().children_index();
+        let old_root_children_idx = self.root_node().children_index();
 
         self[self.root_index()].set_to(new_root);
         self[self.root_index()].set_children_count(count);
