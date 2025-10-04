@@ -9,7 +9,28 @@ impl SearchEngine {
 
         let expl = cpuct * exploration_scale;
 
-        self.tree().select_child_by_key(node_idx, |child_node| {
+        let start_idx = parent_node.children_index();
+        let mut total_policy = 0.0;
+        let mut k = 0;
+        while k < parent_node.children_count() && total_policy < self.options().policy_percentage() {
+            total_policy += self.tree[start_idx + k].policy();
+            k += 1;
+        }
+
+        let mut limit = k.max(self.options().min_policy_actions() as usize);
+        if parent_node.visits() >= self.options().initial_visit_threshold() as u32 {
+            limit += (self.options().visit_increase_multi() * (parent_node.visits() as f64).log2() - self.options().visit_increase_offset()).floor() as usize;
+        }
+
+        #[allow(unused_assignments)]{
+            limit = limit.min(parent_node.children_count());
+        }
+
+        #[cfg(feature = "datagen")] {
+            limit = parent_node.children_count()
+        }
+
+        self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
             let score = get_score(&parent_node.score(), child_node, child_node.visits()).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
             } else {

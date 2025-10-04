@@ -28,15 +28,28 @@ create_options! {
             winning_pst_threshold: f64  =>  0.6,   0.01,  1.0,   0.06,   0.002;
             winning_pst_max:       f64  =>  1.6,   0.01,  10.0,  0.016,  0.002;
 
-            //Node Selection
-            start_cpuct:           f64  =>  1.2813,    0.1,    5.0,      0.128,    0.002;
-            end_cpuct:             f64  =>  0.3265,    0.0,    1.0,      0.032,    0.002;
-            cpuct_depth_decay:     f64  =>  0.264101,  0.0,    5.0,      0.02641,  0.002;
-            cpuct_visit_scale:     f64  =>  8000.00,   128.0,  65536.0,  800.0,    0.002;
-            cpuct_variance_scale:  f64  =>  0.2,       0.1,    50.0,     0.02,     0.002;
-            cpuct_variance_weight: f64  =>  0.85,      0.0,    2.0,      0.085,    0.002;
-            cpuct_var_warmup:      f64  =>  0.5,       0.0,    1.0,      0.05,     0.002;
-            exploration_tau:       f64  =>  0.51,      0.0,    1.0,      0.055,    0.002;
+            //CPUCT
+            start_cpuct:           f64  =>  1.2813,    0.1,  5.0,  0.05,     0.002;
+            end_cpuct:             f64  =>  0.3265,    0.1,  1.0,  0.015,    0.002;
+            cpuct_depth_decay:     f64  =>  0.264101,  0.1,  5.0,  0.02641,  0.002;
+
+            //Visit scaling
+            cpuct_visit_scale:     f64  =>  8000.00,  4096.0,  65536.0,  250.0,  0.002;
+
+            //Variance scaling
+            cpuct_variance_scale:  f64  =>  0.2,   0.1,  50.0,  0.02,   0.002;
+            cpuct_variance_weight: f64  =>  0.85,  0.0,  2.0,   0.085,  0.002;
+            cpuct_var_warmup:      f64  =>  0.5,   0.0,  1.0,   0.05,   0.002;
+
+            //Exploration scale
+            exploration_tau:       f64  =>  0.51,  0.0,  1.0,  0.055,  0.002;
+
+            //Progressive widening
+            policy_percentage:       f64  =>  0.6407,  0.1,  1.0,    0.05,  0.002;
+            min_policy_actions:      i64  =>  3,       1,    32,     1,     0.002;
+            initial_visit_threshold: i64  =>  9,       0,    1024,   1,     0.002;
+            visit_increase_multi:    f64  =>  2.2623,  1.0,  10.0,   0.1,   0.002;
+            visit_increase_offset:   f64  =>  4.1092,  1.0,  10.0,   0.1,   0.002;
 
             //Draw Scaling
             draw_scaling_power: f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;
@@ -104,11 +117,11 @@ create_options! {
             hash_size: f64  =>  0.04,  0.01,  0.5,  0.004,  0.002;
 
             //Contempt
-            max_reasonable_s: f64  =>  2.0,     0.0,    100.0,    0.2,    0.002;
-            book_exit_bias:   f64  =>  0.65,    0.0,    1.0,      0.065,  0.002;
-            draw_rate_target: f64  =>  0.0,     0.0,    1.0,      0.01,   0.002;
-            draw_rate_ref:    f64  =>  0.65,    0.0,    1.0,      0.065,  0.002;
-            contempt_att:     f64  =>  1.0,     -10.0,  10.0,     0.1,    0.002;
+            max_reasonable_s: f64  =>  2.0,   0.0,    100.0,  0.2,    0.002;
+            book_exit_bias:   f64  =>  0.65,  0.0,    1.0,    0.065,  0.002;
+            draw_rate_target: f64  =>  0.0,   0.0,    1.0,    0.01,   0.002;
+            draw_rate_ref:    f64  =>  0.65,  0.0,    1.0,    0.065,  0.002;
+            contempt_att:     f64  =>  1.0,   -10.0,  10.0,   0.1,    0.002;
         }
     }
 }

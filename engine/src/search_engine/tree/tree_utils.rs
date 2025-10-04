@@ -12,12 +12,21 @@ impl Tree {
     pub fn select_child_by_key<F: FnMut(&Node) -> f64>(
         &self,
         parent_idx: NodeIndex,
+        key: F,
+    ) -> Option<NodeIndex> {
+        self.select_child_by_key_with_limit(parent_idx, self[parent_idx].children_count(), key)
+    }
+
+    pub fn select_child_by_key_with_limit<F: FnMut(&Node) -> f64>(
+        &self,
+        parent_idx: NodeIndex,
+        limit: usize,
         mut key: F,
     ) -> Option<NodeIndex> {
         let mut best_idx = None;
         let mut best_score = f64::NEG_INFINITY;
 
-        self[parent_idx].map_children(|child_idx| {
+        self[parent_idx].map_children_with_limit(limit, |child_idx| {
             let new_score = key(&self[child_idx]);
             if new_score > best_score {
                 best_idx = Some(child_idx);
