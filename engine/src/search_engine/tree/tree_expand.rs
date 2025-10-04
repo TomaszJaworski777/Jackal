@@ -25,35 +25,35 @@ impl Tree {
             1.23
         }; //calculate_pst(engine_options, self[node_idx].score().single(0.5), depth);
 
-        let mut moves = Vec::new();
         let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
         board.map_legal_moves(|mv| {
-            moves.push(mv);
             let see = board.see(mv, -108);
             let p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
-            policy.push(p);
+            policy.push((mv, p));
             max = max.max(p);
         });
 
-        let start_index = self.current_half().reserve_nodes(moves.len())?;
+        let start_index = self.current_half().reserve_nodes(policy.len())?;
 
-        for p in policy.iter_mut() {
+        for (_, p) in policy.iter_mut() {
             *p = ((*p - max)/pst).exp();
             total += *p;
         }
 
         children_idx.store(start_index);
-        self[node_idx].set_children_count(moves.len());
+        self[node_idx].set_children_count(policy.len());
+
+        policy.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let mut squares = 0.0;
-        for (idx, mv) in moves.into_iter().enumerate() {
+        for (idx, &(mv, p)) in policy.iter().enumerate() {
             let p = if policy.len() == 1 {
                 1.0
             } else {
-                policy[idx] / total
+                 p / total
             };
 
             self[start_index + idx].clear(mv);

@@ -189,10 +189,14 @@ impl Node {
         self.children_count.store(chilren_count as u8, Ordering::Relaxed);
     }
 
-    pub fn map_children<F: FnMut(NodeIndex)>(&self, mut func: F) {
+    pub fn map_children<F: FnMut(NodeIndex)>(&self, func: F) {
+        self.map_children_with_limit(usize::MAX, func);
+    }
+
+    pub fn map_children_with_limit<F: FnMut(NodeIndex)>(&self, limit: usize, mut func: F) {
         let children_idx = self.children_index();
 
-        for child_idx in 0..self.children_count() {
+        for child_idx in 0..limit.min(self.children_count()) {
             func(children_idx + child_idx)
         }
     }
