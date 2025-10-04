@@ -45,11 +45,11 @@ create_options! {
             exploration_tau:       f64  =>  0.51,  0.0,  1.0,  0.055,  0.002;
 
             //Progressive widening
-            policy_percentage:       f64  =>  0.7,  0.1,  1.0,    0.05,  0.002;
-            min_policy_actions:      i64  =>  6,    1,    32,     1,     0.002;
-            initial_visit_threshold: i64  =>  8,    0,    1024,   1,     0.002;
-            visit_increase_multi:    f64  =>  2.0,  1.0,  10.0,   0.1,   0.002;
-            visit_increase_offset:   f64  =>  4.0,  1.0,  10.0,   0.1,   0.002;
+            policy_percentage:       f64  =>  0.6407,  0.1,  1.0,    0.05,  0.002;
+            min_policy_actions:      i64  =>  3,       1,    32,     1,     0.002;
+            initial_visit_threshold: i64  =>  9,       0,    1024,   1,     0.002;
+            visit_increase_multi:    f64  =>  2.2623,  1.0,  10.0,   0.1,   0.002;
+            visit_increase_offset:   f64  =>  4.1092,  1.0,  10.0,   0.1,   0.002;
 
             //Draw Scaling
             draw_scaling_power: f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;
