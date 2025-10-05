@@ -1,6 +1,6 @@
 use std::{ops::{Index, IndexMut}, sync::atomic::{AtomicU64, Ordering}};
 
-use chess::Move;
+use chess::{Move, Side};
 
 mod node;
 mod tree_expand;
@@ -16,13 +16,14 @@ use half::TreeHalf;
 pub use node::{Node, GameState, AtomicWDLScore, WDLScore, NodeIndex};
 pub use pv_line::PvLine;
 
-use crate::search_engine::{engine_options::EngineOptions, hash_table::HashTable};
+use crate::search_engine::{butterfly_history::ButterflyHistory, engine_options::EngineOptions, hash_table::HashTable};
 
 #[derive(Debug)]
 pub struct Tree {
     halves: [TreeHalf; 2],
     current_half: AtomicU64,
     hash_table: HashTable,
+    butterfly_history: ButterflyHistory
 }
 
 impl Clone for Tree {
@@ -30,7 +31,8 @@ impl Clone for Tree {
         Self {
             halves: self.halves.clone(),
             current_half: AtomicU64::from(self.current_half.load(Ordering::Relaxed)),
-            hash_table: self.hash_table.clone()
+            hash_table: self.hash_table.clone(),
+            butterfly_history: self.butterfly_history.clone(),
         }
     }
 }
@@ -66,6 +68,7 @@ impl Tree {
             halves,
             current_half: AtomicU64::new(0),
             hash_table: HashTable::new(hash_bytes),
+            butterfly_history: ButterflyHistory::new()
         }
     }
 
@@ -74,6 +77,7 @@ impl Tree {
         self.halves[0].clear();
         self.halves[1].clear();
         self.hash_table.clear();
+        self.butterfly_history.clear();
 
         self.current_half.store(0, Ordering::Relaxed);
 
@@ -114,6 +118,11 @@ impl Tree {
     #[inline]
     pub fn hash_table(&self) -> &HashTable {
         &self.hash_table
+    }
+
+    #[inline]
+    pub fn butterfly_history(&self) -> &ButterflyHistory {
+        &self.butterfly_history
     }
 
     #[inline]
