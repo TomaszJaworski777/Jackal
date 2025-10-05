@@ -1,6 +1,6 @@
 use chess::ChessPosition;
 
-use crate::{search_engine::tree::NodeIndex, SearchEngine, WDLScore};
+use crate::{search_engine::tree::NodeIndex, GameState, SearchEngine, WDLScore};
 
 mod select;
 mod simulate;
@@ -34,7 +34,9 @@ impl SearchEngine {
 
             selected_child_idx = Some(new_idx);
 
-            position.make_move(self.tree()[new_idx].mv(), castle_mask);
+            let old_side = position.board().side();
+            let mv = self.tree()[new_idx].mv();
+            position.make_move(mv, castle_mask);
 
             self.tree().inc_threads(new_idx, 1);
 
@@ -50,7 +52,13 @@ impl SearchEngine {
 
             self.tree().dec_threads(new_idx, 1);
 
-            score?
+            let score = score?;
+
+            if !self.tree()[new_idx].is_terminal() {
+                self.tree().butterfly_history().update_entry(old_side, mv, score, self.options());
+            }
+
+            score
         }.reversed();
 
         self.backpropagate(node_idx, selected_child_idx, score, hash);

@@ -12,6 +12,7 @@ mod tree;
 mod engine_options;
 mod hash_table;
 mod contempt;
+mod butterfly_history;
 
 pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;

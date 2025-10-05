@@ -6,19 +6,21 @@ create_options! {
     EngineOptions {
         Options {
             //====== General ======
-            ["Hash"]         hash:           i64   =>  32,  1,  524288;
-            ["Threads"]      threads:        i64   =>  1,   1,  1024;
-            ["MoveOverhead"] move_overhead:  i64   =>  25,  0,  2000;
-            ["MultiPV"]      multi_pv:       i64   =>  1,   1,  218;
-            ["UCI_Chess960"] chess960:       bool  =>  false;
-            ["UCI_ShowWDL"]  show_wdl:       bool  =>  false;
-            ["MinimalPrint"] minimal_print:  bool  =>  false;
-            ["ItersAsNodes"] iters_as_nodes: bool  =>  false;
+            ["Hash"]         hash:          i64   =>  32,  1,  524288;
+            ["Threads"]      threads:       i64   =>  1,   1,  1024;
+            ["MoveOverhead"] move_overhead: i64   =>  25,  0,  2000;
+            ["MultiPV"]      multi_pv:      i64   =>  1,   1,  218;
+            ["UCI_Chess960"] chess960:      bool  =>  false;
+            ["UCI_ShowWDL"]  show_wdl:      bool  =>  false;
 
             //======== EAS ========
             ["Contempt"]  contempt:   i64  =>  1000,  -10000,  10000;
             ["DrawScore"] draw_score: i64  =>  30,    -100,    100;
             ["PolicySac"] policy_sac: i64  =>  10,    0,       100;
+
+            //======= Debug =======
+            ["MinimalPrint"] minimal_print:  bool  =>  false;
+            ["ItersAsNodes"] iters_as_nodes: bool  =>  false;
         }
         Tunables {
             //PST
@@ -50,6 +52,10 @@ create_options! {
             initial_visit_threshold: i64  =>  9,       0,    1024,   1,     0.002;
             visit_increase_multi:    f64  =>  2.2623,  1.0,  10.0,   0.1,   0.002;
             visit_increase_offset:   f64  =>  4.1092,  1.0,  10.0,   0.1,   0.002;
+
+            //Butterfly history
+            butterfly_reduction_factor: i64 => 8192,   1,  65536,   819,   0.002;
+            butterfly_bonus_scale:      i64 => 16384,  1,  131072,  1638,  0.002;
 
             //Draw Scaling
             draw_scaling_power: f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;
