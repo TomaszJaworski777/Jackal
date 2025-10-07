@@ -18,6 +18,7 @@ pub struct Node {
     mv: AtomicU16,
     visit_count: AtomicU32,
     cumulative_score: AtomicWDLScore,
+    base_score: AtomicU32,
     squared_score: AtomicU64,
     children_start_index: IndexLock,
     children_count: AtomicU8,
@@ -33,6 +34,7 @@ impl Clone for Node {
             mv: AtomicU16::new(self.mv.load(Ordering::Relaxed)),
             visit_count: AtomicU32::new(self.visit_count.load(Ordering::Relaxed)),
             cumulative_score: self.cumulative_score.clone(),
+            base_score: AtomicU32::new(self.base_score.load(Ordering::Relaxed)),
             squared_score: AtomicU64::new(self.squared_score.load(Ordering::Relaxed)),
             children_start_index: self.children_start_index.clone(),
             children_count: AtomicU8::new(self.children_count.load(Ordering::Relaxed)),
@@ -50,6 +52,7 @@ impl Node {
             mv: AtomicU16::new(0),
             visit_count: AtomicU32::new(0),
             cumulative_score: AtomicWDLScore::default(),
+            base_score: AtomicU32::new(0),
             squared_score: AtomicU64::new(0),
             children_start_index: IndexLock::new(NodeIndex::NULL),
             children_count: AtomicU8::new(0),
@@ -65,6 +68,7 @@ impl Node {
         self.mv.store(u16::from(node.mv()), Ordering::Relaxed);
         self.visit_count.store(node.visits(), Ordering::Relaxed);
         self.cumulative_score.store(node.cumulative_score.get_score());
+        self.base_score.store(node.base_score().to_bits(), Ordering::Relaxed);
         self.squared_score.store(node.squared_score.load(Ordering::Relaxed), Ordering::Relaxed);
         self.state.set(node.state());
         self.policy.store(node.policy.load(Ordering::Relaxed), Ordering::Relaxed);
@@ -77,6 +81,7 @@ impl Node {
         self.mv.store(u16::from(mv), Ordering::Relaxed);
         self.visit_count.store(0, Ordering::Relaxed);
         self.cumulative_score.clear();
+        self.base_score.store(0, Ordering::Relaxed);
         self.squared_score.store(0, Ordering::Relaxed);
         self.state.set(GameState::Ongoing);
         self.policy.store(0, Ordering::Relaxed);
@@ -103,6 +108,11 @@ impl Node {
     #[inline]
     pub fn score(&self) -> WDLScore {
         self.cumulative_score.get_score_with_visits(self.visits())
+    }
+
+    #[inline]
+    pub fn base_score(&self) -> f32 {
+        f32::from_bits(self.base_score.load(Ordering::Relaxed))
     }
 
     #[inline]
@@ -148,6 +158,11 @@ impl Node {
     #[inline]
     pub fn is_terminal(&self) -> bool {
         self.state() != GameState::Ongoing
+    }
+
+    #[inline]
+    pub fn set_base_score(&self, score: WDLScore) {
+        self.base_score.store((score.single() as f32).to_bits(), Ordering::Relaxed);
     }
 
     #[inline]

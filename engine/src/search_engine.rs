@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chess::{ChessBoard, ChessPosition, FEN};
 
-use crate::{search_engine::{contempt::Contempt, engine_options::EngineOptions}, search_report_trait::SearchReport};
+use crate::{search_engine::{contempt::Contempt, engine_options::EngineOptions, subtree_bias::SubtreeBias}, search_report_trait::SearchReport};
 
 mod bench;
 mod mcts;
@@ -13,6 +13,7 @@ mod engine_options;
 mod hash_table;
 mod contempt;
 mod butterfly_history;
+mod subtree_bias;
 
 pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
@@ -25,7 +26,8 @@ pub struct SearchEngine {
     options: EngineOptions,
     interruption_token: AtomicBool,
     game_ply: u16,
-    contempt: Contempt
+    contempt: Contempt,
+    subtree_bias: SubtreeBias
 }
 
 impl Clone for SearchEngine {
@@ -36,7 +38,8 @@ impl Clone for SearchEngine {
             options: self.options.clone(),
             interruption_token: AtomicBool::new(self.interruption_token.load(Ordering::Relaxed)),
             game_ply: self.game_ply,
-            contempt: self.contempt
+            contempt: self.contempt,
+            subtree_bias: self.subtree_bias.clone()
         }
     }
 }
@@ -52,7 +55,8 @@ impl SearchEngine {
             options,
             interruption_token: AtomicBool::new(false),
             game_ply: 0,
-            contempt
+            contempt,
+            subtree_bias: SubtreeBias::new()
         }
     }
 
@@ -92,6 +96,11 @@ impl SearchEngine {
     }
 
     #[inline]
+    pub fn subtree_bias(&self) -> &SubtreeBias {
+        &self.subtree_bias
+    }
+
+    #[inline]
     pub fn set_position(&mut self, position: &ChessPosition, game_ply: u16) {
         self.position = *position;
         self.game_ply = game_ply;
@@ -106,6 +115,11 @@ impl SearchEngine {
     #[inline]
     pub fn reinit_contempt(&mut self) {
         self.contempt = Contempt::init(self.options())
+    }
+
+    #[inline]
+    pub fn reinit_subtree_bias(&mut self) {
+        self.subtree_bias = SubtreeBias::new()
     }
 
     #[inline]

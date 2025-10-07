@@ -35,6 +35,9 @@ impl SearchEngine {
             selected_child_idx = Some(new_idx);
 
             let old_side = position.board().side();
+            let old_position = position.clone();
+            let base_score = self.tree()[node_idx].base_score();
+
             let mv = self.tree()[new_idx].mv();
             position.make_move(mv, castle_mask);
 
@@ -57,6 +60,8 @@ impl SearchEngine {
             if !self.tree()[new_idx].is_terminal() {
                 self.tree().butterfly_history().update_entry(old_side, mv, score, self.options());
             }
+
+            self.subtree_bias().update(score.single() as f32, base_score, &old_position);
 
             score
         }.reversed();

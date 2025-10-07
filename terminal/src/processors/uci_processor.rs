@@ -118,7 +118,9 @@ impl UciProcessor {
             });
         }
 
-        search_engine.tree().try_reuse(search_engine.root_position(), &chess_position, search_engine.options());
+        if search_engine.tree().try_reuse(search_engine.root_position(), &chess_position, search_engine.options()).is_some() {
+            search_engine.reinit_subtree_bias();
+        }
 
         search_engine.set_position(&chess_position, moves.len() as u16);
         self.uci_print("Position has been set.", search_engine.options().minimal_print());
