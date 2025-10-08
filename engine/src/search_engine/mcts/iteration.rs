@@ -1,6 +1,6 @@
 use chess::ChessPosition;
 
-use crate::{search_engine::tree::NodeIndex, GameState, SearchEngine, WDLScore};
+use crate::{search_engine::tree::NodeIndex, SearchEngine, WDLScore};
 
 mod select;
 mod simulate;
@@ -48,8 +48,6 @@ impl SearchEngine {
                 None
             };
 
-            //let base_score = self.tree()[node_idx].base_score();
-
             let score = self.perform_iteration::<false>(new_idx, position, depth, castle_mask);
 
             drop(lock);
@@ -67,7 +65,7 @@ impl SearchEngine {
 
         self.backpropagate(node_idx, selected_child_idx, score, hash);
         if self.tree()[node_idx].base_score() != 0.0 {
-            self.subtree_bias().update(self.tree()[node_idx].score().reversed().single() as f32, self.tree()[node_idx].base_score(), &old_position);
+            self.subtree_bias().update(self.tree()[node_idx].score().reversed().single(), self.tree()[node_idx].base_score(), &old_position);
         }
 
         Some(score)

@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use chess::{ChessPosition, Piece};
 
@@ -9,27 +9,27 @@ const BUCKET_BYTES: usize = 5 * 1024 * 1024;
 #[derive(Debug)]
 struct BiasEntry{
     //score: AtomicU32,
-    error: AtomicU32
+    error: AtomicU64
 }
 
 impl BiasEntry {
     fn new() -> Self {
         Self {
             //score: AtomicU32::new(0.0_f32.to_bits()),
-            error: AtomicU32::new(0.0_f32.to_bits()),
+            error: AtomicU64::new(0.0_f64.to_bits()),
         }
     }
 
-    fn error(&self) -> f32 {
-        f32::from_bits(self.error.load(Ordering::Relaxed))
+    fn error(&self) -> f64 {
+        f64::from_bits(self.error.load(Ordering::Relaxed))
     }
 
-    fn set(&self, _score: f32, error: f32) {
+    fn set(&self, _score: f64, error: f64) {
         //self.score.store(score.to_bits(), Ordering::Relaxed);
         self.error.store(error.to_bits(), Ordering::Relaxed);
     }
 
-    fn update(&self, score: f32, error: f32) {
+    fn update(&self, score: f64, error: f64) {
         self.set(score, error);
     }
 }
@@ -69,12 +69,12 @@ impl BiasBucket {
         (key % (self.0.len() as u64)) as usize
     }
 
-    fn update(&self, score: f32, error: f32, key: u64) {
+    fn update(&self, score: f64, error: f64, key: u64) {
         let idx = self.index(key);
         self.0[idx].update(score, error);
     }
 
-    fn error(&self, key: u64) -> f32 {
+    fn error(&self, key: u64) -> f64 {
         let idx = self.index(key);
         self.0[idx].error()
     }
@@ -92,7 +92,7 @@ impl SubtreeBias {
         }
     }
 
-    pub fn update(&self, tree_score: f32, base_score: f32, position: &ChessPosition) {
+    pub fn update(&self, tree_score: f64, base_score: f64, position: &ChessPosition) {
         let error = base_score - tree_score;
 
         let side = position.board().side();
