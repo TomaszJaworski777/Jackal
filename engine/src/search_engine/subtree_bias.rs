@@ -34,6 +34,18 @@ impl BiasEntry {
     }
 }
 
+// fn atomic_add_f32(atomic: &AtomicU32, value: f32) {
+//     let mut old = atomic.load(Ordering::Relaxed);
+//     loop {
+//         let current = f32::from_bits(old);
+//         let new = (current + value).to_bits();
+//         match atomic.compare_exchange_weak(old, new, Ordering::Relaxed, Ordering::Relaxed) {
+//             Ok(_) => break,
+//             Err(now) => old = now,
+//         }
+//     }
+// }
+
 #[derive(Debug)]
 struct BiasBucket(Vec<BiasEntry>);
 
@@ -101,7 +113,7 @@ impl SubtreeBias {
 
         let biased_scalar = (score.single() - options.bias_lambda() * avg_error).clamp(0.0, 1.0);
 
-        let new_w = (biased_scalar - 0.5 * score.draw_chance()).clamp(0.0, 1.0 - score.draw_chance());
+        let new_w = (biased_scalar - 0.5 * score.draw_chance()).clamp(0.0, (1.0 - score.draw_chance()).max(0.0));
         *score = WDLScore::new(new_w, score.draw_chance());
     }
 }

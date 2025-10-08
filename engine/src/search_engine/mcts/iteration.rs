@@ -18,6 +18,7 @@ impl SearchEngine {
         let node = &self.tree()[node_idx];
 
         let mut selected_child_idx = None;
+        let old_position = position.clone();
 
         let score = if !ROOT && (node.is_terminal() || node.visits() == 0) {
             self.simulate(node_idx, position, *depth)
@@ -47,7 +48,6 @@ impl SearchEngine {
                 None
             };
 
-            let old_position = position.clone();
             //let base_score = self.tree()[node_idx].base_score();
 
             let score = self.perform_iteration::<false>(new_idx, position, depth, castle_mask);
@@ -62,12 +62,13 @@ impl SearchEngine {
                 self.tree().butterfly_history().update_entry(old_side, mv, score, self.options());
             }
 
-            self.subtree_bias().update(score.reversed().single() as f32, self.tree()[new_idx].base_score(), &old_position);
-
             score
         }.reversed();
 
         self.backpropagate(node_idx, selected_child_idx, score, hash);
+        if self.tree()[node_idx].base_score() != 0.0 {
+            self.subtree_bias().update(self.tree()[node_idx].score().reversed().single() as f32, self.tree()[node_idx].base_score(), &old_position);
+        }
 
         Some(score)
     }

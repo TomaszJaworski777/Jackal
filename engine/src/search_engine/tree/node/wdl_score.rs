@@ -80,7 +80,7 @@ impl WDLScore {
 
     #[inline]
     pub const fn new(win_chance: f64, draw_chance: f64) -> Self {
-        Self(win_chance, draw_chance)
+        Self(win_chance.clamp(0.0, 1.0), draw_chance.clamp(0.0, 1.0))
     }
 
     #[inline]
