@@ -65,7 +65,7 @@ impl SearchEngine {
 
         self.backpropagate(node_idx, selected_child_idx, score, hash);
         if self.tree()[node_idx].base_score() != 0.0 {
-            self.subtree_bias().update(self.tree()[node_idx].score().reversed().single(), self.tree()[node_idx].base_score(), &old_position);
+            self.subtree_bias().update(self.tree()[node_idx].score().reversed().single(), self.tree()[node_idx].base_score(), self.tree()[node_idx].visits(), &old_position, self.options());
         }
 
         Some(score)

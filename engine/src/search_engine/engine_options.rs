@@ -54,11 +54,12 @@ create_options! {
             visit_increase_offset:   f64  =>  4.1092,  1.0,  10.0,   0.1,   0.002;
 
             //Butterfly history
-            butterfly_reduction_factor: i64 => 8192,   1,  65536,   819,   0.002;
-            butterfly_bonus_scale:      i64 => 16384,  1,  131072,  1638,  0.002;
+            butterfly_reduction_factor: i64  =>  8192,   1,  65536,   819,   0.002;
+            butterfly_bonus_scale:      i64  =>  16384,  1,  131072,  1638,  0.002;
 
             //Subtree bias
-            bias_lambda: f64  =>  0.35,  0.05,  1.0,  0.025,  0.002;
+            bias_lambda:      f64  =>  0.35,  0.05,  1.0,   0.025,  0.002;
+            bias_error_alpha: f64  =>  0.8,   0.05,  1.25,  0.5,    0.002;
             
             //Draw Scaling
             draw_scaling_power: f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;

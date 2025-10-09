@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use chess::{ChessPosition, Piece};
 
@@ -8,43 +8,47 @@ const BUCKET_BYTES: usize = 5 * 1024 * 1024;
 
 #[derive(Debug)]
 struct BiasEntry{
-    //score: AtomicU32,
+    weight: AtomicU64,
     error: AtomicU64
 }
 
 impl BiasEntry {
     fn new() -> Self {
         Self {
-            //score: AtomicU32::new(0.0_f32.to_bits()),
+            weight: AtomicU64::new(0.0_f64.to_bits()),
             error: AtomicU64::new(0.0_f64.to_bits()),
         }
     }
 
     fn error(&self) -> f64 {
-        f64::from_bits(self.error.load(Ordering::Relaxed))
+        let error = f64::from_bits(self.error.load(Ordering::Relaxed));
+        let weight = f64::from_bits(self.weight.load(Ordering::Relaxed));
+
+        error / weight
     }
 
-    fn set(&self, _score: f64, error: f64) {
-        //self.score.store(score.to_bits(), Ordering::Relaxed);
+    fn set(&self, error: f64, weight: f64) {
+        self.weight.store(weight.to_bits(), Ordering::Relaxed);
         self.error.store(error.to_bits(), Ordering::Relaxed);
     }
 
-    fn update(&self, score: f64, error: f64) {
-        self.set(score, error);
+    fn update(&self, error: f64, weight: f64) {
+        atomic_add_f64(&self.error, error);
+        atomic_add_f64(&self.weight, weight);
     }
 }
 
-// fn atomic_add_f32(atomic: &AtomicU32, value: f32) {
-//     let mut old = atomic.load(Ordering::Relaxed);
-//     loop {
-//         let current = f32::from_bits(old);
-//         let new = (current + value).to_bits();
-//         match atomic.compare_exchange_weak(old, new, Ordering::Relaxed, Ordering::Relaxed) {
-//             Ok(_) => break,
-//             Err(now) => old = now,
-//         }
-//     }
-// }
+fn atomic_add_f64(atomic: &AtomicU64, value: f64) {
+    let mut old = atomic.load(Ordering::Relaxed);
+    loop {
+        let current = f64::from_bits(old);
+        let new = (current + value).to_bits();
+        match atomic.compare_exchange_weak(old, new, Ordering::Relaxed, Ordering::Relaxed) {
+            Ok(_) => break,
+            Err(now) => old = now,
+        }
+    }
+}
 
 #[derive(Debug)]
 struct BiasBucket(Vec<BiasEntry>);
@@ -52,9 +56,10 @@ struct BiasBucket(Vec<BiasEntry>);
 impl Clone for BiasBucket {
     fn clone(&self) -> Self {
         Self(self.0.iter().map(|x| {
-            let result = BiasEntry::new();
-            result.set(0.0, x.error());
-            result
+            BiasEntry { 
+                weight: AtomicU64::new(x.weight.load(Ordering::Relaxed)), 
+                error: AtomicU64::new(x.error.load(Ordering::Relaxed)) 
+            }
         }).collect())
     }
 }
@@ -69,9 +74,9 @@ impl BiasBucket {
         (key % (self.0.len() as u64)) as usize
     }
 
-    fn update(&self, score: f64, error: f64, key: u64) {
+    fn update(&self, error: f64, weight: f64, key: u64) {
         let idx = self.index(key);
-        self.0[idx].update(score, error);
+        self.0[idx].update(error, weight);
     }
 
     fn error(&self, key: u64) -> f64 {
@@ -92,13 +97,14 @@ impl SubtreeBias {
         }
     }
 
-    pub fn update(&self, tree_score: f64, base_score: f64, position: &ChessPosition) {
+    pub fn update(&self, tree_score: f64, base_score: f64, visits: u32, position: &ChessPosition, options: &EngineOptions) {
+        let weight = (visits.max(1) as f64).powf(options.bias_error_alpha());
         let error = base_score - tree_score;
 
         let side = position.board().side();
 
         let pawn_key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
-        self.pawn_bucket[usize::from(side)].update(tree_score, error, pawn_key);
+        self.pawn_bucket[usize::from(side)].update(error * weight, weight, pawn_key);
     }
 
     pub fn apply_bias(&self, score: &mut WDLScore, position: &ChessPosition, options: &EngineOptions) {
