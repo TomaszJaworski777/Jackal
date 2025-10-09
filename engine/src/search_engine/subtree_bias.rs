@@ -87,13 +87,15 @@ impl BiasBucket {
 
 #[derive(Debug, Clone)]
 pub struct SubtreeBias {
-    pawn_bucket: [BiasBucket; 2]
+    pawn_bucket: [BiasBucket; 2],
+    bishop_bucket: [BiasBucket; 2]
 }
 
 impl SubtreeBias {
     pub fn new() -> Self {
         Self { 
-            pawn_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)]
+            pawn_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)],
+            bishop_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)]
         }
     }
 
@@ -103,8 +105,11 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let pawn_key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
-        self.pawn_bucket[usize::from(side)].update(error * weight, weight, pawn_key);
+        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
+        self.pawn_bucket[usize::from(side)].update(error * weight, weight, key);
+
+        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
+        self.bishop_bucket[usize::from(side)].update(error * weight, weight, key);
     }
 
     pub fn apply_bias(&self, score: &mut WDLScore, position: &ChessPosition, options: &EngineOptions) {
@@ -112,10 +117,13 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let pawn_key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
-        avg_error += self.pawn_bucket[usize::from(side)].error(pawn_key);
+        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
+        avg_error += self.pawn_bucket[usize::from(side)].error(key);
 
-        let avg_error = (avg_error as f64) / 1.0;
+        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
+        avg_error += self.bishop_bucket[usize::from(side)].error(key);
+
+        let avg_error = (avg_error as f64) / 2.0;
 
         let biased_scalar = (score.single() - options.bias_lambda() * avg_error).clamp(0.0, 1.0);
 
