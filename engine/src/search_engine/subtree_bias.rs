@@ -9,7 +9,8 @@ const BUCKET_BYTES: usize = 5 * 1024 * 1024;
 #[derive(Debug)]
 struct BiasEntry{
     weight: AtomicU64,
-    error: AtomicU64
+    error: AtomicU64,
+    key: AtomicU64,
 }
 
 impl BiasEntry {
@@ -17,22 +18,48 @@ impl BiasEntry {
         Self {
             weight: AtomicU64::new(0.0_f64.to_bits()),
             error: AtomicU64::new(0.0_f64.to_bits()),
+            key: AtomicU64::new(0)
         }
     }
 
-    fn error(&self) -> f64 {
+    fn key(&self) -> u64 { 
+        self.key.load(Ordering::Relaxed)
+    }
+
+    fn weight(&self, key: u64) -> f64 { 
+        if self.key() != key { 
+            return 0.0;
+        }
+
+        f64::from_bits(self.weight.load(Ordering::Relaxed))
+    }
+
+    fn error(&self, key: u64) -> f64 {
+        if self.key() != key { 
+            return 0.0;
+        }
+
         let error = f64::from_bits(self.error.load(Ordering::Relaxed));
         let weight = f64::from_bits(self.weight.load(Ordering::Relaxed));
 
         error / weight
     }
 
-    fn set(&self, error: f64, weight: f64) {
+    fn set(&self, error: f64, weight: f64, key: u64) {
         self.weight.store(weight.to_bits(), Ordering::Relaxed);
         self.error.store(error.to_bits(), Ordering::Relaxed);
+        self.key.store(key, Ordering::Relaxed);
     }
 
-    fn update(&self, error: f64, weight: f64) {
+    fn update(&self, error: f64, weight: f64, key: u64) {
+        if self.key() != key {
+            if weight < f64::from_bits(self.weight.load(Ordering::Relaxed)) {
+                return;
+            }
+
+            self.set(error, weight, key);
+        }
+
         atomic_add_f64(&self.error, error);
         atomic_add_f64(&self.weight, weight);
     }
@@ -58,7 +85,8 @@ impl Clone for BiasBucket {
         Self(self.0.iter().map(|x| {
             BiasEntry { 
                 weight: AtomicU64::new(x.weight.load(Ordering::Relaxed)), 
-                error: AtomicU64::new(x.error.load(Ordering::Relaxed)) 
+                error: AtomicU64::new(x.error.load(Ordering::Relaxed)),
+                key: AtomicU64::new(x.key.load(Ordering::Relaxed)),
             }
         }).collect())
     }
@@ -76,12 +104,12 @@ impl BiasBucket {
 
     fn update(&self, error: f64, weight: f64, key: u64) {
         let idx = self.index(key);
-        self.0[idx].update(error, weight);
+        self.0[idx].update(error, weight, key);
     }
 
     fn error(&self, key: u64) -> f64 {
         let idx = self.index(key);
-        self.0[idx].error()
+        self.0[idx].error(key)
     }
 }
 
