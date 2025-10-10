@@ -130,10 +130,10 @@ impl SubtreeBias {
         let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         self.pawn_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side)) | u64::from(position.board().piece_mask_for_side(Piece::KNIGHT, side));
         self.bishop_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side.flipped()));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         self.major_bucket[usize::from(side)].update(error * weight, weight, key, options);
     }
 
@@ -145,10 +145,10 @@ impl SubtreeBias {
         let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         avg_error += self.pawn_bucket[usize::from(side)].error(key);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side)) | u64::from(position.board().piece_mask_for_side(Piece::KNIGHT, side));
         avg_error += self.bishop_bucket[usize::from(side)].error(key);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side.flipped()));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         avg_error += self.major_bucket[usize::from(side)].error(key);
 
         let avg_error = (avg_error as f64) / 3.0;
