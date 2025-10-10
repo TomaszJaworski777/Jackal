@@ -58,9 +58,10 @@ create_options! {
             butterfly_bonus_scale:      i64  =>  16384,  1,  131072,  1638,  0.002;
 
             //Subtree bias
-            bias_lambda:      f64  =>  0.35,  0.05,  1.0,   0.025,  0.002;
-            bias_error_alpha: f64  =>  0.8,   0.05,  1.25,  0.5,    0.002;
-            
+            bias_lambda:         f64  =>  0.35,  0.05,  1.0,   0.025,  0.002;
+            bias_error_alpha:    f64  =>  0.8,   0.05,  1.25,  0.05,   0.002;
+            bias_replace_factor: f64  =>  2.0,   0.3,   4.0,   0.1,    0.002;
+
             //Draw Scaling
             draw_scaling_power: f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;
             draw_scaling_cap:   f64  =>  0.9,     0.0,  1.0,   0.08,    0.002;

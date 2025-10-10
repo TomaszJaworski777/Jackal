@@ -26,14 +26,6 @@ impl BiasEntry {
         self.key.load(Ordering::Relaxed)
     }
 
-    fn weight(&self, key: u64) -> f64 { 
-        if self.key() != key { 
-            return 0.0;
-        }
-
-        f64::from_bits(self.weight.load(Ordering::Relaxed))
-    }
-
     fn error(&self, key: u64) -> f64 {
         if self.key() != key { 
             return 0.0;
@@ -51,9 +43,9 @@ impl BiasEntry {
         self.key.store(key, Ordering::Relaxed);
     }
 
-    fn update(&self, error: f64, weight: f64, key: u64) {
+    fn update(&self, error: f64, weight: f64, key: u64, options: &EngineOptions) {
         if self.key() != key {
-            if weight < f64::from_bits(self.weight.load(Ordering::Relaxed)) {
+            if weight < f64::from_bits(self.weight.load(Ordering::Relaxed)) * options.bias_replace_factor() {
                 return;
             }
 
@@ -102,9 +94,9 @@ impl BiasBucket {
         (key % (self.0.len() as u64)) as usize
     }
 
-    fn update(&self, error: f64, weight: f64, key: u64) {
+    fn update(&self, error: f64, weight: f64, key: u64, options: &EngineOptions) {
         let idx = self.index(key);
-        self.0[idx].update(error, weight, key);
+        self.0[idx].update(error, weight, key, options);
     }
 
     fn error(&self, key: u64) -> f64 {
@@ -134,10 +126,10 @@ impl SubtreeBias {
         let side = position.board().side();
 
         let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
-        self.pawn_bucket[usize::from(side)].update(error * weight, weight, key);
+        self.pawn_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
         let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
-        self.bishop_bucket[usize::from(side)].update(error * weight, weight, key);
+        self.bishop_bucket[usize::from(side)].update(error * weight, weight, key, options);
     }
 
     pub fn apply_bias(&self, score: &mut WDLScore, position: &ChessPosition, options: &EngineOptions) {
