@@ -133,7 +133,7 @@ impl SubtreeBias {
         let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
         self.bishop_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side.flipped()));
         self.major_bucket[usize::from(side)].update(error * weight, weight, key, options);
     }
 
@@ -148,7 +148,7 @@ impl SubtreeBias {
         let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
         avg_error += self.bishop_bucket[usize::from(side)].error(key);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side.flipped()));
         avg_error += self.major_bucket[usize::from(side)].error(key);
 
         let avg_error = (avg_error as f64) / 3.0;
