@@ -49,7 +49,8 @@ impl BiasEntry {
                 return;
             }
 
-            self.set(error, weight, key);
+            self.set(error * options.bias_replace_boost(), weight * options.bias_replace_boost(), key);
+            return;
         }
 
         atomic_add_f64(&self.error, error);
