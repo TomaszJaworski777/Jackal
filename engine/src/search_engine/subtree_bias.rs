@@ -109,7 +109,7 @@ impl BiasBucket {
 #[derive(Debug, Clone)]
 pub struct SubtreeBias {
     pawn_bucket: [BiasBucket; 2],
-    bishop_bucket: [BiasBucket; 2],
+    minor_bucket: [BiasBucket; 2],
     major_bucket: [BiasBucket; 2]
 }
 
@@ -117,7 +117,7 @@ impl SubtreeBias {
     pub fn new() -> Self {
         Self { 
             pawn_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)],
-            bishop_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)],
+            minor_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)],
             major_bucket: [BiasBucket::new(BUCKET_BYTES), BiasBucket::new(BUCKET_BYTES)],
         }
     }
@@ -128,13 +128,13 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = pawn_key(position);
         self.pawn_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side)) | u64::from(position.board().piece_mask_for_side(Piece::KNIGHT, side));
-        self.bishop_bucket[usize::from(side)].update(error * weight, weight, key, options);
+        let key = minor_key(position);
+        self.minor_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = major_key(position);
         self.major_bucket[usize::from(side)].update(error * weight, weight, key, options);
     }
 
@@ -143,13 +143,13 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = pawn_key(position);
         avg_error += self.pawn_bucket[usize::from(side)].error(key);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side)) | u64::from(position.board().piece_mask_for_side(Piece::KNIGHT, side));
-        avg_error += self.bishop_bucket[usize::from(side)].error(key);
+        let key = minor_key(position);
+        avg_error += self.minor_bucket[usize::from(side)].error(key);
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side)) | u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+        let key = major_key(position);
         avg_error += self.major_bucket[usize::from(side)].error(key);
 
         let avg_error = (avg_error as f64) / 3.0;
@@ -159,4 +159,27 @@ impl SubtreeBias {
         let new_w = (biased_scalar - 0.5 * score.draw_chance()).clamp(0.0, (1.0 - score.draw_chance()).max(0.0));
         *score = WDLScore::new(new_w, score.draw_chance());
     }
+}
+
+fn pawn_key(position: &ChessPosition) -> u64 {
+    let side = position.board().side();
+    let pawns = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
+    let king = u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+    pawns | king
+}
+
+fn minor_key(position: &ChessPosition) -> u64 {
+    let side = position.board().side();
+    let bishops = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
+    let knights = u64::from(position.board().piece_mask_for_side(Piece::KNIGHT, side));
+    bishops | knights
+}
+
+fn major_key(position: &ChessPosition) -> u64 {
+    let side = position.board().side();
+    let rooks = u64::from(position.board().piece_mask_for_side(Piece::ROOK, side));
+    let queens = u64::from(position.board().piece_mask_for_side(Piece::QUEEN, side));
+    let king = u64::from(position.board().piece_mask_for_side(Piece::KING, side));
+
+    rooks | queens | king
 }
