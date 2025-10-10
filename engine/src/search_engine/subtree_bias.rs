@@ -125,7 +125,7 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         self.pawn_bucket[usize::from(side)].update(error * weight, weight, key, options);
 
         let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
@@ -137,7 +137,7 @@ impl SubtreeBias {
 
         let side = position.board().side();
 
-        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side));
+        let key = u64::from(position.board().piece_mask_for_side(Piece::PAWN, side)) | u64::from(position.board().piece_mask_for_side(Piece::KING, side));
         avg_error += self.pawn_bucket[usize::from(side)].error(key);
 
         let key = u64::from(position.board().piece_mask_for_side(Piece::BISHOP, side));
