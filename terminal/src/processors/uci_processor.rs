@@ -55,10 +55,12 @@ impl UciProcessor {
     }
 
     fn set_option(&self, args: &[String], search_engine: &mut SearchEngine) {
+        let minimal_print = *search_engine.options().minimal_print();
+
         match args.iter().map(|s| s.as_str()).collect::<Vec<&str>>().as_slice() {
             ["name", name, "value", value] => {
                 if let Err(msg) = search_engine.set_option(*name, *value) {
-                    self.uci_print(msg.as_str(), search_engine.options().minimal_print());
+                    self.uci_print(msg.as_str(), minimal_print);
                     return;
                 }
 
@@ -69,7 +71,11 @@ impl UciProcessor {
                 search_engine.reinit_contempt();
 
                 let str = format!("Option {name} has been set to {value}");
-                self.uci_print(str.as_str(), search_engine.options().minimal_print());
+                self.uci_print(str.as_str(), *search_engine.options().minimal_print());
+
+                if name.eq_ignore_ascii_case("syzygypath") {
+                    self.uci_print(search_engine.load_syzygy().as_str(), minimal_print);
+                }
             },
             _ => {}
         }
@@ -105,14 +111,14 @@ impl UciProcessor {
         }
 
         if !FEN::validate_fen(&fen) {
-            self.uci_print("Provided fen is invalid.", search_engine.options().minimal_print());
+            self.uci_print("Provided fen is invalid.", *search_engine.options().minimal_print());
             return;
         }
 
         let mut chess_position = ChessPosition::from(ChessBoard::from(&FEN::from(fen)));
         for &mv in &moves {
             chess_position.board().clone().map_legal_moves(|legal_mv| {
-                if *mv == legal_mv.to_string(search_engine.options().chess960()) {
+                if *mv == legal_mv.to_string(*search_engine.options().chess960()) {
                     chess_position.make_move_no_mask(legal_mv);
                 }
             });
@@ -121,7 +127,7 @@ impl UciProcessor {
         search_engine.tree().try_reuse(search_engine.root_position(), &chess_position, search_engine.options());
 
         search_engine.set_position(&chess_position, moves.len() as u16);
-        self.uci_print("Position has been set.", search_engine.options().minimal_print());
+        self.uci_print("Position has been set.", *search_engine.options().minimal_print());
     }
 
     fn go(
@@ -136,7 +142,7 @@ impl UciProcessor {
         std::thread::scope(|s| {
             s.spawn(|| {
                 let _ = if self.uci_initialized { 
-                    if search_engine.options().minimal_print() {
+                    if *search_engine.options().minimal_print() {
                         search_engine.search::<UciMinimalReport>(&search_limits)
                     } else {
                         search_engine.search::<UciSearchReport>(&search_limits)

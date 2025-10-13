@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chess::{ChessBoard, ChessPosition, FEN};
 
-use crate::{search_engine::{contempt::Contempt, engine_options::EngineOptions}, search_report_trait::SearchReport};
+use crate::{search_engine::{contempt::Contempt, engine_options::EngineOptions, syzygy_tables::SyzygyTables}, search_report_trait::SearchReport};
 
 mod bench;
 mod mcts;
@@ -13,6 +13,7 @@ mod engine_options;
 mod hash_table;
 mod contempt;
 mod butterfly_history;
+mod syzygy_tables;
 
 pub use search_limits::SearchLimits;
 pub use search_stats::SearchStats;
@@ -25,20 +26,8 @@ pub struct SearchEngine {
     options: EngineOptions,
     interruption_token: AtomicBool,
     game_ply: u16,
-    contempt: Contempt
-}
-
-impl Clone for SearchEngine {
-    fn clone(&self) -> Self {
-        Self {
-            position: self.position,
-            tree: self.tree.clone(),
-            options: self.options.clone(),
-            interruption_token: AtomicBool::new(self.interruption_token.load(Ordering::Relaxed)),
-            game_ply: self.game_ply,
-            contempt: self.contempt
-        }
-    }
+    contempt: Contempt,
+    syzygy_tables: SyzygyTables
 }
 
 impl SearchEngine {
@@ -48,11 +37,12 @@ impl SearchEngine {
 
         Self {
             position: ChessPosition::from(ChessBoard::from(&FEN::start_position())),
-            tree: Tree::from_bytes(options.hash() as usize, &options),
+            tree: Tree::from_bytes(*options.hash() as usize, &options),
             options,
             interruption_token: AtomicBool::new(false),
             game_ply: 0,
-            contempt
+            contempt,
+            syzygy_tables: SyzygyTables::default()
         }
     }
 
@@ -68,7 +58,7 @@ impl SearchEngine {
 
     #[inline]
     pub fn resize_tree(&mut self) {
-        self.tree = Tree::from_bytes(self.options.hash() as usize, self.options())
+        self.tree = Tree::from_bytes(*self.options.hash() as usize, self.options())
     }
 
     #[inline]
@@ -89,6 +79,16 @@ impl SearchEngine {
     #[inline]
     pub fn contempt(&self) -> &Contempt {
         &self.contempt
+    }
+
+    #[inline]
+    pub fn syzygy(&self) -> &SyzygyTables {
+        &self.syzygy_tables
+    }
+
+    #[inline]
+    pub fn load_syzygy(&mut self) -> String {
+        self.syzygy_tables.load_table(self.options.syzygy_path())
     }
 
     #[inline]

@@ -169,5 +169,5 @@ fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
         options.sac_queen_value()
         ];
 
-    ((piece_values[usize::from(attacker)] - piece_values[usize::from(victim)]) * (options.policy_sac() as f64 / 10000.0)).max(0.0)
+    ((piece_values[usize::from(attacker)] - piece_values[usize::from(victim)]) * (*options.policy_sac() as f64 / 10000.0)).max(0.0)
 }

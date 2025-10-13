@@ -192,7 +192,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     for (idx, &(mv, p)) in moves.iter().enumerate() {
         println!(" {} {}", 
-            format!("{}:", mv.to_string(search_engine.options().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
+            format!("{}:", mv.to_string(*search_engine.options().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
             heat_color(&format!("{:.2}%", p * 100.0), p, min_policy, max_policy)
         )
     }
@@ -304,7 +304,7 @@ fn analyse(search_engine: &mut SearchEngine, iters: Option<u64>) {
     print!("{} {}\r", " Progress:".primary(5.0/32.0), create_loading_bar(50, progress / piece_count as f32, (225,225,225), (225,225,225)).secondary(5.0/32.0));
     let _ = std::io::stdout().flush();
 
-    let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+    let draw_score = *search_engine.options().draw_score() as f64 / 100.0;
     let wdl_score = search_engine.tree().get_best_pv(0, draw_score).score();
     let current_eval = wdl_score.cp();
 

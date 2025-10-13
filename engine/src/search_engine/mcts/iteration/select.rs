@@ -34,7 +34,7 @@ impl SearchEngine {
             let score = get_score(&parent_node.score(), child_node, child_node.visits()).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
             } else {
-                self.options().draw_score() as f64 / 100.0
+                *self.options().draw_score() as f64 / 100.0
             }) as f64;
             score + child_node.policy() * expl / f64::from(child_node.visits() + 1)
         }).expect("Failed to select a valid node.")

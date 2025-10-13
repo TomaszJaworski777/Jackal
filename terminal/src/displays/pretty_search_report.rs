@@ -27,7 +27,7 @@ impl SearchReport for PrettySearchReport {
 
         print_search_report::<true>(search_limits, search_stats, search_engine);
 
-        let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+        let draw_score = *search_engine.options().draw_score() as f64 / 100.0;
         let best_node_idx = search_engine.tree().select_best_child(search_engine.tree().root_index(), draw_score);
 
         if let Some((x,y)) = term_cursor::get_pos().ok() {
@@ -39,7 +39,7 @@ impl SearchReport for PrettySearchReport {
             format!(" Best Move: {}", search_engine
                 .tree()[best_node_idx.unwrap()]
                 .mv()
-                .to_string(search_engine.options().chess960()).secondary(1.0)).primary(1.0)
+                .to_string(*search_engine.options().chess960()).secondary(1.0)).primary(1.0)
         );
 
         print!("\x1B[?25h");
@@ -109,7 +109,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     height_used += 3;
 
     if t_height >= 21 {
-        let nodes = if search_engine.options().iters_as_nodes() {
+        let nodes = if *search_engine.options().iters_as_nodes() {
             search_stats.iterations()
         } else {
             search_stats.cumulative_depth()
@@ -132,7 +132,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         height_used += 4;
     }
 
-    let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+    let draw_score = *search_engine.options().draw_score() as f64 / 100.0;
     let pv = search_engine.tree().get_best_pv(0, draw_score);
 
     let score = pv.score();
@@ -166,9 +166,9 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     }
 
     let pv_string = if FINAL {
-        pv.to_string(search_engine.options().chess960())
+        pv.to_string(*search_engine.options().chess960())
     } else {
-        pv.to_string_wrapped(PV_WRAPPING, search_engine.options().chess960())
+        pv.to_string_wrapped(PV_WRAPPING, *search_engine.options().chess960())
     };
 
     height_used += pv_string.len().div_ceil(t_width - 13);
@@ -189,7 +189,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         for idx in start_idx..SEARCH_HISTORY.len() {
             let (time, pv) = &SEARCH_HISTORY[idx];
 
-            let pv_string = pv.to_string_wrapped(PV_WRAPPING, search_engine.options().chess960());
+            let pv_string = pv.to_string_wrapped(PV_WRAPPING, *search_engine.options().chess960());
 
             print!("{}\r", " ".repeat(t_width));
             println!("{}", format!("{} -> {}", time_to_string(*time).align_to_right(9), pv_string).secondary(grad(29)))

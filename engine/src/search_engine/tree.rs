@@ -1,6 +1,6 @@
 use std::{ops::{Index, IndexMut}, sync::atomic::{AtomicU64, Ordering}};
 
-use chess::{Move, Side};
+use chess::Move;
 
 mod node;
 mod tree_expand;

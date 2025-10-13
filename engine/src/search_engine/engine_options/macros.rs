@@ -35,8 +35,8 @@ macro_rules! create_options {
             }
 
             $(
-            pub const fn $option(&self) -> $option_ty {
-                self.$option
+            pub const fn $option(&self) -> &$option_ty {
+                &self.$option
             }
             )+
 

@@ -152,7 +152,7 @@ impl TimeManager {
             return 1.0;
         }
         
-        let draw_score = options.draw_score() as f64 / 100.0;
+        let draw_score = *options.draw_score() as f64 / 100.0;
         let current_score = tree[tree.select_best_child(tree.root_index(), draw_score).unwrap()].score().cp() as f64 / 100.0;
         let score_trend = if let Some(previous_score) = self.previous_score {
             let trend = current_score - previous_score;
@@ -192,7 +192,7 @@ impl TimeManager {
             return 1.0;
         }
 
-        let draw_score = options.draw_score() as f64 / 100.0;
+        let draw_score = *options.draw_score() as f64 / 100.0;
         let current_score = tree[tree.select_best_child(tree.root_index(), draw_score).unwrap()].score().cp() as f64 / 100.0;
 
         if current_score >= 0.0 {

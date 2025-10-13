@@ -10,9 +10,9 @@ impl SearchReport for UciSearchReport {
         let depth = search_stats.avg_depth();
         let max_depth = search_stats.max_depth();
 
-        let pv_count = search_engine.tree().root_node().children_count().min(search_engine.options().multi_pv() as usize);
+        let pv_count = search_engine.tree().root_node().children_count().min(*search_engine.options().multi_pv() as usize);
 
-        let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+        let draw_score = *search_engine.options().draw_score() as f64 / 100.0;
 
         for pv_idx in 0..pv_count {
             let pv = search_engine.tree().get_best_pv(pv_idx as usize, draw_score);
@@ -32,7 +32,7 @@ impl SearchReport for UciSearchReport {
                 _ => format!("cp {}", pv_score.cp())
             };
 
-            let wdl = if search_engine.options().show_wdl() {
+            let wdl = if *search_engine.options().show_wdl() {
                 format!(" wdl {:.0} {:.0} {:.0}", 
                     pv_score.win_chance() * 1000.0, 
                     pv_score.draw_chance() * 1000.0,
@@ -43,7 +43,7 @@ impl SearchReport for UciSearchReport {
             };
             
             let time = search_stats.time_passesd_ms();
-            let nodes = if search_engine.options().iters_as_nodes() {
+            let nodes = if *search_engine.options().iters_as_nodes() {
                 search_stats.iterations()
             } else {
                 search_stats.cumulative_depth()
@@ -53,14 +53,14 @@ impl SearchReport for UciSearchReport {
 
             let hashfull = search_engine.tree().current_size() * 1000 / search_engine.tree().max_size();
 
-            let pv = pv.to_string(search_engine.options().chess960());
+            let pv = pv.to_string(*search_engine.options().chess960());
 
             println!("info depth {depth} seldepth {max_depth} score {score}{wdl} time {time} nodes {nodes} nps {nps} hashfull {hashfull} multipv {} pv {pv}", pv_idx + 1)   
         }
     }
 
     fn search_ended(_: &SearchLimits, _: &SearchStats, search_engine: &SearchEngine) {
-        let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+        let draw_score = *search_engine.options().draw_score() as f64 / 100.0;
         let best_node_idx = search_engine.tree().select_best_child(search_engine.tree().root_index(), draw_score);
 
         if best_node_idx.is_none() {
@@ -72,7 +72,7 @@ impl SearchReport for UciSearchReport {
             search_engine
                 .tree()[best_node_idx.unwrap()]
                 .mv()
-                .to_string(search_engine.options().chess960())
+                .to_string(*search_engine.options().chess960())
         );
     }
 }
