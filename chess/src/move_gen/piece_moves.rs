@@ -48,7 +48,7 @@ impl MoveGen {
 
         let not_pinned_pieces = pieces & !pinned_pieces;
 
-        not_pinned_pieces.map(|piece_square| {
+        not_pinned_pieces.for_each(|piece_square| {
             let attacks = match PIECE_TYPE {
                 KNIGHT => Attacks::get_knight_attacks(piece_square),
                 BISHOP => Attacks::get_bishop_attacks(piece_square, board.occupancy()),
@@ -56,7 +56,7 @@ impl MoveGen {
                 _ => unreachable!(),
             };
 
-            (attacks & capture_map).map(|to_square| {
+            (attacks & capture_map).for_each(|to_square| {
                 apply_move(Move::from_squares(
                     piece_square,
                     to_square,
@@ -68,7 +68,7 @@ impl MoveGen {
                 return;
             }
 
-            (attacks & push_map).map(|to_square| {
+            (attacks & push_map).for_each(|to_square| {
                 apply_move(Move::from_squares(
                     piece_square,
                     to_square,
@@ -77,7 +77,7 @@ impl MoveGen {
             });
         });
 
-        pinned_pieces.map(|piece_square| {
+        pinned_pieces.for_each(|piece_square| {
             let attacks = match PIECE_TYPE {
                 KNIGHT => Bitboard::EMPTY,
                 BISHOP => {
@@ -89,7 +89,7 @@ impl MoveGen {
                 _ => unreachable!(),
             };
 
-            (attacks & capture_map).map(|to_square| {
+            (attacks & capture_map).for_each(|to_square| {
                 apply_move(Move::from_squares(
                     piece_square,
                     to_square,
@@ -101,7 +101,7 @@ impl MoveGen {
                 return;
             }
 
-            (attacks & push_map).map(|to_square| {
+            (attacks & push_map).for_each(|to_square| {
                 apply_move(Move::from_squares(
                     piece_square,
                     to_square,

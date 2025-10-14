@@ -70,7 +70,7 @@ impl UciProcessor {
 
                 search_engine.reinit_contempt();
 
-                let str = format!("Option {name} has been set to {value}");
+                let str = format!("Option {name} has been set to {value}.");
                 self.uci_print(str.as_str(), *search_engine.options().minimal_print());
 
                 if name.eq_ignore_ascii_case("syzygypath") {

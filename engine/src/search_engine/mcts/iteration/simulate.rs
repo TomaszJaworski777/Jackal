@@ -5,10 +5,18 @@ use crate::{search_engine::{contempt::Contempt, engine_options::EngineOptions, t
 impl SearchEngine {
     pub(super) fn simulate(&self, node_idx: NodeIndex, position: &ChessPosition, depth: f64) -> WDLScore {
         if self.tree()[node_idx].visits() == 0 {
-            let state = get_node_state(position, self.root_position());
+            let state = if self.syzygy().is_syzygy_available(position) {
+                if let Some(state) = self.syzygy().probe_outcome(position) {
+                    state
+                } else {
+                    get_node_state(position, self.root_position())
+                }
+            } else {
+                get_node_state(position, self.root_position())
+            };
+            
             self.tree().set_state(node_idx, state);
         }
-
         let is_stm = self.root_position().board().side() == position.board().side();
 
         if self.tree[node_idx].state() == GameState::Ongoing {

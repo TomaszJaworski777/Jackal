@@ -115,7 +115,7 @@ fn handle_pawn_pushes<F: FnMut(Move), const COLOR: u8>(
     } else {
         promotion_pawns >> 8
     } & push_map;
-    targets.map(|to_square| {
+    targets.for_each(|to_square| {
         let from_square = if COLOR == WHITE {
             to_square >> 8
         } else {
@@ -158,9 +158,9 @@ fn handle_pawn_captures<F: FnMut(Move), const COLOR: u8>(
     let promotion_pawns = pawns & promotion_rank;
     pawns &= !promotion_rank;
 
-    (pawns & !bishop_pins).map(|from_square| {
+    (pawns & !bishop_pins).for_each(|from_square| {
         let attacks = Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map;
-        attacks.map(|to_square| {
+        attacks.for_each(|to_square| {
             apply_move(Move::from_squares(
                 from_square,
                 to_square,
@@ -169,10 +169,10 @@ fn handle_pawn_captures<F: FnMut(Move), const COLOR: u8>(
         });
     });
 
-    (pawns & bishop_pins).map(|from_square| {
+    (pawns & bishop_pins).for_each(|from_square| {
         let attacks =
             Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map & bishop_pins;
-        attacks.map(|to_square| {
+        attacks.for_each(|to_square| {
             apply_move(Move::from_squares(
                 from_square,
                 to_square,
@@ -181,9 +181,9 @@ fn handle_pawn_captures<F: FnMut(Move), const COLOR: u8>(
         });
     });
 
-    (promotion_pawns & !bishop_pins).map(|from_square| {
+    (promotion_pawns & !bishop_pins).for_each(|from_square| {
         let attacks = Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map;
-        attacks.map(|to_square| {
+        attacks.for_each(|to_square| {
             apply_move(Move::from_squares(
                 from_square,
                 to_square,
@@ -207,10 +207,10 @@ fn handle_pawn_captures<F: FnMut(Move), const COLOR: u8>(
         });
     });
 
-    (promotion_pawns & bishop_pins).map(|from_square| {
+    (promotion_pawns & bishop_pins).for_each(|from_square| {
         let attacks =
             Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map & bishop_pins;
-        attacks.map(|to_square| {
+        attacks.for_each(|to_square| {
             apply_move(Move::from_squares(
                 from_square,
                 to_square,
@@ -243,7 +243,7 @@ fn handle_en_passant<F: FnMut(Move), const COLOR: u8>(
     let en_passant_square = board.en_passant_square();
     pawns &= Attacks::get_pawn_attacks(en_passant_square, Side::from(COLOR).flipped());
 
-    pawns.map(|from_square| {
+    pawns.for_each(|from_square| {
         let mut board = *board;
         let mv = Move::from_squares(from_square, en_passant_square, MoveFlag::EN_PASSANT);
         board.make_move_no_mask(mv);

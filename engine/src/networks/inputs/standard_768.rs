@@ -25,12 +25,12 @@ impl Standard768 {
                 nstm_bitboard = nstm_bitboard.flip();
             }
 
-            stm_bitboard.map(|square| {
+            stm_bitboard.for_each(|square| {
                 let feat = feat_idx + usize::from(square);
                 process_input(feat)
             });
 
-            nstm_bitboard.map(|square| {
+            nstm_bitboard.for_each(|square| {
                 let feat = 384 + feat_idx + usize::from(square);
                 process_input(feat)
             });

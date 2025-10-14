@@ -1,4 +1,4 @@
-use crate::search_engine::{tree::{node::Node, pv_line::PvLine, NodeIndex, Tree}};
+use crate::{search_engine::tree::{node::Node, pv_line::PvLine, NodeIndex, Tree}, GameState};
 
 impl Tree {
     pub fn bytes_to_size(bytes: usize) -> usize {
@@ -38,7 +38,13 @@ impl Tree {
     }
 
     pub fn select_best_child(&self, parent_idx: NodeIndex, draw_score: f64) -> Option<NodeIndex> {
-        self.select_child_by_key(parent_idx, |node| node.score().single_with_score(draw_score) as f64)
+        self.select_child_by_key(parent_idx, |node| {
+            match node.state() {
+                GameState::Loss(x) => 2.0 - (x as f64 / 100.0),
+                GameState::Win(x) => -1.0 + (x as f64 / 100.0),
+                _ => node.score().single_with_score(draw_score) as f64
+            }
+        })
     }
 
     pub fn get_pv(&self, node_idx: NodeIndex, draw_score: f64, flip: bool) -> PvLine {
@@ -77,7 +83,13 @@ impl Tree {
                 return;
             }
 
-            chilren_nodes.push((child_idx, node.score().single()))
+            let score = match node.state() {
+                GameState::Loss(x) => 2.0 - (x as f64 / 100.0),
+                GameState::Win(x) => -1.0 + (x as f64 / 100.0),
+                _ => node.score().single_with_score(draw_score) as f64
+            };
+
+            chilren_nodes.push((child_idx, score))
         });
 
         if chilren_nodes.is_empty() {

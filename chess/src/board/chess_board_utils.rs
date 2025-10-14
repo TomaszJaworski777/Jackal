@@ -84,7 +84,7 @@ impl ChessBoard {
             & (self.piece_mask_for_side(Piece::BISHOP, attacker_side) | queens);
 
         let mut bishop_pins = Bitboard::EMPTY;
-        potential_pinners.map(|potential_pinner| {
+        potential_pinners.for_each(|potential_pinner| {
             let ray = Rays::get_ray(king_square, potential_pinner);
             if (ray & defender_occupancy).only_one_bit() {
                 bishop_pins |= ray;
@@ -94,7 +94,7 @@ impl ChessBoard {
         let potential_pinners = Attacks::get_rook_attacks(king_square, attacker_occupancy)
             & (self.piece_mask_for_side(Piece::ROOK, attacker_side) | queens);
         let mut rook_pins = Bitboard::EMPTY;
-        potential_pinners.map(|potential_pinner| {
+        potential_pinners.for_each(|potential_pinner| {
             let ray = Rays::get_ray(king_square, potential_pinner);
             if (ray & defender_occupancy).only_one_bit() {
                 rook_pins |= ray;
@@ -114,19 +114,19 @@ impl ChessBoard {
         let queens = self.piece_mask(Piece::QUEEN);
 
         (attacker_pieces & (self.piece_mask(Piece::ROOK) | queens))
-            .map(|rook_square| threats |= Attacks::get_rook_attacks(rook_square, occupancy));
+            .for_each(|rook_square| threats |= Attacks::get_rook_attacks(rook_square, occupancy));
 
         (attacker_pieces & (self.piece_mask(Piece::BISHOP) | queens))
-            .map(|bishop_square| threats |= Attacks::get_bishop_attacks(bishop_square, occupancy));
+            .for_each(|bishop_square| threats |= Attacks::get_bishop_attacks(bishop_square, occupancy));
 
         (attacker_pieces & self.piece_mask(Piece::KING))
-            .map(|king_square| threats |= Attacks::get_king_attacks(king_square));
+            .for_each(|king_square| threats |= Attacks::get_king_attacks(king_square));
 
         (attacker_pieces & self.piece_mask(Piece::KNIGHT))
-            .map(|knight_square| threats |= Attacks::get_knight_attacks(knight_square));
+            .for_each(|knight_square| threats |= Attacks::get_knight_attacks(knight_square));
 
         (attacker_pieces & self.piece_mask(Piece::PAWN))
-            .map(|pawn_square| threats |= Attacks::get_pawn_attacks(pawn_square, attacker_side));
+            .for_each(|pawn_square| threats |= Attacks::get_pawn_attacks(pawn_square, attacker_side));
 
         threats
     }

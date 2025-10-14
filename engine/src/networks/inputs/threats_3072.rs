@@ -41,7 +41,7 @@ impl Threats3072 {
                 nstm_bitboard = nstm_bitboard.flip();
             }
 
-            stm_bitboard.map(|square| {
+            stm_bitboard.for_each(|square| {
                 let mut feat = piece_index + (usize::from(square) ^ horizontal_mirror);
 
                 if threats.get_bit(square) {
@@ -55,7 +55,7 @@ impl Threats3072 {
                 process_input(feat)
             });
 
-            nstm_bitboard.map(|square| {
+            nstm_bitboard.for_each(|square| {
                 let mut feat = 384 + piece_index + (usize::from(square) ^ horizontal_mirror);
 
                 if threats.get_bit(square) {

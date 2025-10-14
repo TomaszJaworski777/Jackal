@@ -258,7 +258,7 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(4.0/32.0);
 
     let mut evals = [0; 64];
-    board.occupancy().map(|square| {
+    board.occupancy().for_each(|square| {
         let piece = board.piece_on_square(square);
         let side = board.color_on_square(square);
 
@@ -311,7 +311,7 @@ fn analyse(search_engine: &mut SearchEngine, iters: Option<u64>) {
     let info = [const { String::new() }; 33];
 
     let mut evals = [0; 64];
-    board.occupancy().map(|square| {
+    board.occupancy().for_each(|square| {
         let piece = board.piece_on_square(square);
         let side = board.color_on_square(square);
 

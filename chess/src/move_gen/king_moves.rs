@@ -15,13 +15,13 @@ impl MoveGen {
         let move_mask = Attacks::get_king_attacks(king_square) & !attack_map;
 
         (move_mask & board.occupancy_for_side(Side::from(COLOR).flipped()))
-            .map(|square| apply_move(Move::from_squares(king_square, square, MoveFlag::CAPTURE)));
+            .for_each(|square| apply_move(Move::from_squares(king_square, square, MoveFlag::CAPTURE)));
 
         if CAPTURE_ONLY {
             return;
         }
 
-        (move_mask & !board.occupancy()).map(|square| {
+        (move_mask & !board.occupancy()).for_each(|square| {
             apply_move(Move::from_squares(
                 king_square,
                 square,

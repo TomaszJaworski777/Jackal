@@ -119,7 +119,7 @@ impl Bitboard {
         self.0 &= rhs.0;
     }
 
-    pub fn map<F: FnMut(Square)>(&self, mut method: F) {
+    pub fn for_each<F: FnMut(Square)>(&self, mut method: F) {
         let mut bitboard_copy = *self;
         while bitboard_copy.is_not_empty() {
             method(bitboard_copy.pop_ls1b_square())

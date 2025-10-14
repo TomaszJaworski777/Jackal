@@ -1,4 +1,4 @@
-use std::{ops::Mul, sync::atomic::{AtomicU64, Ordering}};
+use std::{fmt::Display, ops::Mul, sync::atomic::{AtomicU64, Ordering}};
 
 use chess::{ChessBoard, Piece};
 
@@ -155,5 +155,11 @@ impl Mul<u32> for WDLScore {
 
     fn mul(self, rhs: u32) -> Self::Output {
         Self(self.win_chance() * f64::from(rhs), self.draw_chance() * f64::from(rhs))
+    }
+}
+
+impl Display for WDLScore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("[W: {:.2}%, D: {:.2}%, L: {:.2}%]", self.win_chance(), self.draw_chance(), self.lose_chance()))
     }
 }
