@@ -2,14 +2,20 @@ use crate::{attacks::Rays, board::ChessBoard, Attacks, Bitboard, Piece, Side, Sq
 
 impl ChessBoard {
     pub fn is_insufficient_material(&self) -> bool {
-        let phase = self.phase();
+        if (self.piece_mask(Piece::PAWN) | self.piece_mask(Piece::ROOK) | self.piece_mask(Piece::QUEEN)).is_not_empty() {
+            return false;
+        }
+
+        if self.occupancy().pop_count() <= 3 {
+            return true;
+        }
+
+        if self.piece_mask(Piece::PAWN).is_not_empty() {
+            return false;
+        }
+
         let bishops = self.piece_mask(Piece::BISHOP);
-        phase <= 2
-            && self.piece_mask(Piece::PAWN).is_empty()
-            && ((phase != 2)
-                || bishops.pop_count() == 2
-                    && (bishops & 0x55AA55AA55AA55AA == bishops
-                        || bishops & 0xAA55AA55AA55AA55 == bishops))
+        bishops & 0x55AA55AA55AA55AA == bishops || bishops & 0xAA55AA55AA55AA55 == bishops
     }
 
     pub fn all_attackers_to_square(
