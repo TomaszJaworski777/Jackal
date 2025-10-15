@@ -18,6 +18,7 @@ pub struct Node {
     mv: AtomicU16,
     visit_count: AtomicU32,
     cumulative_score: AtomicWDLScore,
+    trend_score: AtomicU64,
     squared_score: AtomicU64,
     children_start_index: IndexLock,
     children_count: AtomicU8,
@@ -33,6 +34,7 @@ impl Clone for Node {
             mv: AtomicU16::new(self.mv.load(Ordering::Relaxed)),
             visit_count: AtomicU32::new(self.visit_count.load(Ordering::Relaxed)),
             cumulative_score: self.cumulative_score.clone(),
+            trend_score: AtomicU64::new(self.trend_score.load(Ordering::Relaxed)),
             squared_score: AtomicU64::new(self.squared_score.load(Ordering::Relaxed)),
             children_start_index: self.children_start_index.clone(),
             children_count: AtomicU8::new(self.children_count.load(Ordering::Relaxed)),
@@ -50,6 +52,7 @@ impl Node {
             mv: AtomicU16::new(0),
             visit_count: AtomicU32::new(0),
             cumulative_score: AtomicWDLScore::default(),
+            trend_score: AtomicU64::new(0.0_f64.to_bits()),
             squared_score: AtomicU64::new(0),
             children_start_index: IndexLock::new(NodeIndex::NULL),
             children_count: AtomicU8::new(0),
@@ -65,6 +68,7 @@ impl Node {
         self.mv.store(u16::from(node.mv()), Ordering::Relaxed);
         self.visit_count.store(node.visits(), Ordering::Relaxed);
         self.cumulative_score.store(node.cumulative_score.get_score());
+        self.trend_score.store(self.trend_score.load(Ordering::Relaxed), Ordering::Relaxed);
         self.squared_score.store(node.squared_score.load(Ordering::Relaxed), Ordering::Relaxed);
         self.state.set(node.state());
         self.policy.store(node.policy.load(Ordering::Relaxed), Ordering::Relaxed);
@@ -77,6 +81,7 @@ impl Node {
         self.mv.store(u16::from(mv), Ordering::Relaxed);
         self.visit_count.store(0, Ordering::Relaxed);
         self.cumulative_score.clear();
+        self.trend_score.store(0.0_f64.to_bits(), Ordering::Relaxed);
         self.squared_score.store(0, Ordering::Relaxed);
         self.state.set(GameState::Ongoing);
         self.policy.store(0, Ordering::Relaxed);
@@ -103,6 +108,11 @@ impl Node {
     #[inline]
     pub fn score(&self) -> WDLScore {
         self.cumulative_score.get_score_with_visits(self.visits())
+    }
+
+    #[inline]
+    pub fn trend_score(&self) -> f64 {
+        f64::from_bits(self.trend_score.load(Ordering::Relaxed))
     }
 
     #[inline]
@@ -177,11 +187,15 @@ impl Node {
 
     #[inline]
     pub fn add_visit(&self, score: WDLScore) {
-        self.visit_count.fetch_add(1, Ordering::Relaxed) as f64;
+        let previous_visits = self.visit_count.fetch_add(1, Ordering::Relaxed);
         self.cumulative_score.add(score);
         
         let score = score.single() as f64;
         self.squared_score.fetch_add((score.powi(2) * f64::from(SCORE_SCALE)) as u64, Ordering::Relaxed);
+
+        if previous_visits % 128 == 0 {
+            self.trend_score.store(self.score().single().to_bits(), Ordering::Relaxed);
+        }
     }
 
     #[inline]

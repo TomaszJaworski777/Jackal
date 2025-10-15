@@ -72,7 +72,26 @@ fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
         cpuct *= 1.0 + options.cpuct_variance_weight() * (variance - 1.0);
     }
 
+    cpuct *= get_dynamic_cpuct_multiplier(parent_node, options);
+
     cpuct
+}
+
+fn get_dynamic_cpuct_multiplier(parent_node: &Node, options: &EngineOptions) -> f64 {
+    if parent_node.visits() < 64 {
+        return 1.0;
+    }
+
+    #[inline] fn logit(x: f64) -> f64 {
+        let p = x.clamp(1e-4, 1.0 - 1e-4);
+        (p / (1.0 - p)).ln()
+    }
+
+    let d = logit(parent_node.score().single()) - logit(parent_node.trend_score());
+    let s = (d / 1.5).tanh();
+    // let v = visits as f32;
+    // let shrink = v / (v + 256.0);
+    (-0.50 * s/* * shrink*/).exp().clamp(0.7, 1.6)
 }
 
 #[allow(unused_mut)]

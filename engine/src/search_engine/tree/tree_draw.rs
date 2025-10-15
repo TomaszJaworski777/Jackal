@@ -248,13 +248,16 @@ impl Tree {
             _ => String::new(),
         };
 
+        let trend = node.score().single() - node.trend_score() as f64;
+
         println!(
             "{}",
             format!(
-                "{prefix}  {score} score  {} visits  {} policy  {:.4} gini {}",
+                "{prefix}  {score} score  {} visits  {} policy  {:.4} gini  {} trend  {}",
                 visits.to_string().white(),
                 policy,
                 node.gini_impurity(),
+                trend,
                 state.white()
             )
             .secondary(color_gradient)
