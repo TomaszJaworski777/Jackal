@@ -87,7 +87,11 @@ fn get_dynamic_cpuct_multiplier(parent_node: &Node, options: &EngineOptions) -> 
         (p / (1.0 - p)).ln()
     }
 
-    let d = logit(parent_node.score().single()) - logit(parent_node.trend_score());
+    let mut d = logit(parent_node.score().single()) - logit(parent_node.trend_score());
+    if d.abs() < 0.10 { 
+        d = 0.0; 
+    }
+
     let s = (d / 1.5).tanh();
     let v = parent_node.visits() as f64;
     let shrink = v / (v + 256.0);
