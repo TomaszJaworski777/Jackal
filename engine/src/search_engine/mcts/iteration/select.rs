@@ -30,7 +30,7 @@ impl SearchEngine {
             limit = parent_node.children_count()
         }
 
-        let best_score = {
+        let best_score = if parent_node.visits() > 1024 {
             let mut best_score = f64::MIN;
 
             self.tree()[node_idx].map_children_with_limit(limit, |child_idx| {
@@ -39,6 +39,8 @@ impl SearchEngine {
             });
 
             best_score
+        } else {
+            0.0
         };
 
         let optimistic_score = (best_score + 0.1).clamp(0.0, 1.0);
