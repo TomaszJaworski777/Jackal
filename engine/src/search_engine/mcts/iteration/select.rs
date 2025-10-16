@@ -49,16 +49,15 @@ impl SearchEngine {
             let child_visits = child_node.visits();
             let optimistic_score = ((child_node.score().single() * child_visits as f64) + (optimistic_score * nodes_left as f64)) / (child_visits as f64 + nodes_left as f64); 
 
-            if optimistic_score <= best_score && !child_node.is_terminal() {
-                return -69420.0;
-            }
+            let margin = (best_score - optimistic_score).max(0.0);
+            let penalty = (-margin * 40.0).exp();
 
             let score = get_score(&parent_node.score(), child_node, child_visits).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
             } else {
                 self.options().draw_score() as f64 / 100.0
             }) as f64;
-            score + child_node.policy() * expl / f64::from(child_node.visits() + 1)
+            (score + child_node.policy() * expl / f64::from(child_node.visits() + 1)) * penalty
         }).expect("Failed to select a valid node.")
     }
 }
