@@ -41,9 +41,11 @@ impl SearchEngine {
             best_score
         };
 
+        let optimistic_score = (best_score + 0.1).clamp(0.0, 1.0);
+
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
             let child_visits = child_node.visits();
-            let optimistic_score = (child_node.score().single() * child_visits as f64 + nodes_left as f64) / (child_visits as f64 + nodes_left as f64); 
+            let optimistic_score = (child_node.score().single() * child_visits as f64 + optimistic_score * nodes_left as f64) / (child_visits as f64 + nodes_left as f64); 
 
             if optimistic_score <= best_score && !child_node.is_terminal() {
                 return -69420.0;
