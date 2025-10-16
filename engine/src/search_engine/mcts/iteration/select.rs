@@ -1,7 +1,7 @@
 use crate::{search_engine::{engine_options::EngineOptions, tree::NodeIndex}, Node, SearchEngine, WDLScore};
 
 impl SearchEngine {
-    pub(super) fn select(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
+    pub(super) fn select(&self, node_idx: NodeIndex, depth: f64, nodes_left: u64) -> NodeIndex {
         let parent_node = &self.tree()[node_idx];
 
         let cpuct = get_cpuct(&self.options(), &parent_node, depth);
@@ -30,8 +30,26 @@ impl SearchEngine {
             limit = parent_node.children_count()
         }
 
+        let best_score = {
+            let mut best_score = f64::MIN;
+
+            self.tree()[node_idx].map_children_with_limit(limit, |child_idx| {
+                let child_node = &self.tree()[child_idx];
+                best_score = best_score.max(child_node.score().single())
+            });
+
+            best_score
+        };
+
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
-            let score = get_score(&parent_node.score(), child_node, child_node.visits()).single_with_score(if depth as i64 % 2 == 0 {
+            let child_visits = child_node.visits();
+            let optimistic_score = (child_node.score().single() * child_visits as f64 + nodes_left as f64) / (child_visits as f64 + nodes_left as f64); 
+
+            if optimistic_score <= best_score && !child_node.is_terminal() {
+                return -69420.0;
+            }
+
+            let score = get_score(&parent_node.score(), child_node, child_visits).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
             } else {
                 self.options().draw_score() as f64 / 100.0

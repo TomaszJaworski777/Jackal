@@ -85,19 +85,24 @@ impl SearchEngine {
                 continue;
             }
 
-            if time_manager.hard_limit_reached(search_stats) {
+            let mut t_left = u128::MAX;
+            if time_manager.hard_limit_reached(search_stats, &mut t_left) {
                 self.interrupt_search();
                 break;
             }
+
+            search_stats.store_time_left(t_left);
 
             if search_stats.iterations() % 4096 != 0 {
                 continue;
             }
 
-            if time_manager.soft_limit_reached(search_stats, self.tree(), self.options(), *best_move_changes) {
+            if time_manager.soft_limit_reached(search_stats, self.tree(), self.options(), *best_move_changes, &mut t_left) {
                 self.interrupt_search();
                 break;
             }
+
+            search_stats.store_time_left(t_left);
 
             if search_stats.iterations() % 16384 != 0 {
                 continue;
@@ -131,7 +136,7 @@ impl SearchEngine {
         let mut depth = 0.0;
         let mut position = *self.root_position();
 
-        self.perform_iteration::<true>(self.tree().root_index(), &mut position, &mut depth, castle_mask)?;
+        self.perform_iteration::<true>(self.tree().root_index(), &mut position, &mut depth, castle_mask, search_stats.nodes_left())?;
 
         search_stats.add_iteration(depth as u64);
 

@@ -1,6 +1,6 @@
 use chess::ChessPosition;
 
-use crate::{search_engine::tree::NodeIndex, GameState, SearchEngine, WDLScore};
+use crate::{search_engine::tree::NodeIndex, SearchEngine, WDLScore};
 
 mod select;
 mod simulate;
@@ -13,6 +13,7 @@ impl SearchEngine {
         position: &mut ChessPosition,
         depth: &mut f64,
         castle_mask: &[u8; 64],
+        mut nodes_left: u64
     ) -> Option<WDLScore> { 
         let hash = position.board().hash();
         let node = &self.tree()[node_idx];
@@ -30,23 +31,27 @@ impl SearchEngine {
 
             self.tree().update_node(node_idx)?;
 
-            let new_idx = self.select(node_idx, *depth);
+            let new_idx = self.select(node_idx, *depth, nodes_left);
 
             selected_child_idx = Some(new_idx);
+            let new_node = &self.tree()[new_idx];
 
             let old_side = position.board().side();
-            let mv = self.tree()[new_idx].mv();
+            let mv = new_node.mv();
             position.make_move(mv, castle_mask);
 
             self.tree().inc_threads(new_idx, 1);
 
-            let lock = if self.tree()[new_idx].visits() == 0 {
+            let lock = if new_node.visits() == 0 {
                 Some(node.children_index_mut())
             } else {
                 None
             };
 
-            let score = self.perform_iteration::<false>(new_idx, position, depth, castle_mask);
+            let visit_fraction = new_node.visits() as f64 / node.visits() as f64;
+            nodes_left = (nodes_left as f64 * visit_fraction as f64).max(1.0) as u64;
+
+            let score = self.perform_iteration::<false>(new_idx, position, depth, castle_mask, nodes_left);
 
             drop(lock);
 

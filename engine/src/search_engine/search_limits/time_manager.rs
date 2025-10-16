@@ -65,21 +65,23 @@ impl TimeManager {
         self.hard_limit = Some(hard_time);
     } 
 
-    pub fn hard_limit_reached(&mut self, search_stats: &SearchStats) -> bool {
+    pub fn hard_limit_reached(&mut self, search_stats: &SearchStats, time_left: &mut u128) -> bool {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
 
-        search_stats.time_passesd_ms() >= self.hard_limit.unwrap()
+        let time_passed = search_stats.time_passesd_ms();
+        *time_left = self.hard_limit.unwrap().saturating_sub(time_passed);
+        time_passed >= self.hard_limit.unwrap()
     }
 
-    pub fn soft_limit_reached(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> bool {
+    pub fn soft_limit_reached(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions, best_move_changes: usize, time_left: &mut u128) -> bool {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
 
         let move_overhead = (options.move_overhead() + (options.threads() - 1) * 10) as u128;
-        let time_passed_ms = search_stats.time_passesd_ms();
+        let time_passed = search_stats.time_passesd_ms();
         
         let mut soft_limit_multiplier = 1.0;
 
@@ -87,7 +89,9 @@ impl TimeManager {
         soft_limit_multiplier *= self.falling_eval(search_stats, tree, options);
         soft_limit_multiplier *= self.best_move_instability(search_stats, tree, options, best_move_changes);
 
-        time_passed_ms >= ((self.soft_limit.unwrap() as f64 * soft_limit_multiplier) as u128).saturating_sub(move_overhead).max(1)
+        let soft_limit = ((self.soft_limit.unwrap() as f64 * soft_limit_multiplier) as u128).saturating_sub(move_overhead).max(1);
+        *time_left = soft_limit.saturating_sub(time_passed);
+        time_passed >= soft_limit
     }
 
     fn visits_distribution(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions) -> f64 {
