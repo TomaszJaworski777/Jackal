@@ -45,10 +45,10 @@ impl SearchEngine {
 
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
             let child_visits = child_node.visits();
-            let optimistic_score = ((child_node.score().single() * child_visits as f64) + ((best_score + 0.1).clamp(0.0, 1.0) * nodes_left as f64)) / (child_visits as f64 + nodes_left as f64); 
+            let optimistic_score = ((child_node.score().single() * child_visits as f64) + ((best_score + 0.096).clamp(0.0, 1.0) * nodes_left as f64)) / (child_visits as f64 + nodes_left as f64); 
 
             let margin = (best_score - optimistic_score).max(0.0);
-            let penalty = (-margin * 400.0).exp();
+            let penalty = (-margin * 500.0).exp();
 
             let score = get_score(&parent_node.score(), child_node, child_visits).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
