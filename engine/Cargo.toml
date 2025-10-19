@@ -9,4 +9,5 @@ utils = { path = "../utils" }
 
 [features]
 dev = []
-datagen = []
+policy_datagen = []
+value_datagen = []

@@ -38,8 +38,11 @@ release: create_version_dir
 	$(X86_64_v3_HEADER) -p terminal -- --emit link=$(X86_64_V3)$(EXT)
 	$(X86_64_v4_HEADER) -p terminal -- --emit link=$(X86_64_V4)$(EXT)
 
-gen:
-	$(NATIVE_HEADER) -p datagen --features=datagen -- --emit link=datagen$(EXT)
+valuegen:
+	$(NATIVE_HEADER) -p datagen --features=value_datagen -- --emit link=datagen$(EXT)
+
+policygen:
+	$(NATIVE_HEADER) -p datagen --features=policy_datagen -- --emit link=datagen$(EXT)
 
 trainer:
 	$(NATIVE_HEADER) -p trainer -- --emit link=trainer$(EXT)

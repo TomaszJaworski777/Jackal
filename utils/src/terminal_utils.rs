@@ -63,10 +63,15 @@ pub fn seconds_to_string(seconds: u128) -> String {
 }
 
 pub fn time_to_string(miliseconds: u128) -> String {
-    let mm = miliseconds / 60000;
-    let ss = (miliseconds - (mm * 60000)) as f32 / 1000.0;
+    let hh = miliseconds / 3600000;
+    let mm = (miliseconds - (hh * 3600000)) / 60000;
+    let ss = (miliseconds - (mm * 60000) - (hh * 3600000)) as f32 / 1000.0;
 
     let mut result = String::new();
+
+    if hh > 0 {
+        result.push_str(format!("{}h ", hh).as_str());
+    }
 
     if mm > 0 {
         result.push_str(format!("{}m ", mm).as_str());

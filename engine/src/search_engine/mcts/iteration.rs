@@ -1,6 +1,6 @@
 use chess::ChessPosition;
 
-use crate::{search_engine::tree::NodeIndex, GameState, SearchEngine, WDLScore};
+use crate::{search_engine::tree::NodeIndex, SearchEngine, WDLScore};
 
 mod select;
 mod simulate;
