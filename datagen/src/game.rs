@@ -1,6 +1,6 @@
 use chess::{ChessPosition, Move, MoveFlag, Side, Square, FEN};
 use engine::{NoReport, SearchEngine, SearchLimits};
-use bullet::game::formats::montyformat::{chess::{Castling, Position}, MontyFormat, SearchData};
+use montyformat::{chess::{Castling, Position}, MontyFormat, SearchData};
 
 pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits: &SearchLimits) -> MontyFormat {
     let castle_mask = position.board().castle_rights().get_castle_mask();
@@ -21,7 +21,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
         
         let mut moves = Vec::new();
         let mut best_move = Move::NULL;
-        let mut best_monty_move = bullet::game::formats::montyformat::chess::Move::NULL;
+        let mut best_monty_move = montyformat::chess::Move::NULL;
         let mut best_score = f64::MIN;
         engine.tree().root_node().map_children(|child_idx| {
             let node = &engine.tree()[child_idx];
@@ -79,7 +79,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
     game_data
 }
 
-fn move_to_monty(mv: Move, engine: &SearchEngine) -> bullet::game::formats::montyformat::chess::Move {
+fn move_to_monty(mv: Move, engine: &SearchEngine) -> montyformat::chess::Move {
     let from = u8::from(mv.get_from_square()) as u16;
     let mut to = u8::from(mv.get_to_square()) as u16;
 
@@ -93,5 +93,5 @@ fn move_to_monty(mv: Move, engine: &SearchEngine) -> bullet::game::formats::mont
         }
     }
 
-    bullet::game::formats::montyformat::chess::Move::new(from, to, mv.get_flag() >> 6)
+    montyformat::chess::Move::new(from, to, mv.get_flag() >> 6)
 }
