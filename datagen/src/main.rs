@@ -1,4 +1,4 @@
-use std::{env, fs::OpenOptions, io::Write, sync::atomic::{AtomicU64, Ordering}, time::Duration};
+use std::{env, fs::{File, OpenOptions}, io::{BufRead, Write}, sync::atomic::{AtomicU64, Ordering}, time::Duration};
 
 use chess::{ChessBoard, ChessPosition, FEN};
 use crossbeam::queue::SegQueue;
@@ -49,6 +49,11 @@ fn main() {
         .open(output_path)
         .expect("Cannot open file");
 
+    let openings = std::io::BufReader::new(File::open("./resources/books/UHO_Lichess_4852_v1.epd")
+                                    .expect("Book does not exist!"))
+                                    .lines().map(|line| line.unwrap())
+                                    .collect::<Vec<String>>();
+
     let mut limits = SearchLimits::default();
     limits.set_iters(Some(nodes));
 
@@ -62,30 +67,9 @@ fn main() {
                 let mut engine = SearchEngine::new();
                 let mut rng = rand::rng();
                 
-                'new_game: loop {
-                    let mut new_position = ChessPosition::from(ChessBoard::from(&FEN::start_position()));
-                    for _ in 0..rng.random_range(8..=9) {
-                        let mut moves = Vec::new();
-                        new_position.board().map_legal_moves(|mv| {
-                            moves.push(mv);
-                        });
-
-                        if moves.len() == 0 {
-                            continue 'new_game;
-                        }
-
-                        let selected_move = moves[rng.random_range(0..moves.len())];
-                        new_position.make_move_no_mask(selected_move);
-                    }
- 
-                    let mut no_legal_moves = true;
-                    new_position.board().map_legal_moves(|_| no_legal_moves = false );
-
-                    if no_legal_moves {
-                        continue;
-                    }
-
-                    engine.set_position(&new_position, 9);
+                loop {
+                    let fen = FEN::from(openings[rng.random_range(0..openings.len())].clone());
+                    let mut new_position = ChessPosition::from(ChessBoard::from(&fen));
                     
                     let game = play_game(&mut engine, &mut new_position, &limits);
                     datagen_stats.add_game(game.moves.len() as u64, (game.result * 2.0) as i32 - 1);
@@ -94,7 +78,7 @@ fn main() {
                     let _ = game.serialise_into_buffer(&mut buffer);
 
                     save_queue.push(buffer);
-                }
+                };
             });
         }
  
