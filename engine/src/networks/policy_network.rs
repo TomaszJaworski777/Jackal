@@ -1,84 +1,124 @@
-use chess::{ChessBoard, Move, Side};
+use chess::{Attacks, Bitboard, ChessBoard, Move, Piece, Side, Square};
 
-use crate::networks::{inputs::Standard768, layers::NetworkLayer};
+use crate::networks::{inputs::Standard768, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
 const INPUT_SIZE: usize = Standard768::input_size();
+const HL_SIZE: usize = 128;
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct PolicyNetwork {
-    subnets: [PolicyNetworkSubnet; 192],
-}
-
-#[repr(C)]
-#[derive(Debug)]
-pub struct PolicyNetworkSubnet {
-    l0: NetworkLayer<f32, INPUT_SIZE, 32>,
-    l1: NetworkLayer<f32, 32, 32>,
+    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<f32, HL_SIZE, {1880 * 2}>
 }
 
 impl PolicyNetwork {
-    pub fn get_inputs(&self, board: &ChessBoard) -> Vec<usize> {
-        let mut result = Vec::with_capacity(board.occupancy().pop_count() as usize);
-        Standard768::map_inputs(board, |idx| result.push(idx));
+    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
+        let mut result = *self.l0.biases();
+
+        Standard768::map_inputs(board, |weight_idx| {
+            for (i, weight) in result
+                .values_mut()
+                .iter_mut()
+                .zip(self.l0.weights()[weight_idx].values())
+            {
+                *i += *weight;
+            }
+        });
+
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, inputs: &Vec<usize>, mv: Move, cache: &mut [Option<Vec<f32>>; 192], see: bool) -> f32 {
-        let vertical_flip = (usize::from(board.side() == Side::BLACK) * 56) as u8;
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool) -> f32 {
+        let idx = map_move_to_index(board, mv, see);
+        let weights = self.l1.weights()[idx];
+        let mut result = self.l1.biases().values()[idx];
 
-        let from_idx = usize::from(mv.get_from_square() ^ vertical_flip);
-        let to_idx = usize::from(mv.get_to_square() ^ vertical_flip) + 64 + usize::from(see) * 64;
+        for (&weight, &value) in weights.values().iter().zip(base.values()) {
+            let acc = value.clamp(0.0, 1.0).powi(2);
+            result += weight * acc;
+        }
 
-        let from = if let Some(from) = &cache[from_idx] {
-            from.clone()
-        } else {
-            let result = self.subnets[from_idx].forward(inputs);
-            cache[from_idx] = Some(result.clone());
-            result
-        };
-        
-        let to = if let Some(to) = &cache[to_idx] {
-            to.clone()
-        } else {
-            let result = self.subnets[to_idx].forward(inputs);
-            cache[to_idx] = Some(result.clone());
-            result
-        };
-
-        dot(&from, &to)
+        result
     }
 }
 
-impl PolicyNetworkSubnet {
-    pub fn forward(&self, inputs: &Vec<usize>) -> Vec<f32> {
-        let mut l0_out = *self.l0.biases();
+fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool) -> usize {
+    let horizontal_mirror = 0;// if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
+    let good_see = (OFFSETS[64] + PROMOS) * usize::from(see);
 
-        for &input_index in inputs {
-            for (bias, weight) in l0_out.values_mut().iter_mut().zip(self.l0.weights()[input_index].values()) {
-                *bias += *weight;
-            }
-        }
+    let idx = if mv.is_promotion() {
+        let from_file = (mv.get_from_square() ^ horizontal_mirror).get_file();
+        let to_file = (mv.get_to_square() ^ horizontal_mirror).get_file();
+        let promo_id = 2 * from_file + to_file;
 
-        let mut out = *self.l1.biases();
-        for (neuron, weights) in l0_out.values().iter().zip(self.l1.weights().iter()) {
-            out.madd(relu(*neuron), weights);
-        }
+        OFFSETS[64] + 22 * (usize::from(mv.get_promotion_piece()) - usize::from(Piece::KNIGHT)) + usize::from(promo_id)
+    } else {
+        let flip = if board.side() == Side::WHITE { 0 } else { 56 };
+        let from = usize::from(mv.get_from_square() ^ flip ^ horizontal_mirror);
+        let to = usize::from(mv.get_to_square() ^ flip ^ horizontal_mirror);
 
-        out.values().to_vec()
-    }
+        let below = ALL_DESTINATIONS[from] & ((1 << to) - 1);
+
+        OFFSETS[from] + below.count_ones() as usize
+    };
+
+    good_see + idx
 }
 
-fn dot(a: &Vec<f32>, b: &Vec<f32>) -> f32 {
-    let mut result = 0.0;
+const PROMOS: usize = 4 * 22;
 
-    for (value_a, value_b) in a.iter().zip(b) {
-        result += relu(*value_a) * relu(*value_b)
+const OFFSETS: [usize; 65] = {
+    let mut offsets = [0; 65];
+
+    let mut current_offset = 0;
+    let mut square_index = 0;
+
+    while square_index < 64 {
+        offsets[square_index] = current_offset;
+        current_offset += ALL_DESTINATIONS[square_index].count_ones() as usize;
+        square_index += 1;
+    }
+
+    offsets[64] = current_offset;
+
+    offsets
+};
+
+pub const ALL_DESTINATIONS: [u64; 64] = {
+    let mut result = [0u64; 64];
+    let mut square_index = 0;
+    while square_index < 64 {
+        let square = Square::from_value(square_index as u8);
+
+        let rank = square.get_rank() as usize;
+        let file = square.get_file() as usize;
+
+        let rooks = (Bitboard::RANK_1.get_value() << ((rank * 8) as u32)) ^ (Bitboard::FILE_A.get_value() << (file as u32));
+        let bishops = DIAGONALS[file + rank].swap_bytes() ^ DIAGONALS[7 + file - rank];
+
+        result[square_index] = rooks | bishops | Attacks::get_knight_attacks(Square::from_value(square_index as u8)).get_value() | Attacks::get_king_attacks(Square::from_value(square_index as u8)).get_value();
+
+        square_index += 1;
     }
 
     result
-}
+};
 
-fn relu(x: f32) -> f32 {
-    x.max(0.0)
-}
+pub const DIAGONALS: [u64; 15] = [
+    0x0100_0000_0000_0000,
+    0x0201_0000_0000_0000,
+    0x0402_0100_0000_0000,
+    0x0804_0201_0000_0000,
+    0x1008_0402_0100_0000,
+    0x2010_0804_0201_0000,
+    0x4020_1008_0402_0100,
+    0x8040_2010_0804_0201,
+    0x0080_4020_1008_0402,
+    0x0000_8040_2010_0804,
+    0x0000_0080_4020_1008,
+    0x0000_0000_8040_2010,
+    0x0000_0000_0080_4020,
+    0x0000_0000_0000_8040,
+    0x0000_0000_0000_0080,
+];

@@ -16,8 +16,7 @@ impl Tree {
             "Node {node_idx} already have children."
         );
 
-        let policy_inputs = PolicyNetwork.get_inputs(board);
-        let mut policy_cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
+        let policy_base = PolicyNetwork.create_base(board);
 
         let pst = if node_idx == self.root_index() {
             3.25
@@ -31,7 +30,7 @@ impl Tree {
 
         board.map_legal_moves(|mv| {
             let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
             policy.push((mv, p));
             max = max.max(p);
@@ -97,8 +96,7 @@ impl Tree {
             return;
         }
 
-        let policy_inputs = PolicyNetwork.get_inputs(board);
-        let mut policy_cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
+        let policy_base = PolicyNetwork.create_base(board);
 
         let pst = if node_idx == self.root_index() {
             3.25
@@ -113,7 +111,7 @@ impl Tree {
         self[node_idx].map_children(|child_idx| {
             let mv = self[child_idx].mv();
             let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_inputs, mv, &mut policy_cache, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
             policy.push(p);
             max = max.max(p);

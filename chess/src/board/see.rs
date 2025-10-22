@@ -102,7 +102,7 @@ impl ChessBoard {
                 // As a slide speed up for move legality checking, if our last attacking
                 // piece is a king, and our opponent still has attackers, then we've
                 // lost as the move we followed would be illegal
-                if next_victim == Piece::KING && (attackers & self.occupancy_for_side(side.flipped())).is_not_empty() {
+                if next_victim == Piece::KING && (attackers & self.occupancy_for_side(side)).is_not_empty() {
                     side.flip();
                 }
 
