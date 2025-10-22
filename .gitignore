@@ -12,3 +12,4 @@ Cargo.lock
 *.exe
 *.bin
 *.pgn
+/data

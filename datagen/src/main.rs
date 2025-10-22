@@ -65,6 +65,10 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
+                _ = engine.set_option("Contempt", "500");
+                _ = engine.set_option("DrawScore", "50");
+                _ = engine.set_option("PolicySac", "0");
+
                 let mut rng = rand::rng();
                 
                 loop {
