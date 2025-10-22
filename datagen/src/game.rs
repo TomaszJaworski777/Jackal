@@ -1,6 +1,6 @@
-use chess::{ChessPosition, Move, Side, FEN};
+use chess::{ChessPosition, Move, MoveFlag, Side, Square, FEN};
 use engine::{NoReport, SearchEngine, SearchLimits};
-use montyformat::{chess::{Castling, Position}, MontyFormat, SearchData};
+use bullet::game::formats::montyformat::{chess::{Castling, Position}, MontyFormat, SearchData};
 
 pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits: &SearchLimits) -> MontyFormat {
     let castle_mask = position.board().castle_rights().get_castle_mask();
@@ -9,22 +9,28 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
     let monty_position = Position::parse_fen(FEN::from(position.board()).to_string().as_str(), &mut monty_castling);
     let mut game_data = MontyFormat::new(monty_position, monty_castling);
 
+    //println!("Game:");
+
     loop {
         engine.tree().clear();
         engine.set_position(position, 10);
+
+        //println!("FEN: {}", FEN::from(position.board()));
 
         let _ = engine.search::<NoReport>(limits);
         
         let mut moves = Vec::new();
         let mut best_move = Move::NULL;
-        let mut best_monty_move = montyformat::chess::Move::NULL;
+        let mut best_monty_move = bullet::game::formats::montyformat::chess::Move::NULL;
         let mut best_score = f64::MIN;
         engine.tree().root_node().map_children(|child_idx| {
             let node = &engine.tree()[child_idx];
 
             let mv = node.mv();
 
-            let monty_move = montyformat::chess::Move::new(u8::from(mv.get_from_square()) as u16, u8::from(mv.get_to_square()) as u16, mv.get_flag());
+            let monty_move = move_to_monty(mv, engine);
+
+            //println!("  {}({}, {}) -> {}", monty_move, monty_move.src(), monty_move.to(), node.visits());
 
             moves.push((monty_move, node.visits()));
 
@@ -35,6 +41,8 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
                 best_monty_move = monty_move;
             }
         });
+
+        moves.sort_by_key(|(mv, _)| u16::from(*mv));
 
         game_data.push(SearchData {
             best_move: best_monty_move,
@@ -69,4 +77,21 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
     }
 
     game_data
+}
+
+fn move_to_monty(mv: Move, engine: &SearchEngine) -> bullet::game::formats::montyformat::chess::Move {
+    let from = u8::from(mv.get_from_square()) as u16;
+    let mut to = u8::from(mv.get_to_square()) as u16;
+
+    if !engine.options().chess960() && mv.is_castle() {
+        let side = usize::from(engine.root_position().board().side());
+
+        if mv.get_flag() == MoveFlag::KING_SIDE_CASTLE {
+           to = u8::from(Square::G1) as u16 ^ (56 * side) as u16; 
+        } else {
+            to = u8::from(Square::C1) as u16 ^ (56 * side) as u16;  
+        }
+    }
+
+    bullet::game::formats::montyformat::chess::Move::new(from, to, mv.get_flag() >> 6)
 }

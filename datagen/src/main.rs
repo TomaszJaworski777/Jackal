@@ -92,11 +92,12 @@ fn main() {
 
                     let mut buffer = Vec::new();
                     let _ = game.serialise_into_buffer(&mut buffer);
+
                     save_queue.push(buffer);
                 }
             });
         }
-
+ 
         let mut last_update_positions = 0;
 
         loop {
@@ -106,7 +107,7 @@ fn main() {
                 println!("Generating policy data...\n");
             }
 
-             #[cfg(feature = "value_datagen")] {
+            #[cfg(feature = "value_datagen")] {
                 println!("Generating value data...\n");
             }
 

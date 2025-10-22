@@ -7,11 +7,10 @@ edition = "2021"
 engine = { path = "../engine" }
 chess  = { path = "../chess" }
 utils  = { path = "../utils" }
-montyformat = "*"
+bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features = ["hip"], rev = "da3cd73e0687adcae1439e814dc0607f96cff356" }
 crossbeam = "*"
 rand = "*"
 
 [features]
-# Local features
 policy_datagen = ["engine/policy_datagen"]
 value_datagen  = ["engine/value_datagen"]
