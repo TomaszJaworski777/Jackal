@@ -40,7 +40,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_50_100m",
+        net_id: "policy_50_100m_kld",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
@@ -53,7 +53,7 @@ pub fn run() {
 
     let settings = PolicyLocalSettings { data_prep_threads: 4, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("policy_data.bin", 48000);
+    let data_loader = PolicyDataLoader::new("policy_data_v3.bin", 48000);
 
     trainer.run(&schedule, &settings, &data_loader);
 
