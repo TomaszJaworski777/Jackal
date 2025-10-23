@@ -128,6 +128,10 @@ create_options! {
             draw_rate_target: f64  =>  0.0,   0.0,    1.0,    0.01,   0.002;
             draw_rate_ref:    f64  =>  0.65,  0.0,    1.0,    0.065,  0.002;
             contempt_att:     f64  =>  1.0,   -10.0,  10.0,   0.1,    0.002;
+
+            //Datagen
+            #[cfg(any(feature = "policy_datagen", feature = "value_datagen"))]
+            kld_min: f64 => 0.5, 0.0, 1.0, 0.5, 0.002;
         }
     }
 }

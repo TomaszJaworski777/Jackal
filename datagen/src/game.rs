@@ -3,7 +3,7 @@ use engine::{NoReport, SearchEngine, SearchLimits};
 use montyformat::{chess::{Castling, Position}, MontyFormat, SearchData};
 use rand::Rng;
 
-pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits: &SearchLimits) -> MontyFormat {
+pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits: &SearchLimits, avg_iters: &mut u64) -> MontyFormat {
     let castle_mask = position.board().castle_rights().get_castle_mask();
 
     let mut monty_castling = Castling::default();
@@ -12,11 +12,14 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
 
     let mut temperature = 0.77;
 
+    let mut iter_sum = 0u64;
+
     loop {
         engine.tree().clear();
         engine.set_position(position, 10);
 
-        let _ = engine.search::<NoReport>(limits);
+        let stats = engine.search::<NoReport>(limits);
+        iter_sum += stats.iterations();
         
         let mut moves = Vec::new();
         let mut best_move = Move::NULL;
@@ -103,6 +106,8 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
            break;
         }
     }
+
+    *avg_iters = iter_sum / game_data.moves.len() as u64;
 
     game_data
 }

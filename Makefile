@@ -39,16 +39,16 @@ release: create_version_dir
 	$(X86_64_v4_HEADER) -p terminal -- --emit link=$(X86_64_V4)$(EXT)
 
 value_gen:
-	$(NATIVE_HEADER) -p datagen --features=value_datagen -- --emit link=datagen$(EXT)
+	$(NATIVE_HEADER) -p datagen --features=value_datagen -- --emit link=value_gen$(EXT)
 
 policy_gen:
-	$(NATIVE_HEADER) -p datagen --features=policy_datagen -- --emit link=datagen$(EXT)
+	$(NATIVE_HEADER) -p datagen --features=policy_datagen -- --emit link=policy_gen$(EXT)
 
 policy_trainer:
-	$(NATIVE_HEADER) -p trainer --features=policy_trainer -- --emit link=trainer$(EXT)
+	$(NATIVE_HEADER) -p trainer --features=policy_trainer -- --emit link=policy_trainer$(EXT)
 
 value_trainer:
-	$(NATIVE_HEADER) -p trainer --features=value_trainer -- --emit link=trainer$(EXT)
+	$(NATIVE_HEADER) -p trainer --features=value_trainer -- --emit link=value_trainer$(EXT)
 
 ifneq ("$(wildcard $(RELEASE_DIR))","")
 create_version_dir:

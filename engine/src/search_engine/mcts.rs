@@ -62,6 +62,9 @@ impl SearchEngine {
         last_best_move: &mut Option<Move>,
         best_move_changes: &mut usize
     ) -> Option<()> {
+        #[allow(unused)]
+        let mut latest_kld_distribution: Vec<u32> = Vec::new();
+
         while !self.is_search_interrupted() {
             self.search_step(search_stats, search_limits, castle_mask)?;
 
@@ -80,6 +83,13 @@ impl SearchEngine {
             }
 
             *last_best_move = Some(best_move);
+
+            #[cfg(any(feature = "policy_datagen", feature = "value_datagen"))] { 
+                if self.kld_limit(&mut latest_kld_distribution, self.options().kld_min()) {
+                    self.interrupt_search();
+                    break;
+                }
+            }
 
             if search_stats.iterations() % 128 != 0 {
                 continue;
@@ -141,4 +151,45 @@ impl SearchEngine {
 
         Some(())
     }
+
+    #[allow(unused)]
+    fn kld_limit(&self, old_distribution: &mut Vec<u32>, kld_min: f64) -> bool {
+        let root = self.tree().root_node();
+
+        let mut new_distribution = Vec::with_capacity(root.children_count());
+        root.map_children(|child_idx| new_distribution.push(self.tree()[child_idx].visits()));
+
+        if let Some(kld_gain) = calculate_kld_gain(&new_distribution, old_distribution) {
+            if kld_gain < kld_min {
+                return true;
+            }
+        }
+
+        *old_distribution = new_distribution;
+
+        false
+    }
+}
+
+fn calculate_kld_gain(current_distribution: &[u32], old_distribution: &[u32]) -> Option<f64> {
+    let current_sum = current_distribution.iter().sum::<u32>() as f64;
+    let old_sum = old_distribution.iter().sum::<u32>() as f64;
+
+    if old_sum == 0.0 {
+        return None;
+    }
+
+    let mut result = 0.0;
+    for (&a, &b) in current_distribution.iter().zip(old_distribution) {
+        if b == 0 {
+            return None;
+        }
+
+        let q = a as f64 / current_sum;
+        let p = b as f64 / old_sum;
+
+        result += p * (p / q).ln();
+    };
+
+    Some(result / (current_sum - old_sum))
 }

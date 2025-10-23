@@ -13,3 +13,4 @@ Cargo.lock
 *.bin
 *.pgn
 /data
+/policy_checkpoints

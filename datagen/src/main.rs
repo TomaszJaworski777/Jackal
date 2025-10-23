@@ -14,7 +14,6 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut threads = 1usize;
     let mut target_positions = 100_000_000usize;
-    let mut nodes = 1000;
     #[allow(unused_mut)]
     let mut output_path = "./value_data.bin".to_string();
 
@@ -27,11 +26,6 @@ fn main() {
             "--threads" => {
                 if let Some(v) = args.get(i + 1) {
                     threads = v.parse().unwrap_or(1);
-                }
-            }
-            "--nodes" => {
-                if let Some(v) = args.get(i + 1) {
-                    nodes = v.parse().unwrap_or(1000);
                 }
             }
             "--target" => {
@@ -55,7 +49,7 @@ fn main() {
                                     .collect::<Vec<String>>();
 
     let mut limits = SearchLimits::default();
-    limits.set_iters(Some(nodes));
+    limits.set_iters(Some(99999));
 
     let datagen_stats = DatagenStats::new();
 
@@ -65,9 +59,10 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
-                _ = engine.set_option("Contempt", "500");
-                _ = engine.set_option("DrawScore", "50");
-                _ = engine.set_option("PolicySac", "0");
+                // _ = engine.set_option("Contempt", "500");
+                // _ = engine.set_option("DrawScore", "50");
+                // _ = engine.set_option("PolicySac", "0");
+                _ = engine.set_option("kld_min", "0.00000075");
 
                 let mut rng = rand::rng();
                 
@@ -75,8 +70,9 @@ fn main() {
                     let fen = FEN::from(openings[rng.random_range(0..openings.len())].clone());
                     let mut new_position = ChessPosition::from(ChessBoard::from(&fen));
                     
-                    let game = play_game(&mut engine, &mut new_position, &limits);
-                    datagen_stats.add_game(game.moves.len() as u64, (game.result * 2.0) as i32 - 1);
+                    let mut avg_iters = 0u64;
+                    let game = play_game(&mut engine, &mut new_position, &limits, &mut avg_iters);
+                    datagen_stats.add_game(game.moves.len() as u64, (game.result * 2.0) as i32 - 1, avg_iters);
 
                     let mut buffer = Vec::new();
                     let _ = game.serialise_into_buffer(&mut buffer);
@@ -105,21 +101,21 @@ fn main() {
 
             let seconds_left = (target_positions as u128 - positions as u128) / speed.max(1) as u128;
 
-            println!("Progress:  {}", create_loading_bar(40, positions as f32 / target_positions as f32, WHITE, WHITE));
-            println!("Threads:   {}", threads);
-            println!("Nodes:     {}", nodes);
-            println!("Target:    {}\n", utils::number_to_string(target_positions as u128));
+            println!("Progress:   {}", create_loading_bar(40, positions as f32 / target_positions as f32, WHITE, WHITE));
+            println!("Threads:    {}", threads);
+            println!("Avg. Nodes: {:.1}", datagen_stats.avg_iterations());
+            println!("Target:     {}\n", utils::number_to_string(target_positions as u128));
 
-            println!("Positions: {}", utils::number_to_string(positions as u128));
-            println!("Games:     {}", utils::number_to_string(datagen_stats.games() as u128));
-            println!("WDL:       [W: {}, D: {}, L: {}]\n", 
+            println!("Positions:  {}", utils::number_to_string(positions as u128));
+            println!("Games:      {}", utils::number_to_string(datagen_stats.games() as u128));
+            println!("WDL:        [W: {}, D: {}, L: {}]\n", 
                 utils::number_to_string(datagen_stats.wins() as u128), 
                 utils::number_to_string(datagen_stats.draws() as u128), 
                 utils::number_to_string(datagen_stats.loses() as u128)
             );
 
-            println!("Speed:     {}N/s", utils::number_to_string(speed as u128));
-            println!("ETA:       {}", utils::time_to_string(seconds_left * 1000));
+            println!("Speed:      {}N/s", utils::number_to_string(speed as u128));
+            println!("ETA:        {}", utils::time_to_string(seconds_left * 1000));
 
             while save_queue.len() > 0 {
                 let buffer = save_queue.pop().expect("Cannot obtain save buffer"); 
@@ -139,7 +135,8 @@ struct DatagenStats {
     positions: AtomicU64,
     games: AtomicU64,
     white_wins: AtomicU64,
-    draws: AtomicU64
+    draws: AtomicU64,
+    iterations: AtomicU64
 }
 
 impl DatagenStats {
@@ -148,7 +145,8 @@ impl DatagenStats {
             positions: AtomicU64::new(0), 
             games: AtomicU64::new(0), 
             white_wins: AtomicU64::new(0), 
-            draws: AtomicU64::new(0) 
+            draws: AtomicU64::new(0),
+            iterations: AtomicU64::new(0),
         }
     }
 
@@ -172,9 +170,14 @@ impl DatagenStats {
         self.games() - self.wins() - self.draws()
     }
 
-    pub fn add_game(&self, positions: u64, result: i32) {
+    fn avg_iterations(&self) -> f64 {
+        self.iterations.load(Ordering::Relaxed) as f64 / self.games().max(1) as f64
+    }
+
+    pub fn add_game(&self, positions: u64, result: i32, avg_iters: u64) {
         self.games.fetch_add(1, Ordering::Relaxed);
         self.positions.fetch_add(positions, Ordering::Relaxed);
+        self.iterations.fetch_add(avg_iters, Ordering::Relaxed);
 
         match result {
             1 => self.white_wins.fetch_add(1, Ordering::Relaxed),
