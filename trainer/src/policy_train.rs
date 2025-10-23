@@ -9,7 +9,7 @@ const END_LR: f32 = 0.00001;
 #[allow(unused)]
 pub fn run() {
     let inputs = inputs::Chess768;
-    let transform = move_maps::HorizontalMirror;
+    let transform = move_maps::NoTransform;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
     let num_inputs = inputs.num_inputs();
@@ -40,7 +40,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_128_50_111",
+        net_id: "policy_50_100m",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
