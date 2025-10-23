@@ -9,7 +9,7 @@ const END_LR: f32 = 0.00001;
 #[allow(unused)]
 pub fn run() {
     let inputs = inputs::Chess768;
-    let transform = move_maps::NoTransform;
+    let transform = move_maps::HorizontalMirror;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
     let num_inputs = inputs.num_inputs();
