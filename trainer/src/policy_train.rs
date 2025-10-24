@@ -53,7 +53,7 @@ pub fn run() {
 
     let settings = PolicyLocalSettings { data_prep_threads: 4, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("policy_data_v4.bin", 48000);
+    let data_loader = PolicyDataLoader::new("policy_data_v5.bin", 48000);
 
     trainer.run(&schedule, &settings, &data_loader);
 
