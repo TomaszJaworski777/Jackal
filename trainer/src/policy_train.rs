@@ -1,6 +1,6 @@
 use bullet::{game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{loader::PolicyDataLoader, move_maps::{self, MoveBucket}, PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule}, trainer::save::{Layout, QuantTarget, SavedFormat}, Shape, TrainingSteps};
 
-const HL_SIZE: usize = 128;
+const HL_SIZE: usize = 256;
 
 const END_SUPERBATCH: usize = 50;
 const START_LR: f32 = 0.001;
@@ -40,7 +40,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_50_750m_kld",
+        net_id: "policy_50_750m_256",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
