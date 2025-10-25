@@ -47,6 +47,9 @@ policy_gen:
 policy_trainer:
 	$(NATIVE_HEADER) -p trainer --features=policy_trainer -- --emit link=trainer$(EXT)
 
+policy_util:
+	$(NATIVE_HEADER) -p trainer --features=policy_interleave -- --emit link=policy_interleave$(EXT)
+
 value_trainer:
 	$(NATIVE_HEADER) -p trainer --features=value_trainer -- --emit link=trainer$(EXT)
 
