@@ -3,7 +3,7 @@ use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
 use crate::networks::{inputs::{Standard768, Threats3072}, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
 const INPUT_SIZE: usize = Standard768::input_size();
-const HL_SIZE: usize = 256;
+const HL_SIZE: usize = 512;
 
 #[repr(C)]
 #[derive(Debug)]

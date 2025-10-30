@@ -2,7 +2,7 @@ use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn
 
 mod policy_inputs;
 
-const HL_SIZE: usize = 256;
+const HL_SIZE: usize = 512;
 
 const END_SUPERBATCH: usize = 100;
 const START_LR: f32 = 0.001;
@@ -42,7 +42,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_100_1150m_256",
+        net_id: "policy_100_1150m_512",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
@@ -53,7 +53,7 @@ pub fn run() {
         save_rate: 10,
     };
 
-    let settings = PolicyLocalSettings { data_prep_threads: 4, output_directory: "policy_checkpoints", batch_queue_size: 64 };
+    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
     let data_loader = PolicyDataLoader::new("interleaved.bin", 48000);
 
