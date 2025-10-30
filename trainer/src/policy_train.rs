@@ -4,7 +4,7 @@ mod policy_inputs;
 
 const HL_SIZE: usize = 256;
 
-const END_SUPERBATCH: usize = 200;
+const END_SUPERBATCH: usize = 100;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.00001;
 
@@ -42,7 +42,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_100_750m_256",
+        net_id: "policy_100_750m_256_td",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
