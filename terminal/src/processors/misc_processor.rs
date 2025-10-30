@@ -166,7 +166,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.map_legal_moves(|mv| {
         let see = board.see(mv, -108);
-        let p = PolicyNetwork.forward(board, &policy_base, mv, see);
+        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
         max = max.max(p);
         moves.push((mv, p));
     });

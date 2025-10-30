@@ -1,4 +1,4 @@
-use chess::{Attacks, Bitboard, ChessBoard, Move, Piece, Side, Square};
+use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
 
 use crate::networks::{inputs::Standard768, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
@@ -29,8 +29,8 @@ impl PolicyNetwork {
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool) -> f32 {
-        let idx = map_move_to_index(board, mv, see);
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
+        let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
         let mut result = self.l1.biases().values()[idx];
 
@@ -43,7 +43,7 @@ impl PolicyNetwork {
     }
 }
 
-fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool) -> usize {
+fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool, chess960: bool) -> usize {
     let horizontal_mirror = 0;// if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
     let good_see = (OFFSETS[64] + PROMOS) * usize::from(see);
 
@@ -56,7 +56,22 @@ fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool) -> usize {
     } else {
         let flip = if board.side() == Side::WHITE { 0 } else { 56 };
         let from = usize::from(mv.get_from_square() ^ flip ^ horizontal_mirror);
-        let to = usize::from(mv.get_to_square() ^ flip ^ horizontal_mirror);
+        let to = if mv.is_castle() && !chess960 {
+            let side = if u8::from(mv.get_from_square()) < 32 {
+                Side::WHITE
+            } else {
+                Side::BLACK
+            };
+            let destination_square = if mv.get_flag() == MoveFlag::QUEEN_SIDE_CASTLE {
+                Square::C1
+            } else {
+                Square::G1
+            } + 56 * u8::from(side);
+
+            usize::from(destination_square ^ flip ^ horizontal_mirror)
+        } else {
+            usize::from(mv.get_to_square() ^ flip ^ horizontal_mirror)
+        };
 
         let below = ALL_DESTINATIONS[from] & ((1 << to) - 1);
 
