@@ -44,7 +44,7 @@ impl PolicyNetwork {
 }
 
 fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool, chess960: bool) -> usize {
-    let horizontal_mirror = 0;// if board.get_king_square::<STM_WHITE>().get_file() > 3 { 7 } else { 0 };
+    let horizontal_mirror = if board.king_square(board.side()).get_file() > 3 { 7 } else { 0 };
     let good_see = (OFFSETS[64] + PROMOS) * usize::from(see);
 
     let idx = if mv.is_promotion() {

@@ -4,14 +4,14 @@ mod policy_inputs;
 
 const HL_SIZE: usize = 512;
 
-const END_SUPERBATCH: usize = 100;
+const END_SUPERBATCH: usize = 200;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.00001;
 
 #[allow(unused)]
 pub fn run() {
     let inputs = inputs::Chess768;
-    let transform = move_maps::NoTransform;
+    let transform = move_maps::HorizontalMirror;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
     let num_inputs = inputs.num_inputs();
@@ -42,7 +42,7 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_100_1150m_512",
+        net_id: "policy_100_1150m_512_hm",
         lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
