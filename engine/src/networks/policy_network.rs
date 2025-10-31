@@ -1,8 +1,8 @@
 use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
 
-use crate::networks::{inputs::{Standard768, Threats3072}, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
+use crate::networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
-const INPUT_SIZE: usize = Standard768::input_size();
+const INPUT_SIZE: usize = Threats3072::input_size();
 const HL_SIZE: usize = 512;
 
 #[repr(C)]
@@ -16,7 +16,7 @@ impl PolicyNetwork {
     pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
         let mut result = *self.l0.biases();
 
-        Standard768::map_inputs(board, |weight_idx| {
+        Threats3072::map_inputs(board, |weight_idx| {
             for (i, weight) in result
                 .values_mut()
                 .iter_mut()
@@ -44,7 +44,7 @@ impl PolicyNetwork {
 }
 
 fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool, chess960: bool) -> usize {
-    let horizontal_mirror = if board.king_square(board.side()).get_file() > 3 { 7 } else { 0 };
+    let horizontal_mirror = 0; //if board.king_square(board.side()).get_file() > 3 { 7 } else { 0 };
     let good_see = (OFFSETS[64] + PROMOS) * usize::from(see);
 
     let idx = if mv.is_promotion() {

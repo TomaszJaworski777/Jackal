@@ -33,35 +33,27 @@ impl SparseInputType for PolicyInputs {
             }
         }
 
-        let flip = board.side() == Side::BLACK;
+        let vertical_flip = if board.side() == Side::BLACK { 56 } else { 0 };
         let horizontal_mirror = if board.king_square(board.side()).get_file() > 3 {
             7
         } else {
             0
         };
 
-        let mut threats = board.generate_attack_map(board.side().flipped());
-        let mut defences = board.generate_attack_map(board.side());
+        let flip = vertical_flip ^ horizontal_mirror;
 
-        if flip {
-            threats = threats.flip();
-            defences = defences.flip();
-        }
+        let threats = board.generate_attack_map(board.side().flipped());
+        let defences = board.generate_attack_map(board.side());
 
         for piece_idx in u8::from(Piece::PAWN)..=u8::from(Piece::KING) {
             let piece_input_index = 64 * (piece_idx - u8::from(Piece::PAWN)) as usize;
             
             let piece = Piece::from(piece_idx);
-            let mut stm_bitboard = board.piece_mask_for_side(piece, board.side());
-            let mut nstm_bitboard = board.piece_mask_for_side(piece, board.side().flipped());
-
-            if flip {
-                stm_bitboard = stm_bitboard.flip();
-                nstm_bitboard = nstm_bitboard.flip();
-            }
+            let stm_bitboard = board.piece_mask_for_side(piece, board.side());
+            let nstm_bitboard = board.piece_mask_for_side(piece, board.side().flipped());
 
             stm_bitboard.map(|square| {
-                let mut feat = piece_input_index + (usize::from(square) ^ horizontal_mirror);
+                let mut feat = piece_input_index + (usize::from(square) ^ flip);
 
                 if threats.get_bit(square) {
                     feat += 768;
@@ -75,8 +67,9 @@ impl SparseInputType for PolicyInputs {
             });
 
             nstm_bitboard.map(|square| {
-                let mut feat = 384 + piece_input_index + (usize::from(square) ^ horizontal_mirror);
+                let mut feat = 384 + piece_input_index + (usize::from(square) ^ flip);
 
+                
                 if threats.get_bit(square) {
                     feat += 768;
                 }
