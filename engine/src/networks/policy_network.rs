@@ -32,14 +32,15 @@ impl PolicyNetwork {
     pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
-        let mut result = self.l1.biases().values()[idx];
 
-        for (&weight, &value) in weights.values().iter().zip(base.values()) {
-            let acc = value.clamp(0.0, 1.0).powi(2);
-            result += weight * acc;
+        let mut vals = [0.0; 16];
+        for (weights, values) in weights.values().chunks_exact(16).zip(base.values().chunks_exact(16)) {
+            for i in 0..16 {
+                vals[i] += weights[i] * values[i].clamp(0.0, 1.0).powi(2)
+            }
         }
 
-        result
+        vals.iter().sum::<f32>() + self.l1.biases().values()[idx]
     }
 }
 
