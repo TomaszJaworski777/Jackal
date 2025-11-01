@@ -24,19 +24,16 @@ create_options! {
         }
         Tunables {
             //PST
-            base_pst:              f64  =>  0.1,   0.01,  1.0,   0.01,   0.002;
-            root_pst:              f64  =>  0.34,  0.01,  1.0,   0.034,  0.002;
-            depth_pst_adjustment:  f64  =>  1.8,   0.01,  10.0,  0.18,   0.002;
-            winning_pst_threshold: f64  =>  0.6,   0.01,  1.0,   0.06,   0.002;
-            winning_pst_max:       f64  =>  1.6,   0.01,  10.0,  0.016,  0.002;
+            root_pst: f64  =>  3.25,  0.5,  5.0,  0.15,   0.002;
+            base_pst: f64  =>  1.23,  0.5,  2.0,  0.015,  0.002;
 
             //CPUCT
-            start_cpuct:           f64  =>  1.2813,    0.1,  5.0,  0.05,     0.002;
-            end_cpuct:             f64  =>  0.3265,    0.1,  1.0,  0.015,    0.002;
-            cpuct_depth_decay:     f64  =>  0.264101,  0.1,  5.0,  0.02641,  0.002;
+            start_cpuct:       f64  =>  1.2813,    0.1,  5.0,  0.05,     0.002;
+            end_cpuct:         f64  =>  0.3265,    0.1,  1.0,  0.015,    0.002;
+            cpuct_depth_decay: f64  =>  0.264101,  0.1,  5.0,  0.02641,  0.002;
 
             //Visit scaling
-            cpuct_visit_scale:     f64  =>  8000.00,  4096.0,  65536.0,  250.0,  0.002;
+            cpuct_visit_scale: f64  =>  8000.00,  4096.0,  65536.0,  250.0,  0.002;
 
             //Variance scaling
             cpuct_variance_scale:  f64  =>  0.2,   0.1,  50.0,  0.02,   0.002;
@@ -44,7 +41,13 @@ create_options! {
             cpuct_var_warmup:      f64  =>  0.5,   0.0,  1.0,   0.05,   0.002;
 
             //Exploration scale
-            exploration_tau:       f64  =>  0.51,  0.0,  1.0,  0.055,  0.002;
+            exploration_tau: f64  =>  0.51,  0.0,  1.0,  0.055,  0.002;
+
+            //Gini impurity
+            gini_base:       f64  =>  0.463,  0.1,  1.0,  0.025,  0.002;
+            gini_multiplier: f64  =>  1.567,  0.5,  5.0,  0.1,    0.002;
+            gini_min:        f64  =>  1.0,    0.0,  5.0,  0.075,  0.002;
+            gini_max:        f64  =>  1.5,    0.0,  5.0,  0.075,  0.002;
 
             //Progressive widening
             policy_percentage:       f64  =>  0.6407,  0.1,  1.0,    0.05,  0.002;

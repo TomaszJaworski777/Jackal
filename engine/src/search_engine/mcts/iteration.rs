@@ -25,7 +25,7 @@ impl SearchEngine {
             *depth += 1.0;
 
             if node.children_count() == 0 {
-                self.tree().expand_node(node_idx, *depth, position.board(), self.options())?
+                self.tree().expand_node(node_idx, position.board(), self.options())?
             }
 
             self.tree().update_node(node_idx)?;

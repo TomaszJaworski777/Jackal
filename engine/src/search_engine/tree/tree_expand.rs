@@ -3,7 +3,7 @@ use chess::{ChessBoard, Move, Piece};
 use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwork, Tree};
 
 impl Tree {
-    pub fn expand_node(&self, node_idx: NodeIndex, depth: f64, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
+    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
         let children_idx = self[node_idx].children_index_mut();
 
         if self[node_idx].children_count() > 0 {
@@ -19,10 +19,10 @@ impl Tree {
         let policy_base = PolicyNetwork.create_base(board);
 
         let pst = if node_idx == self.root_index() {
-            3.25
+            engine_options.root_pst()
         } else {
-            1.23
-        }; //calculate_pst(engine_options, self[node_idx].score().single(0.5), depth);
+            engine_options.base_pst()
+        };
 
         let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
         let mut max = f64::NEG_INFINITY;
@@ -68,7 +68,7 @@ impl Tree {
         Some(())
     }
 
-    const RELABEL_DEPTH: u8 = 2;
+    const RELABEL_DEPTH: u8 = 1;
     pub fn relabel_root(&self, board: &ChessBoard, engine_options: &EngineOptions) {
         self.recurse_relabel(self.root_index(), Self::RELABEL_DEPTH, board, engine_options);
     }
@@ -89,7 +89,7 @@ impl Tree {
         });
     }
 
-    fn relabel_node(&self, node_idx: NodeIndex, depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
+    fn relabel_node(&self, node_idx: NodeIndex, _depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
         let children_idx = self[node_idx].children_index();
 
         if self[node_idx].children_count() == 0 {
@@ -99,10 +99,10 @@ impl Tree {
         let policy_base = PolicyNetwork.create_base(board);
 
         let pst = if node_idx == self.root_index() {
-            3.25
+            engine_options.root_pst()
         } else {
-            1.23
-        }; //calculate_pst(engine_options, self[node_idx].score().single(0.5), depth);
+            engine_options.base_pst()
+        };
 
         let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
         let mut max = f64::NEG_INFINITY;
@@ -137,14 +137,6 @@ impl Tree {
         let gini_impurity = (1.0 - squares).clamp(0.0, 1.0);
         self[node_idx].set_gini_impurity(gini_impurity);
     }
-}
-
-fn calculate_pst(options: &EngineOptions, parent_score: f64, depth: f64) -> f64 {
-    let scalar = parent_score - parent_score.min(options.winning_pst_threshold());
-    let t = scalar / (1.0 - options.winning_pst_threshold());
-    let base_pst = 1.0 - options.base_pst()
-        + (depth - options.root_pst()).powf(-options.depth_pst_adjustment());
-    base_pst + (options.winning_pst_max() - base_pst) * t
 }
 
 fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
