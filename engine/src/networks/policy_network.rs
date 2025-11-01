@@ -5,15 +5,18 @@ use crate::networks::{inputs::{Standard768, Threats3072}, layers::{Accumulator, 
 const INPUT_SIZE: usize = Standard768::input_size();
 const HL_SIZE: usize = 1024;
 
+const QA: i16 = 255;
+const QB: i16 = 64;
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct PolicyNetwork {
-    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
-    l1: TransposedNetworkLayer<f32, HL_SIZE, {1880 * 2}>
+    l0: NetworkLayer<i16, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<i16, HL_SIZE, {1880 * 2}>
 }
 
 impl PolicyNetwork {
-    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
+    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, HL_SIZE> {
         let mut result = *self.l0.biases();
 
         Standard768::map_inputs(board, |weight_idx| {
@@ -29,18 +32,17 @@ impl PolicyNetwork {
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
 
-        let mut vals = [0.0; 16];
-        for (weights, values) in weights.values().chunks_exact(16).zip(base.values().chunks_exact(16)) {
-            for i in 0..16 {
-                vals[i] += weights[i] * values[i].clamp(0.0, 1.0).powi(2)
-            }
+        let mut result = 0;
+        for (&weight, &neuron) in weights.values().iter().zip(base.values().iter()) {
+            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
+            result += i32::from(weight) * act;
         }
 
-        vals.iter().sum::<f32>() + self.l1.biases().values()[idx]
+        (result as f32 / f32::from(QA) + f32::from(self.l1.biases().values()[idx])) / f32::from(QA * QB)
     }
 }
 

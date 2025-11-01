@@ -1,4 +1,4 @@
-use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::save::{Layout, QuantTarget, SavedFormat}};
+use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::{NetworkTrainer, save::{Layout, QuantTarget, SavedFormat}}};
 
 mod policy_inputs;
 
@@ -7,6 +7,9 @@ const HL_SIZE: usize = 1024;
 const END_SUPERBATCH: usize = 200;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.00001;
+
+const QA: i16 = 255;
+const QB: i16 = 64;
 
 #[allow(unused)]
 pub fn run() {
@@ -20,10 +23,10 @@ pub fn run() {
     let l1_shape = Shape::new(num_outputs, HL_SIZE);
 
     let save_format = [
-        SavedFormat::new("l0w", QuantTarget::Float, Layout::Normal),
-        SavedFormat::new("l0b", QuantTarget::Float, Layout::Normal),
-        SavedFormat::new("l1w", QuantTarget::Float, Layout::Transposed(l1_shape)),
-        SavedFormat::new("l1b", QuantTarget::Float, Layout::Normal),
+        SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
+        SavedFormat::new("l0b", QuantTarget::I16(QA), Layout::Normal),
+        SavedFormat::new("l1w", QuantTarget::I16(QB), Layout::Transposed(l1_shape)),
+        SavedFormat::new("l1b", QuantTarget::I16(QA * QB), Layout::Normal),
     ];
 
     let mut trainer = PolicyTrainerBuilder::default()
@@ -47,7 +50,7 @@ pub fn run() {
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
-            start_superbatch: 1,
+            start_superbatch: END_SUPERBATCH,
             end_superbatch: END_SUPERBATCH,
         },
         save_rate: 10,
@@ -57,7 +60,9 @@ pub fn run() {
 
     let data_loader = PolicyDataLoader::new("interleaved.bin", 48000);
 
-    trainer.run(&schedule, &settings, &data_loader);
+    trainer.load_from_checkpoint("./policy_checkpoints/policy_200_1600m_1024exp-190");
+    trainer.save_to_checkpoint("./policy_checkpoints/policy_200_1600m_1024exp-190");
+    //trainer.run(&schedule, &settings, &data_loader);
 
     trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");
