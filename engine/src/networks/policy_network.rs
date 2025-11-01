@@ -1,9 +1,9 @@
 use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
 
-use crate::networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
+use crate::networks::{inputs::{Standard768, Threats3072}, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
-const INPUT_SIZE: usize = Threats3072::input_size();
-const HL_SIZE: usize = 512;
+const INPUT_SIZE: usize = Standard768::input_size();
+const HL_SIZE: usize = 1024;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -16,7 +16,7 @@ impl PolicyNetwork {
     pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
         let mut result = *self.l0.biases();
 
-        Threats3072::map_inputs(board, |weight_idx| {
+        Standard768::map_inputs(board, |weight_idx| {
             for (i, weight) in result
                 .values_mut()
                 .iter_mut()

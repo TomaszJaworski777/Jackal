@@ -1,8 +1,8 @@
-use bullet::{Shape, TrainingSteps, game::inputs::SparseInputType, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::save::{Layout, QuantTarget, SavedFormat}};
+use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::save::{Layout, QuantTarget, SavedFormat}};
 
 mod policy_inputs;
 
-const HL_SIZE: usize = 512;
+const HL_SIZE: usize = 1024;
 
 const END_SUPERBATCH: usize = 200;
 const START_LR: f32 = 0.001;
@@ -10,7 +10,7 @@ const END_LR: f32 = 0.00001;
 
 #[allow(unused)]
 pub fn run() {
-    let inputs = policy_inputs::PolicyInputs;
+    let inputs = inputs::Chess768;
     let transform = move_maps::NoTransform;
     let buckets = move_maps::GoodSEEBuckets(-108);
 
@@ -42,8 +42,8 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_100_1150m_512_td",
-        lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
+        net_id: "policy_200_1600m_1024exp",
+        lr_scheduler: lr::ExponentialDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
