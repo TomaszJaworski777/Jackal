@@ -1,4 +1,4 @@
-use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::{NetworkTrainer, save::{Layout, QuantTarget, SavedFormat}}};
+use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::{save::{Layout, QuantTarget, SavedFormat}}};
 
 mod policy_inputs;
 
@@ -39,18 +39,18 @@ pub fn run() {
             let l0 = builder.new_affine("l0", num_inputs, HL_SIZE);
             let l1 = builder.new_affine("l1", HL_SIZE, num_outputs);
 
-            let out = l0.forward(stm).screlu();
+            let out = l0.forward(stm).crelu();
             //let out = out.pairwise_mul();
             l1.forward(out)
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_200_1600m_1024exp",
+        net_id: "policy_200_1600m_1024crelu",
         lr_scheduler: lr::ExponentialDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
-            start_superbatch: END_SUPERBATCH,
+            start_superbatch: 1,
             end_superbatch: END_SUPERBATCH,
         },
         save_rate: 10,
@@ -60,9 +60,7 @@ pub fn run() {
 
     let data_loader = PolicyDataLoader::new("interleaved.bin", 48000);
 
-    trainer.load_from_checkpoint("./policy_checkpoints/policy_200_1600m_1024exp-190");
-    trainer.save_to_checkpoint("./policy_checkpoints/policy_200_1600m_1024exp-190");
-    //trainer.run(&schedule, &settings, &data_loader);
+    trainer.run(&schedule, &settings, &data_loader);
 
     trainer.display_eval("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     trainer.display_eval("rk6/8/8/p7/P7/Q7/R7/RK6 w - - 80 200");

@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 engine = { path = "../engine" }
 chess  = { path = "../chess" }
-bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features = ["hip"], rev = "da3cd73e0687adcae1439e814dc0607f96cff356" }
+bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', default-features = false, features = ["hip"], rev = "95be83356a320a18c76b8c7c3507cc4d933ebcca" }
 
 [features]
 policy_trainer = []
