@@ -37,17 +37,17 @@ impl Move {
     }
 
     #[inline]
-    pub fn get_from_square(&self) -> Square {
+    pub fn from_square(&self) -> Square {
         Square::from((self.0 & 63) as u8)
     }
 
     #[inline]
-    pub fn get_to_square(&self) -> Square {
+    pub fn to_square(&self) -> Square {
         Square::from((self.0 >> 10) as u8)
     }
 
     #[inline]
-    pub fn get_flag(&self) -> u16 {
+    pub fn flag(&self) -> u16 {
         self.0 & (15 << 6)
     }
 
@@ -58,12 +58,12 @@ impl Move {
 
     #[inline]
     pub fn is_en_passant(&self) -> bool {
-        self.get_flag() == MoveFlag::EN_PASSANT
+        self.flag() == MoveFlag::EN_PASSANT
     }
 
     #[inline]
     pub fn is_castle(&self) -> bool {
-        let flag = self.get_flag();
+        let flag = self.flag();
         flag == MoveFlag::KING_SIDE_CASTLE || flag == MoveFlag::QUEEN_SIDE_CASTLE
     }
 
@@ -73,31 +73,31 @@ impl Move {
     }
 
     #[inline]
-    pub fn get_promotion_piece(&self) -> Piece {
-        Piece::from((((self.get_flag() >> 6) & 3) + 1) as u8)
+    pub fn promotion_piece(&self) -> Piece {
+        Piece::from((((self.flag() >> 6) & 3) + 1) as u8)
     }
 
     pub fn to_string(&self, chess960: bool) -> String {
         if !chess960 && self.is_castle() {
-            let side = if u8::from(self.get_from_square()) < 32 {
+            let side = if u8::from(self.from_square()) < 32 {
                 Side::WHITE
             } else {
                 Side::BLACK
             };
-            let destination_square = if self.get_flag() == MoveFlag::QUEEN_SIDE_CASTLE {
+            let destination_square = if self.flag() == MoveFlag::QUEEN_SIDE_CASTLE {
                 Square::C1
             } else {
                 Square::G1
             } + 56 * u8::from(side);
-            return format!("{}{}", self.get_from_square(), destination_square);
+            return format!("{}{}", self.from_square(), destination_square);
         }
 
         format!(
             "{}{}{}",
-            self.get_from_square(),
-            self.get_to_square(),
+            self.from_square(),
+            self.to_square(),
             if self.is_promotion() {
-                ["n", "b", "r", "q"][(u8::from(self.get_promotion_piece()) - 1) as usize]
+                ["n", "b", "r", "q"][(u8::from(self.promotion_piece()) - 1) as usize]
             } else {
                 ""
             }

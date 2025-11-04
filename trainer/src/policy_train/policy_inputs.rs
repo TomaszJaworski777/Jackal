@@ -34,7 +34,7 @@ impl SparseInputType for PolicyInputs {
         }
 
         let vertical_flip = if board.side() == Side::BLACK { 56 } else { 0 };
-        let horizontal_mirror = if board.king_square(board.side()).get_file() > 3 {
+        let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
         } else {
             0

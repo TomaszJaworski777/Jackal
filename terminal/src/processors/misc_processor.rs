@@ -370,7 +370,7 @@ fn draw_eval_board(board: &ChessBoard, info: &[String; 33], current_eval: i32, b
             match row_idx {
                 0 => {
                     let file_char = if rank == if board.side() == Side::WHITE { 0 } else { 7 } {
-                        (b'A' + square.get_file()) as char
+                        (b'A' + square.file()) as char
                     } else {
                         ' '
                     };

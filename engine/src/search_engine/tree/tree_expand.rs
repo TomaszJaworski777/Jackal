@@ -140,8 +140,8 @@ impl Tree {
 }
 
 fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
-    let attacker = board.piece_on_square(mv.get_from_square());
-    let victim = board.piece_on_square(mv.get_to_square());
+    let attacker = board.piece_on_square(mv.from_square());
+    let victim = board.piece_on_square(mv.to_square());
 
     if !mv.is_capture() || victim == Piece::NONE || attacker == Piece::KING {
         return 0.0;

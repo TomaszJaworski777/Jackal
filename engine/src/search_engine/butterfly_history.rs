@@ -47,7 +47,7 @@ impl ButterflyHistory {
     }
 
     fn entry(&self, side: Side, mv: Move) -> &AtomicI16 {
-        &self.0[Self::index(side, mv.get_from_square(), mv.get_to_square())]
+        &self.0[Self::index(side, mv.from_square(), mv.to_square())]
     }
 }
 

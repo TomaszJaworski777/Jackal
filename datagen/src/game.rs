@@ -80,18 +80,18 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
 }
 
 fn move_to_monty(mv: Move, engine: &SearchEngine) -> bullet::game::formats::montyformat::chess::Move {
-    let from = u8::from(mv.get_from_square()) as u16;
-    let mut to = u8::from(mv.get_to_square()) as u16;
+    let from = u8::from(mv.from_square()) as u16;
+    let mut to = u8::from(mv.to_square()) as u16;
 
     if !engine.options().chess960() && mv.is_castle() {
         let side = usize::from(engine.root_position().board().side());
 
-        if mv.get_flag() == MoveFlag::KING_SIDE_CASTLE {
+        if mv.flag() == MoveFlag::KING_SIDE_CASTLE {
            to = u8::from(Square::G1) as u16 ^ (56 * side) as u16; 
         } else {
             to = u8::from(Square::C1) as u16 ^ (56 * side) as u16;  
         }
     }
 
-    bullet::game::formats::montyformat::chess::Move::new(from, to, mv.get_flag() >> 6)
+    bullet::game::formats::montyformat::chess::Move::new(from, to, mv.flag() >> 6)
 }

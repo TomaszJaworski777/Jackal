@@ -14,11 +14,11 @@ impl ChessBoard {
     pub fn see(&self, mv: Move, threshold: i32) -> bool {
 
         // Unpack move information
-        let from = mv.get_from_square();
-        let to = mv.get_to_square();
+        let from = mv.from_square();
+        let to = mv.to_square();
 
         let mut next_victim = if mv.is_promotion() {
-            mv.get_promotion_piece()
+            mv.promotion_piece()
         } else {
             self.piece_on_square(from)
         };
@@ -119,12 +119,12 @@ impl ChessBoard {
 
         // Start with the value of the piece on the target square
         if mv.is_capture() & !mv.is_en_passant() {
-            value += see_value(self.piece_on_square(mv.get_to_square()));
+            value += see_value(self.piece_on_square(mv.to_square()));
         }
 
         // Factor in the new piece's value and remove our promoted pawn
         if mv.is_promotion() {
-            value += see_value(mv.get_promotion_piece()) - see_value(Piece::PAWN);
+            value += see_value(mv.promotion_piece()) - see_value(Piece::PAWN);
 
         // Target square is encoded as empty for enpass moves
         } else if mv.is_en_passant() {

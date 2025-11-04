@@ -1,25 +1,26 @@
-use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Piece, Side, Square};
+use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Side, Square};
 
-use crate::networks::{inputs::{Standard768, Threats3072}, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
+use crate::networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
-const INPUT_SIZE: usize = Standard768::input_size();
+const INPUT_SIZE: usize = Threats3072::input_size();
 const HL_SIZE: usize = 1024;
 
-const QA: i16 = 255;
-const QB: i16 = 64;
+const QA: i16 = 128;
+const QB: i16 = 128;
 
 #[repr(C)]
+#[repr(align(64))]
 #[derive(Debug)]
 pub struct PolicyNetwork {
-    l0: NetworkLayer<i16, INPUT_SIZE, HL_SIZE>,
-    l1: TransposedNetworkLayer<i16, HL_SIZE, {1880 * 2}>
+    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<f32, HL_SIZE, NUM_MOVES_INDICES>
 }
 
 impl PolicyNetwork {
-    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, HL_SIZE> {
+    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
         let mut result = *self.l0.biases();
 
-        Standard768::map_inputs(board, |weight_idx| {
+        Threats3072::map_inputs(board, |weight_idx| {
             for (i, weight) in result
                 .values_mut()
                 .iter_mut()
@@ -32,96 +33,123 @@ impl PolicyNetwork {
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
 
-        let mut result = 0;
+        let mut result = self.l1.biases().values()[idx];
         for (&weight, &neuron) in weights.values().iter().zip(base.values().iter()) {
-            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
-            result += i32::from(weight) * act;
+            let act = neuron.clamp(0.0, 1.0).powi(2);
+            result += weight * act;
         }
 
-        (result as f32 / f32::from(QA) + f32::from(self.l1.biases().values()[idx])) / f32::from(QA * QB)
+        result
     }
 }
 
-fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool, chess960: bool) -> usize {
-    let horizontal_mirror = 0; //if board.king_square(board.side()).get_file() > 3 { 7 } else { 0 };
-    let good_see = (OFFSETS[64] + PROMOS) * usize::from(see);
+//Even though output mapping is literally copy pasted from monty, 
+//the neural network weights are fully unique, so will still say that policy is 100% original.
+pub const NUM_MOVES_INDICES: usize = 2 * FROM_TO;
+pub const FROM_TO: usize = OFFSETS[5][64] + PROMOS + 2 + 8;
+pub const PROMOS: usize = 4 * 22;
+
+fn map_move_to_index(board: &ChessBoard, mv: Move, see: bool, _chess960: bool) -> usize {
+    let hm = if board.king_square(board.side()).file() > 3 { 7 } else { 0 };
+    let flip = hm ^ (if board.side() == Side::BLACK { 56 } else { 0 });
+
+    let src = usize::from(mv.from_square() ^ flip);
+    let dst = usize::from(mv.to_square() ^ flip);
+
+    let good_see = usize::from(see);
 
     let idx = if mv.is_promotion() {
-        let from_file = (mv.get_from_square() ^ horizontal_mirror).get_file();
-        let to_file = (mv.get_to_square() ^ horizontal_mirror).get_file();
-        let promo_id = 2 * from_file + to_file;
+        let ffile = src % 8;
+        let tfile = dst % 8;
+        let promo_id = 2 * ffile + tfile;
 
-        OFFSETS[64] + 22 * (usize::from(mv.get_promotion_piece()) - usize::from(Piece::KNIGHT)) + usize::from(promo_id)
+        OFFSETS[5][64] + (PROMOS / 4) * (usize::from(mv.promotion_piece()) - 1) + promo_id
+    } else if mv.flag() == MoveFlag::QUEEN_SIDE_CASTLE || mv.flag() == MoveFlag::KING_SIDE_CASTLE {
+        let is_ks = usize::from(mv.flag() == MoveFlag::KING_SIDE_CASTLE);
+        let is_hm = usize::from(hm == 0);
+        OFFSETS[5][64] + PROMOS + (is_ks ^ is_hm)
+    } else if mv.flag() == MoveFlag::DOUBLE_PUSH {
+        OFFSETS[5][64] + PROMOS + 2 + (src % 8)
     } else {
-        let flip = if board.side() == Side::WHITE { 0 } else { 56 };
-        let from = usize::from(mv.get_from_square() ^ flip ^ horizontal_mirror);
-        let to = if mv.is_castle() && !chess960 {
-            let side = if u8::from(mv.get_from_square()) < 32 {
-                Side::WHITE
-            } else {
-                Side::BLACK
-            };
-            let destination_square = if mv.get_flag() == MoveFlag::QUEEN_SIDE_CASTLE {
-                Square::C1
-            } else {
-                Square::G1
-            } + 56 * u8::from(side);
+        let pc = u8::from(board.piece_on_square(mv.from_square())) as usize;
+        let below = DESTINATIONS[src][pc] & ((1 << dst) - 1);
 
-            usize::from(destination_square ^ flip ^ horizontal_mirror)
-        } else {
-            usize::from(mv.get_to_square() ^ flip ^ horizontal_mirror)
-        };
-
-        let below = ALL_DESTINATIONS[from] & ((1 << to) - 1);
-
-        OFFSETS[from] + below.count_ones() as usize
+        OFFSETS[pc][src] + below.count_ones() as usize
     };
 
-    good_see + idx
+    FROM_TO * good_see + idx
 }
 
-const PROMOS: usize = 4 * 22;
+macro_rules! init {
+    (|$sq:ident, $size:literal | $($rest:tt)+) => {{
+        let mut $sq = 0;
+        let mut res = [{$($rest)+}; $size];
+        while $sq < $size {
+            res[$sq] = {$($rest)+};
+            $sq += 1;
+        }
+        res
+    }};
+}
 
-const OFFSETS: [usize; 65] = {
-    let mut offsets = [0; 65];
+const OFFSETS: [[usize; 65]; 6] = {
+    let mut offsets = [[0; 65]; 6];
 
-    let mut current_offset = 0;
-    let mut square_index = 0;
+    let mut curr = 0;
 
-    while square_index < 64 {
-        offsets[square_index] = current_offset;
-        current_offset += ALL_DESTINATIONS[square_index].count_ones() as usize;
-        square_index += 1;
+    let mut pc = 0;
+    while pc < 6 {
+        let mut sq = 0;
+
+        while sq < 64 {
+            offsets[pc][sq] = curr;
+            curr += DESTINATIONS[sq][pc].count_ones() as usize;
+            sq += 1;
+        }
+
+        offsets[pc][64] = curr;
+
+        pc += 1;
     }
-
-    offsets[64] = current_offset;
 
     offsets
 };
 
-pub const ALL_DESTINATIONS: [u64; 64] = {
-    let mut result = [0u64; 64];
-    let mut square_index = 0;
-    while square_index < 64 {
-        let square = Square::from_value(square_index as u8);
+const DESTINATIONS: [[u64; 6]; 64] = init!(|sq, 64| [
+    PAWN[sq],
+    Attacks::get_knight_attacks(Square::from_value(sq as u8)).get_value(),
+    bishop(sq),
+    rook(sq),
+    queen(sq),
+    Attacks::get_king_attacks(Square::from_value(sq as u8)).get_value()
+]);
 
-        let rank = square.get_rank() as usize;
-        let file = square.get_file() as usize;
+const PAWN: [u64; 64] = init!(|sq, 64| {
+    let bit = 1 << sq;
+    ((bit & !Bitboard::FILE_A.get_value()) << 7) | (bit << 8) | ((bit & !Bitboard::FILE_H.get_value()) << 9)
+});
 
-        let rooks = (Bitboard::RANK_1.get_value() << ((rank * 8) as u32)) ^ (Bitboard::FILE_A.get_value() << (file as u32));
-        let bishops = DIAGONALS[file + rank].swap_bytes() ^ DIAGONALS[7 + file - rank];
+const fn bishop(sq: usize) -> u64 {
+    let rank = sq / 8;
+    let file = sq % 8;
 
-        result[square_index] = rooks | bishops | Attacks::get_knight_attacks(Square::from_value(square_index as u8)).get_value() | Attacks::get_king_attacks(Square::from_value(square_index as u8)).get_value();
+    DIAGONALS[file + rank].swap_bytes() ^ DIAGONALS[7 + file - rank]
+}
 
-        square_index += 1;
-    }
+const fn rook(sq: usize) -> u64 {
+    let rank = sq / 8;
+    let file = sq % 8;
 
-    result
-};
+    (0xFF << (rank * 8)) ^ (Bitboard::FILE_A.shift_left(file as u32)).get_value()
+}
+
+const fn queen(sq: usize) -> u64 {
+    bishop(sq) | rook(sq)
+}
 
 pub const DIAGONALS: [u64; 15] = [
     0x0100_0000_0000_0000,

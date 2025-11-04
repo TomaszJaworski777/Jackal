@@ -39,7 +39,7 @@ pub fn run() {
             let l0 = builder.new_affine("l0", num_inputs, HL_SIZE);
             let l1 = builder.new_affine("l1", HL_SIZE, num_outputs);
 
-            let out = l0.forward(stm).crelu();
+            let out = l0.forward(stm).screlu();
             //let out = out.pairwise_mul();
             l1.forward(out)
         });

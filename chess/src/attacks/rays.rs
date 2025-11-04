@@ -28,7 +28,7 @@ static RAYS: [[Bitboard; 64]; 64] = {
 
 const fn generate_ray(from: Square, to: Square) -> Bitboard {
     let rank_increment = (to.get_rank() as i32 - from.get_rank() as i32).signum();
-    let file_increment = (to.get_file() as i32 - from.get_file() as i32).signum();
+    let file_increment = (to.file() as i32 - from.file() as i32).signum();
 
     if rank_increment == 0 && file_increment == 0 {
         return Bitboard::EMPTY;
@@ -36,7 +36,7 @@ const fn generate_ray(from: Square, to: Square) -> Bitboard {
 
     let mut result = 0u64;
     let mut rank = from.get_rank() as i32 + rank_increment;
-    let mut file = from.get_file() as i32 + file_increment;
+    let mut file = from.file() as i32 + file_increment;
 
     while rank >= 0 && rank <= 7 && file >= 0 && file <= 7 {
         let current_square = Square::from_coords(rank as u8, file as u8);
