@@ -9,41 +9,44 @@ const QA: i16 = 128;
 const QB: i16 = 128;
 
 #[repr(C)]
-#[repr(align(64))]
 #[derive(Debug)]
 pub struct PolicyNetwork {
-    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
-    l1: TransposedNetworkLayer<f32, HL_SIZE, NUM_MOVES_INDICES>
+    l0: NetworkLayer<i8, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<i8, HL_SIZE, NUM_MOVES_INDICES>
 }
 
 impl PolicyNetwork {
-    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<f32, HL_SIZE> {
-        let mut result = *self.l0.biases();
+    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, HL_SIZE> {
+        let mut result = Accumulator::default();
+
+        for (i, &bias) in result.values_mut().iter_mut().zip(self.l0.biases().values()) {
+            *i = i16::from(bias)
+        }
 
         Threats3072::map_inputs(board, |weight_idx| {
-            for (i, weight) in result
+            for (i, &weight) in result
                 .values_mut()
                 .iter_mut()
                 .zip(self.l0.weights()[weight_idx].values())
             {
-                *i += *weight;
+                *i += i16::from(weight);
             }
         });
 
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<f32, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
 
-        let mut result = self.l1.biases().values()[idx];
+        let mut result = 0;
         for (&weight, &neuron) in weights.values().iter().zip(base.values().iter()) {
-            let act = neuron.clamp(0.0, 1.0).powi(2);
-            result += weight * act;
+            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
+            result += i32::from(weight) * act;
         }
 
-        result
+        (result as f32 / f32::from(QA) + f32::from(self.l1.biases().values()[idx])) / f32::from(QA * QB)
     }
 }
 
