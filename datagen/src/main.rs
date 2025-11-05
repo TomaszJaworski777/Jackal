@@ -43,7 +43,7 @@ fn main() {
         .open(output_path)
         .expect("Cannot open file");
 
-    let openings = std::io::BufReader::new(File::open("./resources/books/UHO_Lichess_4852_v1.epd")
+    let openings = std::io::BufReader::new(File::open("./resources/books/DFRC.epd")
                                     .expect("Book does not exist!"))
                                     .lines().map(|line| line.unwrap())
                                     .collect::<Vec<String>>();
@@ -59,6 +59,7 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
+                _ = engine.set_option("UCI_Chess960", "true");
                 _ = engine.set_option("Contempt", "250");
                 _ = engine.set_option("DrawScore", "50");
                 _ = engine.set_option("PolicySac", "0");
