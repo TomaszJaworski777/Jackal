@@ -3,7 +3,7 @@ use chess::{Attacks, Bitboard, ChessBoard, Move, MoveFlag, Side, Square};
 use crate::networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}};
 
 const INPUT_SIZE: usize = Threats3072::input_size();
-const HL_SIZE: usize = 1024;
+const HL_SIZE: usize = 2048;
 
 const QA: i16 = 128;
 const QB: i16 = 128;
@@ -12,19 +12,19 @@ const QB: i16 = 128;
 #[derive(Debug)]
 pub struct PolicyNetwork {
     l0: NetworkLayer<i8, INPUT_SIZE, HL_SIZE>,
-    l1: TransposedNetworkLayer<i8, HL_SIZE, NUM_MOVES_INDICES>
+    l1: TransposedNetworkLayer<i8, { HL_SIZE / 2 }, NUM_MOVES_INDICES>
 }
 
 impl PolicyNetwork {
-    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, HL_SIZE> {
-        let mut result = Accumulator::default();
+    pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, { HL_SIZE / 2 }> {
+        let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
 
-        for (i, &bias) in result.values_mut().iter_mut().zip(self.l0.biases().values()) {
+        for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
             *i = i16::from(bias)
         }
 
         Threats3072::map_inputs(board, |weight_idx| {
-            for (i, &weight) in result
+            for (i, &weight) in inputs
                 .values_mut()
                 .iter_mut()
                 .zip(self.l0.weights()[weight_idx].values())
@@ -33,20 +33,27 @@ impl PolicyNetwork {
             }
         });
 
+        let mut result = Accumulator::default();
+
+        for (i, (&a, &b)) in result.values_mut().iter_mut().zip(inputs.values().iter().take(HL_SIZE / 2).zip(inputs.values().iter().skip(HL_SIZE / 2))) {
+            let a = i32::from(a).clamp(0, i32::from(QA));
+            let b = i32::from(b).clamp(0, i32::from(QA));
+            *i = ((a * b) / i32::from(QA)) as i16;
+        }
+
         result
     }
 
-    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, HL_SIZE>, mv: Move, see: bool, chess960: bool) -> f32 {
+    pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, { HL_SIZE / 2 }>, mv: Move, see: bool, chess960: bool) -> f32 {
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
 
         let mut result = 0;
         for (&weight, &neuron) in weights.values().iter().zip(base.values().iter()) {
-            let act = i32::from(neuron).clamp(0, i32::from(QA)).pow(2);
-            result += i32::from(weight) * act;
+            result += i32::from(weight) * i32::from(neuron);
         }
 
-        (result as f32 / f32::from(QA) + f32::from(self.l1.biases().values()[idx])) / f32::from(QA * QB)
+        (result as f32 / f32::from(QA) + f32::from(self.l1.biases().values()[idx])) / f32::from(QB)
     }
 }
 
