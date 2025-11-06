@@ -122,7 +122,7 @@ impl SearchEngine {
         self.interruption_token.store(false, Ordering::Relaxed);
 
         if self.tree().root_node().children_count() == 0 {
-            self.tree().expand_node(self.tree().root_index(), 1.0, self.root_position().board(), self.options());
+            self.tree().expand_node(self.tree().root_index(), self.root_position().board(), self.options());
         }
 
         Display::search_started(search_limits, self);

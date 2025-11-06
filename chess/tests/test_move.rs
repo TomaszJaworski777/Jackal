@@ -83,41 +83,41 @@ fn is_promotion() {
 fn promotion_piece() {
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::KNIGHT_PROMOTION)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::KNIGHT
     );
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::BISHOP_PROMOTION)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::BISHOP
     );
     assert_eq!(
-        Move::from_squares(Square::A1, Square::A1, MoveFlag::ROOK_PROMOTION).get_promotion_piece(),
+        Move::from_squares(Square::A1, Square::A1, MoveFlag::ROOK_PROMOTION).promotion_piece(),
         Piece::ROOK
     );
     assert_eq!(
-        Move::from_squares(Square::A1, Square::A1, MoveFlag::QUEEN_PROMOTION).get_promotion_piece(),
+        Move::from_squares(Square::A1, Square::A1, MoveFlag::QUEEN_PROMOTION).promotion_piece(),
         Piece::QUEEN
     );
 
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::KNIGHT_PROMOTION_CAPTURE)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::KNIGHT
     );
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::BISHOP_PROMOTION_CAPTURE)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::BISHOP
     );
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::ROOK_PROMOTION_CAPTURE)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::ROOK
     );
     assert_eq!(
         Move::from_squares(Square::A1, Square::A1, MoveFlag::QUEEN_PROMOTION_CAPTURE)
-            .get_promotion_piece(),
+            .promotion_piece(),
         Piece::QUEEN
     );
 }

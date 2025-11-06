@@ -62,7 +62,7 @@ impl From<&FEN> for ChessBoard {
             };
             let king_square = board.king_square(side);
             let file = char.to_ascii_uppercase() as u8 - b'A';
-            let index = 2 * u8::from(side) + if file < king_square.get_file() { 0 } else { 1 };
+            let index = 2 * u8::from(side) + if file < king_square.file() { 0 } else { 1 };
             rights |= 0b1000 >> index;
             rooks[usize::from(index)] = Square::from_coords(king_square.get_rank(), file);
         }

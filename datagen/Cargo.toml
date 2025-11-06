@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-engine = { path = "../engine", features=['datagen']}
+engine = { path = "../engine" }
 chess  = { path = "../chess" }
 utils  = { path = "../utils" }
+bullet = { package = "bullet_lib", git = 'https://github.com/jw1912/bullet', features = ["hip"], rev = "da3cd73e0687adcae1439e814dc0607f96cff356" }
+crossbeam = "*"
+rand = "*"
+
+[features]
+policy_datagen = ["engine/policy_datagen"]
+value_datagen  = ["engine/value_datagen"]

@@ -80,7 +80,7 @@ const FILE: [[u64; 64]; 64] = {
             result[square_index][occupancy] = (Bitboard::FILE_H.and(Bitboard::from_value(
                 RANK[7 - square.get_rank() as usize][occupancy].wrapping_mul(0x8040_2010_0804_0201),
             )))
-            .shift_right(7 - square.get_file() as u32)
+            .shift_right(7 - square.file() as u32)
             .get_value();
             occupancy += 1;
         }

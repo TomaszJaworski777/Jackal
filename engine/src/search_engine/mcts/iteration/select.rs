@@ -26,7 +26,7 @@ impl SearchEngine {
             limit = limit.min(parent_node.children_count());
         }
 
-        #[cfg(feature = "datagen")] {
+        #[cfg(feature = "policy_datagen")] {
             limit = parent_node.children_count()
         }
 
@@ -78,10 +78,7 @@ fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
 #[allow(unused_mut)]
 fn get_exploration_scale(options: &EngineOptions, parent_node: &Node) -> f64 {
     let mut exp = (options.exploration_tau() * (parent_node.visits().max(1) as f64).ln()).exp();
-
-    #[cfg(not(feature = "datagen"))] {
-        exp *= (0.463 - 1.567 * (parent_node.gini_impurity() + 0.001).ln()).min(1.5).max(1.0);
-    }
+    exp *= (options.gini_base() - options.gini_multiplier() * (parent_node.gini_impurity() + 0.001).ln()).max(options.gini_min()).min(options.gini_max());
 
     exp
 }

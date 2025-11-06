@@ -77,16 +77,16 @@ impl From<CastleRights> for String {
     fn from(value: CastleRights) -> Self {
         let mut result = String::new();
         if value.has_right(CastleRights::WHITE_KING) {
-            result.push(char::from(b'A' + value.rooks[1].get_file()));
+            result.push(char::from(b'A' + value.rooks[1].file()));
         }
         if value.has_right(CastleRights::WHITE_QUEEN) {
-            result.push(char::from(b'A' + value.rooks[0].get_file()));
+            result.push(char::from(b'A' + value.rooks[0].file()));
         }
         if value.has_right(CastleRights::BLACK_KING) {
-            result.push(char::from(b'a' + value.rooks[3].get_file()));
+            result.push(char::from(b'a' + value.rooks[3].file()));
         }
         if value.has_right(CastleRights::BLACK_QUEEN) {
-            result.push(char::from(b'a' + value.rooks[2].get_file()));
+            result.push(char::from(b'a' + value.rooks[2].file()));
         }
         if result.is_empty() {
             result.push('-');

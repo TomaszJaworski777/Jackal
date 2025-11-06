@@ -156,7 +156,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.draw_board();
 
-    let inputs = PolicyNetwork.get_inputs(board);
+    let policy_base = PolicyNetwork.create_base(board);
     let mut max = f32::NEG_INFINITY;
     let mut total = 0f32;
 
@@ -164,11 +164,9 @@ fn draw_policy(search_engine: &SearchEngine) {
     let mut max_policy = f32::NEG_INFINITY;
     let mut moves = Vec::new();
 
-    let mut policy_cache: [Option<Vec<f32>>; 192] = [const { None }; 192];
-
     board.map_legal_moves(|mv| {
         let see = board.see(mv, -108);
-        let p = PolicyNetwork.forward(board, &inputs, mv, &mut policy_cache, see);
+        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
         max = max.max(p);
         moves.push((mv, p));
     });
@@ -372,7 +370,7 @@ fn draw_eval_board(board: &ChessBoard, info: &[String; 33], current_eval: i32, b
             match row_idx {
                 0 => {
                     let file_char = if rank == if board.side() == Side::WHITE { 0 } else { 7 } {
-                        (b'A' + square.get_file()) as char
+                        (b'A' + square.file()) as char
                     } else {
                         ' '
                     };
