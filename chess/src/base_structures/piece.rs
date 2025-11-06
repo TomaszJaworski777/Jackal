@@ -9,7 +9,7 @@ impl Piece {
     pub const ROOK: Self = Self(3);
     pub const QUEEN: Self = Self(4);
     pub const KING: Self = Self(5);
-    pub const NONE: Self = Self(u8::MAX);
+    pub const NONE: Self = Self(6);
 }
 
 impl From<u8> for Piece {

@@ -31,6 +31,11 @@ impl ChessBoard {
     }
 
     #[inline]
+    pub fn pieces(&self) -> [Bitboard; 6] {
+        self.pieces
+    }
+
+    #[inline]
     pub fn piece_mask(&self, piece: Piece) -> Bitboard {
         assert_ne!(piece, Piece::NONE);
         self.pieces[usize::from(piece)]
