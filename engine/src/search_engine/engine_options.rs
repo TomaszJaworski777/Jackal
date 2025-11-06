@@ -64,7 +64,7 @@ create_options! {
             power_50mr:          f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;
             cap_50mr:            f64  =>  0.9,     0.0,  1.0,   0.08,    0.002;
             depth_scaling_power: f64  =>  1.0,     1.0,  5.0,   0.1,     0.002;
-            depth_scaling:       f64  =>  0.003,   0.0,  1.0,   0.0001,  0.002;
+            depth_scaling:       f64  =>  0.0015,  0.0,  1.0,   0.0001,  0.002;
             depth_scaling_cap:   f64  =>  0.15,    0.0,  1.0,   0.01,    0.002;
 
             //Material Scaling
