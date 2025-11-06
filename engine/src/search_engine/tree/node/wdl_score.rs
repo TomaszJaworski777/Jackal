@@ -120,8 +120,8 @@ impl WDLScore {
     }
 
     #[inline]
-    pub fn apply_50mr(&mut self, half_move: u8, depth: f64, options: &EngineOptions) {
-        let s = (0.01 * half_move as f64).powf(options.draw_scaling_power()).min(options.draw_scaling_cap()) + depth * options.depth_scaling();
+    pub fn apply_50mr_and_draw_scaling(&mut self, half_move: u8, depth: f64, options: &EngineOptions) {
+        let s = (0.01 * half_move as f64).powf(options.power_50mr()).min(options.cap_50mr()) + (depth.powf(options.depth_scaling_power()) * options.depth_scaling()).min(options.depth_scaling_cap());
         let win_delta = self.win_chance() * s; 
         let lose_delta = self.lose_chance() * s; 
 

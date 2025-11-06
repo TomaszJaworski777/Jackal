@@ -1,7 +1,7 @@
 use crate::{search_engine::{engine_options::EngineOptions, tree::NodeIndex}, Node, SearchEngine, WDLScore};
 
 impl SearchEngine {
-    pub(super) fn select(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
+    pub(super) fn select<const ROOT: bool>(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
         let parent_node = &self.tree()[node_idx];
 
         let cpuct = get_cpuct(&self.options(), &parent_node, depth);
@@ -31,6 +31,10 @@ impl SearchEngine {
         }
 
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
+            if child_node.is_terminal() && ROOT {
+                return -1000.0;
+            }
+
             let score = get_score(&parent_node.score(), child_node, child_node.visits()).single_with_score(if depth as i64 % 2 == 0 {
                 0.5
             } else {
