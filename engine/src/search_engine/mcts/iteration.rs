@@ -30,7 +30,7 @@ impl SearchEngine {
 
             self.tree().update_node(node_idx)?;
 
-            let new_idx = self.select::<ROOT>(node_idx, *depth);
+            let new_idx = self.select(node_idx, *depth);
 
             selected_child_idx = Some(new_idx);
 
