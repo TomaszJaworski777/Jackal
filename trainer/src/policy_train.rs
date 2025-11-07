@@ -1,10 +1,15 @@
-use bullet::{game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{loader::PolicyDataLoader, move_maps::{self, MoveBucket}, PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule}, trainer::save::{Layout, QuantTarget, SavedFormat}, Shape, TrainingSteps};
+use bullet::{Shape, TrainingSteps, game::inputs::{self, SparseInputType}, lr, nn::optimiser::AdamW, policy::{PolicyLocalSettings, PolicyTrainerBuilder, PolicyTrainingSchedule, loader::PolicyDataLoader, move_maps::{self, MoveBucket}}, trainer::{save::{Layout, QuantTarget, SavedFormat}}};
 
-const HL_SIZE: usize = 128;
+mod policy_inputs;
 
-const END_SUPERBATCH: usize = 50;
+const HL_SIZE: usize = 1024;
+
+const END_SUPERBATCH: usize = 200;
 const START_LR: f32 = 0.001;
 const END_LR: f32 = 0.00001;
+
+const QA: i16 = 255;
+const QB: i16 = 64;
 
 #[allow(unused)]
 pub fn run() {
@@ -18,10 +23,10 @@ pub fn run() {
     let l1_shape = Shape::new(num_outputs, HL_SIZE);
 
     let save_format = [
-        SavedFormat::new("l0w", QuantTarget::Float, Layout::Normal),
-        SavedFormat::new("l0b", QuantTarget::Float, Layout::Normal),
-        SavedFormat::new("l1w", QuantTarget::Float, Layout::Transposed(l1_shape)),
-        SavedFormat::new("l1b", QuantTarget::Float, Layout::Normal),
+        SavedFormat::new("l0w", QuantTarget::I16(QA), Layout::Normal),
+        SavedFormat::new("l0b", QuantTarget::I16(QA), Layout::Normal),
+        SavedFormat::new("l1w", QuantTarget::I16(QB), Layout::Transposed(l1_shape)),
+        SavedFormat::new("l1b", QuantTarget::I16(QA * QB), Layout::Normal),
     ];
 
     let mut trainer = PolicyTrainerBuilder::default()
@@ -40,8 +45,8 @@ pub fn run() {
         });
 
     let schedule = PolicyTrainingSchedule {
-        net_id: "policy_128_50_111",
-        lr_scheduler: lr::CosineDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
+        net_id: "policy_200_1600m_1024crelu",
+        lr_scheduler: lr::ExponentialDecayLR { initial_lr: START_LR, final_lr: END_LR, final_superbatch: END_SUPERBATCH },
         steps: TrainingSteps {
             batch_size: 16_384,
             batches_per_superbatch: 6104,
@@ -51,9 +56,9 @@ pub fn run() {
         save_rate: 10,
     };
 
-    let settings = PolicyLocalSettings { data_prep_threads: 4, output_directory: "policy_checkpoints", batch_queue_size: 64 };
+    let settings = PolicyLocalSettings { data_prep_threads: 6, output_directory: "policy_checkpoints", batch_queue_size: 64 };
 
-    let data_loader = PolicyDataLoader::new("policy_data.bin", 48000);
+    let data_loader = PolicyDataLoader::new("interleaved.bin", 48000);
 
     trainer.run(&schedule, &settings, &data_loader);
 

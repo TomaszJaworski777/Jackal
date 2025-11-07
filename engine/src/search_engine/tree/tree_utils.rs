@@ -1,4 +1,4 @@
-use crate::search_engine::{tree::{node::Node, pv_line::PvLine, NodeIndex, Tree}};
+use crate::{GameState, search_engine::tree::{NodeIndex, Tree, node::Node, pv_line::PvLine}};
 
 impl Tree {
     pub fn bytes_to_size(bytes: usize) -> usize {
@@ -38,7 +38,13 @@ impl Tree {
     }
 
     pub fn select_best_child(&self, parent_idx: NodeIndex, draw_score: f64) -> Option<NodeIndex> {
-        self.select_child_by_key(parent_idx, |node| node.score().single_with_score(draw_score) as f64)
+        self.select_child_by_key(parent_idx, |node| {
+            match node.state() {
+                GameState::Loss(x) => 256.0 - x as f64,
+                GameState::Win(x) => -256.0 + x as f64,
+                _ => node.score().single_with_score(draw_score) as f64
+            }
+        })
     }
 
     pub fn get_pv(&self, node_idx: NodeIndex, draw_score: f64, flip: bool) -> PvLine {
@@ -68,16 +74,16 @@ impl Tree {
 
     pub fn get_best_pv(&self, index: usize, draw_score: f64) -> PvLine {
         let mut chilren_nodes = Vec::new();
-        let node = self.root_node();
+        let root = self.root_node();
 
-        node.map_children(|child_idx| {
+        root.map_children(|child_idx| {
             let node = &self[child_idx];
 
             if node.visits() == 0 {
                 return;
             }
 
-            chilren_nodes.push((child_idx, node.score().single()))
+            chilren_nodes.push((child_idx, node.score().single_with_score(draw_score)))
         });
 
         if chilren_nodes.is_empty() {

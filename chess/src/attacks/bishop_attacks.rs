@@ -44,7 +44,7 @@ const BISHOP: [Mask; 64] = {
     while square_index < 64 {
         let bit = 1u64 << square_index;
         let square = Square::from_value(square_index as u8);
-        let file = square.get_file() as usize;
+        let file = square.file() as usize;
         let rank = square.get_rank() as usize;
         result[square_index] = Mask {
             bitboard: bit,

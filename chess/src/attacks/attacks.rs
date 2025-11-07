@@ -7,18 +7,18 @@ use crate::{
 pub struct Attacks;
 impl Attacks {
     #[inline]
-    pub fn get_king_attacks(square: Square) -> Bitboard {
-        KingAttacks::ATTACK_TABLE[usize::from(square)]
+    pub const fn get_king_attacks(square: Square) -> Bitboard {
+        KingAttacks::ATTACK_TABLE[square.get_value() as usize]
     }
 
     #[inline]
-    pub fn get_knight_attacks(square: Square) -> Bitboard {
-        KnightAttacks::ATTACK_TABLE[usize::from(square)]
+    pub const fn get_knight_attacks(square: Square) -> Bitboard {
+        KnightAttacks::ATTACK_TABLE[square.get_value() as usize]
     }
 
     #[inline]
-    pub fn get_pawn_attacks(square: Square, attacker_side: Side) -> Bitboard {
-        PawnsAttacks::ATTACK_TABLE[usize::from(attacker_side)][usize::from(square)]
+    pub const fn get_pawn_attacks(square: Square, attacker_side: Side) -> Bitboard {
+        PawnsAttacks::ATTACK_TABLE[attacker_side.get_value() as usize][square.get_value() as usize]
     }
 
     #[inline]

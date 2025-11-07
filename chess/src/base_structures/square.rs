@@ -100,7 +100,7 @@ impl Square {
     }
 
     #[inline]
-    pub const fn get_file(&self) -> u8 {
+    pub const fn file(&self) -> u8 {
         self.0 % 8
     }
 
@@ -172,7 +172,7 @@ impl From<Square> for String {
 
         format!(
             "{}{}",
-            (b'a' + value.get_file()) as char,
+            (b'a' + value.file()) as char,
             value.get_rank() + 1
         )
     }

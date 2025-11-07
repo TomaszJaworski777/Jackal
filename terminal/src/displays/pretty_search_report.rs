@@ -149,14 +149,21 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         _ => format!("{}{:.2}", if pv_score.single() < 0.5 { "-" } else { "+" }, pv_score.cp().abs() as f32 / 100.0)
     };
 
+    let wdl = match pv.first_node().state() {
+        engine::GameState::Loss(_) => WDLScore::WIN,
+        engine::GameState::Win(_) => WDLScore::LOSE,
+        engine::GameState::Draw => WDLScore::DRAW,
+        _ => pv.score()
+    };
+
     print!("{}\r", " ".repeat(t_width));
     println!("{}", format!(" Score:      {}", heat_color(score.as_str(), pv_score.single() as f32, 0.0, 1.0)).primary(grad(22)));
     print!("{}\r", " ".repeat(t_width));
-    println!("{}", format!(" Win:        {}", create_loading_bar(50, pv.score().win_chance() as f32, WIN_COLOR, WIN_COLOR).secondary(grad(23))).primary(grad(23)));
+    println!("{}", format!(" Win:        {}", create_loading_bar(50, wdl.win_chance() as f32, WIN_COLOR, WIN_COLOR).secondary(grad(23))).primary(grad(23)));
     print!("{}\r", " ".repeat(t_width));
-    println!("{}", format!(" Draw:       {}", create_loading_bar(50, pv.score().draw_chance() as f32, DRAW_COLOR, DRAW_COLOR).secondary(grad(24))).primary(grad(24)));
+    println!("{}", format!(" Draw:       {}", create_loading_bar(50, wdl.draw_chance() as f32, DRAW_COLOR, DRAW_COLOR).secondary(grad(24))).primary(grad(24)));
     print!("{}\r", " ".repeat(t_width));
-    println!("{}", format!(" Lose:       {}", create_loading_bar(50, pv.score().lose_chance() as f32, LOSE_COLOR, LOSE_COLOR).secondary(grad(25))).primary(grad(25)));
+    println!("{}", format!(" Lose:       {}", create_loading_bar(50, wdl.lose_chance() as f32, LOSE_COLOR, LOSE_COLOR).secondary(grad(25))).primary(grad(25)));
 
     unsafe {
         #[allow(static_mut_refs)]
