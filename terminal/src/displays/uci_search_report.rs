@@ -32,11 +32,18 @@ impl SearchReport for UciSearchReport {
                 _ => format!("cp {}", pv_score.cp())
             };
 
+            let wdl = match pv.first_node().state() {
+                engine::GameState::Loss(_) => WDLScore::WIN,
+                engine::GameState::Win(_) => WDLScore::LOSE,
+                engine::GameState::Draw => WDLScore::DRAW,
+                _ => pv.score()
+            };
+
             let wdl = if search_engine.options().show_wdl() {
                 format!(" wdl {:.0} {:.0} {:.0}", 
-                    pv_score.win_chance() * 1000.0, 
-                    pv_score.draw_chance() * 1000.0,
-                    pv_score.lose_chance() * 1000.0
+                    wdl.win_chance() * 1000.0, 
+                    wdl.draw_chance() * 1000.0,
+                    wdl.lose_chance() * 1000.0
                 )
             } else {
                String::new() 
