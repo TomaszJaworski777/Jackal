@@ -6,8 +6,6 @@ edition = "2021"
 [dependencies]
 chess = { path = "../chess" }
 utils = { path = "../utils" }
-fastapprox = "0.3"
-micromath = "2.1.0"
 
 [features]
 dev = []

@@ -55,27 +55,20 @@ fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32) -> W
 }
 
 fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
-    let mut cpuct = options.end_cpuct() + (options.start_cpuct() - options.end_cpuct()) * exp_f64(-options.cpuct_depth_decay() * (depth - 1.0));
+    let mut cpuct = options.end_cpuct() + (options.start_cpuct() - options.end_cpuct()) * (-options.cpuct_depth_decay() * (depth - 1.0)).exp();
 
     let visit_scale = options.cpuct_visit_scale();
-    cpuct *= 1.0 + ln_f64((f64::from(parent_node.visits()) + visit_scale) / visit_scale);
+    cpuct *= 1.0 + ((f64::from(parent_node.visits()) + visit_scale) / visit_scale).ln();
 
     if parent_node.visits() > 1 {
         let var = (parent_node.squared_score() - (parent_node.score().single() as f64).powi(2)).max(0.0);
-        let mut variance = sqrt_f64(var) / options.cpuct_variance_scale();
+        let mut variance = var.sqrt() / options.cpuct_variance_scale();
         variance += (1.0 - variance) / (1.0 + options.cpuct_var_warmup() * parent_node.visits() as f64);
         cpuct *= 1.0 + options.cpuct_variance_weight() * (variance - 1.0);
     }
 
-    cpuct *= exp_f64(options.exploration_tau() * ln_f64(parent_node.visits().max(1) as f64));
-    cpuct *= (options.gini_base() - options.gini_multiplier() * ln_f64(parent_node.gini_impurity() + 0.001)).max(options.gini_min()).min(options.gini_max());
+    cpuct *= (options.exploration_tau() * (parent_node.visits().max(1) as f64).ln()).exp();
+    cpuct *= (options.gini_base() - options.gini_multiplier() * (parent_node.gini_impurity() + 0.001).ln()).max(options.gini_min()).min(options.gini_max());
 
     cpuct
 }
-
-#[inline(always)]
-fn ln_f64(x: f64) -> f64 { fastapprox::fast::ln(x as f32) as f64 }
-#[inline(always)]
-fn exp_f64(x: f64) -> f64 { fastapprox::fast::exp(x as f32) as f64 }
-#[inline(always)]
-fn sqrt_f64(x: f64) -> f64 { <f32 as micromath::F32Ext>::sqrt(x as f32) as f64 }
