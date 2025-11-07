@@ -135,6 +135,10 @@ impl SearchEngine {
 
         search_stats.add_iteration(depth as u64);
 
+        if self.tree().root_node().is_terminal() {
+            self.interrupt_search();
+        }
+
         if search_limits.is_limit_reached(search_stats) {
             self.interrupt_search();
         }

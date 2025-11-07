@@ -210,7 +210,7 @@ fn eval(search_engine: &SearchEngine) {
     let contempt_eval = contempt_score.cp();
 
     let mut half_moves = wdl_score;
-    half_moves.apply_50mr(board.half_moves(), 0.0, search_engine.options());
+    half_moves.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
     let half_moves_cp = half_moves.cp();
 
     let mut material_scaling = wdl_score;
