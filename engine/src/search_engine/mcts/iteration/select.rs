@@ -5,9 +5,6 @@ impl SearchEngine {
         let parent_node = &self.tree()[node_idx];
 
         let cpuct = get_cpuct(&self.options(), &parent_node, depth);
-        let exploration_scale = get_exploration_scale(self.options(), &parent_node);
-
-        let expl = cpuct * exploration_scale;
 
         let start_idx = parent_node.children_index();
         let mut total_policy = 0.0;
@@ -36,7 +33,7 @@ impl SearchEngine {
             } else {
                 self.options().draw_score() as f64 / 100.0
             }) as f64;
-            score + child_node.policy() * expl / f64::from(child_node.visits() + 1)
+            score + child_node.policy() * cpuct / f64::from(child_node.visits() + 1)
         }).expect("Failed to select a valid node.")
     }
 }
@@ -72,13 +69,8 @@ fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
         cpuct *= 1.0 + options.cpuct_variance_weight() * (variance - 1.0);
     }
 
+    cpuct *= (options.exploration_tau() * (parent_node.visits().max(1) as f64).ln()).exp();
+    cpuct *= (options.gini_base() - options.gini_multiplier() * (parent_node.gini_impurity() + 0.001).ln()).max(options.gini_min()).min(options.gini_max());
+
     cpuct
-}
-
-#[allow(unused_mut)]
-fn get_exploration_scale(options: &EngineOptions, parent_node: &Node) -> f64 {
-    let mut exp = (options.exploration_tau() * (parent_node.visits().max(1) as f64).ln()).exp();
-    exp *= (options.gini_base() - options.gini_multiplier() * (parent_node.gini_impurity() + 0.001).ln()).max(options.gini_min()).min(options.gini_max());
-
-    exp
 }
