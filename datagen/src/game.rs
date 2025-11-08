@@ -7,7 +7,8 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
     let castle_mask = position.board().castle_rights().get_castle_mask();
 
     let mut monty_castling = Castling::default();
-    let monty_position = Position::parse_fen(FEN::from(position.board()).to_string().as_str(), &mut monty_castling);
+    let fen = FEN::from(position.board()).to_string();
+    let monty_position = Position::parse_fen(fen.as_str(), &mut monty_castling);
     let mut game_data = MontyFormat::new(monty_position, monty_castling);
 
     let mut temperature = 0.77;
@@ -46,7 +47,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
 
             let mv = node.mv();
 
-            let monty_move = move_to_monty(mv, engine);
+            let monty_move = move_to_monty(mv, position.board().side(), monty_castling.is_chess960());
 
             moves.push((monty_move, node.visits()));
 
@@ -112,19 +113,19 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
     game_data
 }
 
-fn move_to_monty(mv: Move, engine: &SearchEngine) -> montyformat::chess::Move {
-    let from = u8::from(mv.get_from_square()) as u16;
-    let mut to = u8::from(mv.get_to_square()) as u16;
+fn move_to_monty(mv: Move, side: Side, chess960: bool) -> montyformat::chess::Move {
+    let from = u8::from(mv.from_square()) as u16;
+    let mut to = u8::from(mv.to_square()) as u16;
 
-    if !engine.options().chess960() && mv.is_castle() {
-        let side = usize::from(engine.root_position().board().side());
+    if !chess960 && mv.is_castle() {
+        let side = usize::from(side);
 
-        if mv.get_flag() == MoveFlag::KING_SIDE_CASTLE {
+        if mv.flag() == MoveFlag::KING_SIDE_CASTLE {
            to = u8::from(Square::G1) as u16 ^ (56 * side) as u16; 
         } else {
             to = u8::from(Square::C1) as u16 ^ (56 * side) as u16;  
         }
     }
 
-    montyformat::chess::Move::new(from, to, mv.get_flag() >> 6)
+    montyformat::chess::Move::new(from, to, mv.flag() >> 6)
 }
