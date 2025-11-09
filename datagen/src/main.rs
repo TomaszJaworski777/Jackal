@@ -59,11 +59,10 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
-                _ = engine.set_option("UCI_Chess960", "true");
                 _ = engine.set_option("Contempt", "250");
                 _ = engine.set_option("DrawScore", "50");
                 _ = engine.set_option("PolicySac", "0");
-                _ = engine.set_option("kld_min", "0.00000123");
+                _ = engine.set_option("kld_min", "0.00000075");
 
                 let mut rng = rand::rng();
                 

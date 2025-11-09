@@ -47,7 +47,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
 
             let mv = node.mv();
 
-            let monty_move = move_to_monty(mv, position.board().side(), monty_castling.is_chess960());
+            let monty_move = move_to_monty(mv, position.board().side(), false);
 
             moves.push((monty_move, node.visits()));
 
