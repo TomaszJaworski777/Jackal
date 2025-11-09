@@ -63,7 +63,7 @@ fn main() {
                 _ = engine.set_option("Contempt", "250");
                 _ = engine.set_option("DrawScore", "50");
                 _ = engine.set_option("PolicySac", "0");
-                _ = engine.set_option("kld_min", "0.00000075");
+                _ = engine.set_option("kld_min", "0.00000123");
 
                 let mut rng = rand::rng();
                 
