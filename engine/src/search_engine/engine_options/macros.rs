@@ -10,6 +10,7 @@ macro_rules! create_options {
             }
             Tunables {
                 $(
+                    $(#[$meta:meta])*
                     $tunable:ident : $tunable_ty:ty =>
                         $tunable_default:expr,
                         $tunable_min:expr,
@@ -41,6 +42,7 @@ macro_rules! create_options {
             )+
 
             $(
+            $(#[$meta])*
             pub const fn $tunable(&self) -> $tunable_ty {
                 self.$tunable
             }
