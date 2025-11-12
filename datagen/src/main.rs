@@ -43,7 +43,7 @@ fn main() {
         .open(output_path)
         .expect("Cannot open file");
 
-    let openings = std::io::BufReader::new(File::open("./resources/books/DFRC.epd")
+    let openings = std::io::BufReader::new(File::open("./resources/books/UHO_Lichess_4852_v1.epd")
                                     .expect("Book does not exist!"))
                                     .lines().map(|line| line.unwrap())
                                     .collect::<Vec<String>>();
@@ -62,7 +62,7 @@ fn main() {
                 _ = engine.set_option("Contempt", "250");
                 _ = engine.set_option("DrawScore", "50");
                 _ = engine.set_option("PolicySac", "0");
-                _ = engine.set_option("kld_min", "0.00000075");
+				_ = engine.set_option("kld_min", "0.00000222");
 
                 let mut rng = rand::rng();
                 
