@@ -9,20 +9,21 @@ const QA: i16 = 128;
 const QB: i16 = 1024;
 
 #[repr(C)]
+#[repr(align(64))]
 #[derive(Debug)]
 pub struct ValueNetwork {
-    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
-    l1: NetworkLayer<f32, { HL_SIZE / 2 }, 16>,
+    l0: NetworkLayer<i8, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<i16, { HL_SIZE / 2 }, 16>,
     l2: NetworkLayer<f32, 16, 128>,
     l3: NetworkLayer<f32, 128, 3>
 }
 
 impl ValueNetwork {
     pub fn forward(&self, board: &ChessBoard) -> WDLScore {
-        let mut inputs: Accumulator<f32, HL_SIZE> = Accumulator::default();
+        let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
 
         for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
-            *i = bias
+            *i = i16::from(bias)
         }
 
         Threats3072::map_inputs(board, |weight_idx| {
@@ -31,31 +32,40 @@ impl ValueNetwork {
                 .iter_mut()
                 .zip(self.l0.weights()[weight_idx].values())
             {
-                *i += weight;
+                *i += i16::from(weight)
             }
         });
 
-        let mut l0_out: Accumulator<f32, { HL_SIZE / 2 }> = Accumulator::default();
+        let mut act = [0; HL_SIZE / 2];
 
-        for (i, (&a, &b)) in l0_out.values_mut().iter_mut().zip(inputs.values().iter().take(HL_SIZE / 2).zip(inputs.values().iter().skip(HL_SIZE / 2))) {
-            let a = a.clamp(0.0, 1.0);
-            let b = b.clamp(0.0, 1.0);
+        for (i, (&a, &b)) in act.iter_mut().zip(inputs.values().iter().take(HL_SIZE / 2).zip(inputs.values().iter().skip(HL_SIZE / 2))) {
+            let a = a.clamp(0, QA);
+            let b = b.clamp(0, QA);
             *i = a * b;
         }
 
-        let mut l1_out = *self.l1.biases();
-        for (i, d) in l0_out.values().iter().zip(self.l1.weights()) {
-            l1_out.madd(*i, d);
+        let mut l1_neurons = [0; 16];
+
+        for (neuron, weights) in l1_neurons.iter_mut().zip(self.l1.weights().iter()) {
+            for (&value, &weight) in act.iter().zip(weights.values()) {
+                *neuron += i32::from(value) * i32::from(weight);
+            }
+        }
+
+        let mut l1_out: Accumulator<f32, 16> = Accumulator::default();
+
+        for (out, (&value, &bias)) in l1_out.values_mut().iter_mut().zip(l1_neurons.iter().zip(self.l1.biases().values())) {
+            *out = (value as f32 / f32::from(QA * QA) + f32::from(bias)) / f32::from(QB);
         }
 
         let mut l2_out = *self.l2.biases();
-        for (i, d) in l1_out.values().iter().zip(self.l2.weights()) {
-            l2_out.madd(i.clamp(0.0, 1.0).powi(2), d);
+        for (value, weights) in l1_out.values().iter().zip(self.l2.weights()) {
+            l2_out.madd(value.clamp(0.0, 1.0).powi(2), weights);
         }
 
         let mut out = *self.l3.biases();
-        for (i, d) in l2_out.values().iter().zip(self.l3.weights()) {
-            out.madd(i.clamp(0.0, 1.0).powi(2), d);
+        for (value, weights) in l2_out.values().iter().zip(self.l3.weights()) {
+            out.madd(value.clamp(0.0, 1.0).powi(2), weights);
         }
 
         let mut win_chance = out.values()[2] as f64;
