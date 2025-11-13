@@ -3,54 +3,74 @@ use chess::ChessBoard;
 use crate::{networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}}, WDLScore};
 
 const INPUT_SIZE: usize = Threats3072::input_size();
-const L1_SIZE: usize = 3072;
-const NUM_OUTPUT_BUCKETS: usize = 8;
+const HL_SIZE: usize = 2048;
 
-const QA: i16 = 255;
-const QB: i16 = 64;
+const QA: i16 = 128;
+const QB: i16 = 1024;
 
 #[repr(C)]
 #[repr(align(64))]
 #[derive(Debug)]
 pub struct ValueNetwork {
-    l0: NetworkLayer<i16, INPUT_SIZE, L1_SIZE>,
-    l1: TransposedNetworkLayer<i16, L1_SIZE, { 3 * NUM_OUTPUT_BUCKETS }>
+    l0: NetworkLayer<i8, INPUT_SIZE, HL_SIZE>,
+    l1: TransposedNetworkLayer<i16, { HL_SIZE / 2 }, 16>,
+    l2: NetworkLayer<f32, 16, 128>,
+    l3: NetworkLayer<f32, 128, 3>
 }
 
 impl ValueNetwork {
     pub fn forward(&self, board: &ChessBoard) -> WDLScore {
-        let mut l0_out = *self.l0.biases();
+        let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
 
-        Threats3072::map_inputs(board, |input_index| {
-            for (bias, weight) in l0_out.values_mut().iter_mut().zip(self.l0.weights()[input_index].values()) {
-                *bias += *weight
+        for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
+            *i = i16::from(bias)
+        }
+
+        Threats3072::map_inputs(board, |weight_idx| {
+            for (i, &weight) in inputs
+                .values_mut()
+                .iter_mut()
+                .zip(self.l0.weights()[weight_idx].values())
+            {
+                *i += i16::from(weight);
             }
         });
 
-        let mut out = Accumulator::<i32, 3>::default();
+        let mut l0_out: Accumulator<i16, { HL_SIZE / 2 }> = Accumulator::default();
 
-        let bucket_idx = {
-            let divisor = 32usize.div_ceil(NUM_OUTPUT_BUCKETS);
-            (board.occupancy().pop_count() as usize - 2) / divisor
-        } * 3;
+        for (i, (&a, &b)) in l0_out.values_mut().iter_mut().zip(inputs.values().iter().take(HL_SIZE / 2).zip(inputs.values().iter().skip(HL_SIZE / 2))) {
+            let a = a.clamp(0, QA);
+            let b = b.clamp(0, QA);
+            *i = a * b;
+        }
 
-        for (idx, output) in out.values_mut().iter_mut().enumerate() {
-            let weights = self.l1.weights()[bucket_idx + idx];
+        let mut fwd = [0; 16];
 
-            for (&weight, &l0_neuron) in weights.values().iter().zip(l0_out.values()) {
-                *output += screlu(l0_neuron) * i32::from(weight);
+        for (f, row) in fwd.iter_mut().zip(self.l1.weights().iter()) {
+            for (&a, &w) in l0_out.values().iter().zip(row.values().iter()) {
+                *f += i32::from(a) * i32::from(w);
             }
         }
 
-        let mut win_chance = (out.values()[2] as f64 / f64::from(QA)
-            + f64::from(self.l1.biases().values()[bucket_idx + 2]))
-            / f64::from(QA * QB);
-        let mut draw_chance = (out.values()[1] as f64 / f64::from(QA)
-            + f64::from(self.l1.biases().values()[bucket_idx + 1]))
-            / f64::from(QA * QB);
-        let mut loss_chance = (out.values()[0] as f64 / f64::from(QA)
-            + f64::from(self.l1.biases().values()[bucket_idx + 0]))
-            / f64::from(QA * QB);
+        let mut l1_out: Accumulator<f32, 16> = Accumulator::default();
+
+        for (r, (&f, &b)) in l1_out.values_mut().iter_mut().zip(fwd.iter().zip(self.l2.biases().values().iter())) {
+            *r = (f as f32 / f32::from(QA * QA) + f32::from(b)) / f32::from(QB);
+        }
+
+        let mut l2_out = *self.l2.biases();
+        for (i, d) in l1_out.values().iter().zip(self.l2.weights().iter()) {
+            l2_out.madd(i.clamp(0.0, 1.0).powi(2), d);
+        }
+
+        let mut out = *self.l3.biases();
+        for (i, d) in l2_out.values().iter().zip(self.l3.weights().iter()) {
+            out.madd(i.clamp(0.0, 1.0).powi(2), d);
+        }
+
+        let mut win_chance = out.values()[2] as f64;
+        let mut draw_chance = out.values()[1] as f64;
+        let mut loss_chance = out.values()[0] as f64;
 
         let max = win_chance.max(draw_chance).max(loss_chance);
 
@@ -62,8 +82,4 @@ impl ValueNetwork {
 
         WDLScore::new(win_chance / sum, draw_chance / sum)
     }
-}
-
-fn screlu(x: i16) -> i32 {
-    i32::from(x).clamp(0, i32::from(QA)).pow(2)
 }
