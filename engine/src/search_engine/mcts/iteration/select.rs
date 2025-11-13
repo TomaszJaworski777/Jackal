@@ -23,7 +23,7 @@ impl SearchEngine {
             limit = limit.min(parent_node.children_count());
         }
 
-        #[cfg(feature = "policy_datagen")] {
+        #[cfg(any(feature = "policy_datagen", feature = "value_datagen"))] {
             limit = parent_node.children_count()
         }
 
