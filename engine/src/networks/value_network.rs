@@ -9,21 +9,20 @@ const QA: i16 = 128;
 const QB: i16 = 1024;
 
 #[repr(C)]
-#[repr(align(64))]
 #[derive(Debug)]
 pub struct ValueNetwork {
-    l0: NetworkLayer<i8, INPUT_SIZE, HL_SIZE>,
-    l1: TransposedNetworkLayer<i16, { HL_SIZE / 2 }, 16>,
+    l0: NetworkLayer<f32, INPUT_SIZE, HL_SIZE>,
+    l1: NetworkLayer<f32, { HL_SIZE / 2 }, 16>,
     l2: NetworkLayer<f32, 16, 128>,
     l3: NetworkLayer<f32, 128, 3>
 }
 
 impl ValueNetwork {
     pub fn forward(&self, board: &ChessBoard) -> WDLScore {
-        let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
+        let mut inputs: Accumulator<f32, HL_SIZE> = Accumulator::default();
 
         for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
-            *i = i16::from(bias)
+            *i = bias
         }
 
         Threats3072::map_inputs(board, |weight_idx| {
@@ -32,39 +31,30 @@ impl ValueNetwork {
                 .iter_mut()
                 .zip(self.l0.weights()[weight_idx].values())
             {
-                *i += i16::from(weight);
+                *i += weight;
             }
         });
 
-        let mut l0_out: Accumulator<i16, { HL_SIZE / 2 }> = Accumulator::default();
+        let mut l0_out: Accumulator<f32, { HL_SIZE / 2 }> = Accumulator::default();
 
         for (i, (&a, &b)) in l0_out.values_mut().iter_mut().zip(inputs.values().iter().take(HL_SIZE / 2).zip(inputs.values().iter().skip(HL_SIZE / 2))) {
-            let a = a.clamp(0, QA);
-            let b = b.clamp(0, QA);
+            let a = a.clamp(0.0, 1.0);
+            let b = b.clamp(0.0, 1.0);
             *i = a * b;
         }
 
-        let mut fwd = [0; 16];
-
-        for (f, row) in fwd.iter_mut().zip(self.l1.weights().iter()) {
-            for (&a, &w) in l0_out.values().iter().zip(row.values().iter()) {
-                *f += i32::from(a) * i32::from(w);
-            }
-        }
-
-        let mut l1_out: Accumulator<f32, 16> = Accumulator::default();
-
-        for (r, (&f, &b)) in l1_out.values_mut().iter_mut().zip(fwd.iter().zip(self.l2.biases().values().iter())) {
-            *r = (f as f32 / f32::from(QA * QA) + f32::from(b)) / f32::from(QB);
+        let mut l1_out = *self.l1.biases();
+        for (i, d) in l0_out.values().iter().zip(self.l1.weights()) {
+            l1_out.madd(*i, d);
         }
 
         let mut l2_out = *self.l2.biases();
-        for (i, d) in l1_out.values().iter().zip(self.l2.weights().iter()) {
+        for (i, d) in l1_out.values().iter().zip(self.l2.weights()) {
             l2_out.madd(i.clamp(0.0, 1.0).powi(2), d);
         }
 
         let mut out = *self.l3.biases();
-        for (i, d) in l2_out.values().iter().zip(self.l3.weights().iter()) {
+        for (i, d) in l2_out.values().iter().zip(self.l3.weights()) {
             out.madd(i.clamp(0.0, 1.0).powi(2), d);
         }
 
