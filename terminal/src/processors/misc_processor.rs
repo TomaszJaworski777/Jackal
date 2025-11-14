@@ -207,7 +207,7 @@ fn eval(search_engine: &SearchEngine) {
 
     search_engine.contempt().rescale(&mut v, &mut d, 1.0, false, search_engine.options());
     let contempt_score = WDLScore::new((1.0 + v - d) / 2.0, d);
-    let contempt_eval = contempt_score.cp();
+    let contempt_score_cp = contempt_score.cp();
 
     let mut half_moves = wdl_score;
     half_moves.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
@@ -217,8 +217,20 @@ fn eval(search_engine: &SearchEngine) {
     material_scaling.apply_material_scaling(board, search_engine.options());
     let material_scaling_cp = material_scaling.cp();
 
+    let mut pre_contempt = wdl_score;
+    pre_contempt.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
+    pre_contempt.apply_material_scaling(board, search_engine.options());
+    let pre_contempt_cp = pre_contempt.cp();
+
+    let mut v = pre_contempt.win_chance() - pre_contempt.lose_chance();
+    let mut d = pre_contempt.draw_chance();
+
+    search_engine.contempt().rescale(&mut v, &mut d, 1.0, false, search_engine.options());
+    let total_score = WDLScore::new((1.0 + v - d) / 2.0, d);
+    let total_score_cp = total_score.cp();
+
     let mut info: [String; 33] = [const { String::new() }; 33];
-    info[1] = format!("Raw:      {}", 
+    info[1] = format!("Raw:          {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -227,16 +239,16 @@ fn eval(search_engine: &SearchEngine) {
             heat_color(format!("{:.2}", current_eval.abs() as f32 / 100.0).as_str(), current_eval as f32 / 100.0, -20.0, 20.0),
         ).secondary(1.0/32.0)
     ).primary(1.0/32.0);
-    info[2] = format!("Contempt: {}", 
+    info[2] = format!("Contempt:     {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", contempt_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", contempt_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", contempt_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if contempt_eval > 0 { "+" } else { "-" }, contempt_eval as f32 / 100.0, -20.0, 20.0),
-            heat_color(format!("{:.2}", contempt_eval.abs() as f32 / 100.0).as_str(), contempt_eval as f32 / 100.0, -20.0, 20.0),
+            heat_color(if contempt_score_cp > 0 { "+" } else { "-" }, contempt_score_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(format!("{:.2}", contempt_score_cp.abs() as f32 / 100.0).as_str(), contempt_score_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(2.0/32.0)
     ).primary(2.0/32.0);
-    info[3] = format!("50mr:     {}", 
+    info[3] = format!("50mr:         {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", half_moves.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", half_moves.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -245,7 +257,7 @@ fn eval(search_engine: &SearchEngine) {
             heat_color(format!("{:.2}", half_moves_cp.abs() as f32 / 100.0).as_str(), half_moves_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(3.0/32.0)
     ).primary(3.0/32.0);
-    info[4] = format!("Material: {}", 
+    info[4] = format!("Material:     {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", material_scaling.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", material_scaling.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -254,6 +266,24 @@ fn eval(search_engine: &SearchEngine) {
             heat_color(format!("{:.2}", material_scaling_cp.abs() as f32 / 100.0).as_str(), material_scaling_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(4.0/32.0)
     ).primary(4.0/32.0);
+    info[5] = format!("Pre Contempt: {}", 
+        format!("[{}, {}, {}] ({}{})",
+            format!("{:.2}%", pre_contempt.win_chance() * 100.0).custom_color(WIN_COLOR),
+            format!("{:.2}%", pre_contempt.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+            format!("{:.2}%", pre_contempt.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+            heat_color(if pre_contempt_cp > 0 { "+" } else { "-" }, pre_contempt_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(format!("{:.2}", pre_contempt_cp.abs() as f32 / 100.0).as_str(), pre_contempt_cp as f32 / 100.0, -20.0, 20.0),
+        ).secondary(5.0/32.0)
+    ).primary(5.0/32.0);
+    info[7] = format!("Total:        {}", 
+        format!("[{}, {}, {}] ({}{})",
+            format!("{:.2}%", total_score.win_chance() * 100.0).custom_color(WIN_COLOR),
+            format!("{:.2}%", total_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+            format!("{:.2}%", total_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+            heat_color(if total_score_cp > 0 { "+" } else { "-" }, total_score_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(format!("{:.2}", total_score_cp.abs() as f32 / 100.0).as_str(), total_score_cp as f32 / 100.0, -20.0, 20.0),
+        ).secondary(7.0/32.0)
+    ).primary(7.0/32.0);
 
     let mut evals = [0; 64];
     board.occupancy().map(|square| {

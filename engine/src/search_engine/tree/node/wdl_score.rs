@@ -115,8 +115,18 @@ impl WDLScore {
 
     #[inline]
     pub fn cp(&self) -> i32 {
-        let score = (-246.631 * (1.0 / self.single() - 1.0).ln()) as i32;
-        score.clamp(-30000, 30000)
+        let a = (1.0 / self.lose_chance().clamp(0.0001, 0.9999) - 1.0).ln();
+        let b = (1.0 / self.win_chance().clamp(0.0001, 0.9999) - 1.0).ln();
+        let mu = (a - b) / (a + b);
+
+        let wl = self.win_chance() - self.lose_chance();
+        let cp = (45.0 * (1.5673 * wl).tan()) as i32;
+
+        if mu != 0.0 && wl.abs() + self.draw_chance() < 0.996 && (mu.abs() < 1.0 || cp.abs() < ((mu * 100.0) as i32).abs()) {
+            (mu * 100.0) as i32
+        } else {
+            cp.clamp(-30000, 30000)
+        }
     }
 
     #[inline]
