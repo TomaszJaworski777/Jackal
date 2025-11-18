@@ -1,6 +1,7 @@
 mod policy_train;
 mod value_train;
 mod interleave;
+mod convert;
 
 fn main() {
     #[cfg(feature = "policy_trainer")] {
@@ -15,5 +16,11 @@ fn main() {
         use crate::interleave::interleave;
 
         _ = interleave();
+    }
+
+    #[cfg(feature = "policy_convert")] {
+        use crate::convert::convert;
+
+        _ = convert();
     }
 }
