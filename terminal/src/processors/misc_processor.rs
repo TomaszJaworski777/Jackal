@@ -286,23 +286,23 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(7.0/32.0);
 
     let mut evals = [0; 64];
-    board.occupancy().map(|square| {
-        let piece = board.piece_on_square(square);
-        let side = board.color_on_square(square);
+    // board.occupancy().map(|square| {
+    //     let piece = board.piece_on_square(square);
+    //     let side = board.color_on_square(square);
 
-        if piece == Piece::NONE || piece == Piece::KING {
-            return;
-        }
+    //     if piece == Piece::NONE || piece == Piece::KING {
+    //         return;
+    //     }
 
-        let mut board_cpy = *board;
-        board_cpy.remove_piece_on_square(square, piece, side);
+    //     let mut board_cpy = *board;
+    //     board_cpy.remove_piece_on_square(square, piece, side);
 
-        if board_cpy.is_square_attacked(board.king_square(board.side().flipped()), board.side().flipped()) {
-            return;
-        }
+    //     if board_cpy.is_square_attacked(board.king_square(board.side().flipped()), board.side().flipped()) {
+    //         return;
+    //     }
 
-        evals[usize::from(square)] = ValueNetwork.forward(&board_cpy).cp();
-    });
+    //     evals[usize::from(square)] = ValueNetwork.forward(&board_cpy).cp();
+    // });
 
     println!("\n{} {}\n", " FEN:".primary(0.0), FEN::from(board).to_string().secondary(0.1));
 

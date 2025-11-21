@@ -1,8 +1,8 @@
 use chess::ChessBoard;
 
-use crate::{networks::{inputs::Threats3072, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}}, WDLScore};
+use crate::{WDLScore, networks::{inputs::ThreatsExtended, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}}};
 
-const INPUT_SIZE: usize = Threats3072::input_size();
+const INPUT_SIZE: usize = ThreatsExtended::input_size();
 const HL_SIZE: usize = 2048;
 
 const QA: i16 = 128;
@@ -26,7 +26,7 @@ impl ValueNetwork {
             *i = i16::from(bias)
         }
 
-        Threats3072::map_inputs(board, |weight_idx| {
+        ThreatsExtended::map_inputs(board, |weight_idx| {
             for (i, &weight) in inputs
                 .values_mut()
                 .iter_mut()
