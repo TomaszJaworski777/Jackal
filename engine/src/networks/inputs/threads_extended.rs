@@ -1,6 +1,6 @@
 use chess::{Bitboard, Piece, Rays, Side};
 
-const STATE_INPUTS: usize = 768 * 6;
+const STATE_INPUTS: usize = 768 * 6 * 2 * 2;
 
 pub struct ThreatsExtended;
 #[allow(unused)]
@@ -10,11 +10,11 @@ impl ThreatsExtended {
     }
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
-        let (diag, ortho) = board.generate_pin_masks(board.side());
-        let defender_pin_mask = diag | ortho;
+        let (diag_stm, ortho_stm) = board.generate_pin_masks(board.side());
+        let defender_pin_mask = diag_stm | ortho_stm;
 
-        let (diag, ortho) = board.generate_pin_masks(board.side().flipped());
-        let attack_pin_mask = diag | ortho;
+        let (diag_nstm, ortho_nstm) = board.generate_pin_masks(board.side().flipped());
+        let attack_pin_mask = diag_nstm | ortho_nstm;
 
         let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
@@ -38,13 +38,24 @@ impl ThreatsExtended {
             let piece_index = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
             let base = [384, 0][usize::from(color == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror ^ if flip { 56 } else { 0 });
 
-            let feat = 768 * calculate_state(board, piece, attackers, defenders) + base;
+            let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
+
+            if (if color == board.side() { diag_stm } else { diag_nstm }).get_bit(square) {
+                feat += 768 * 6;
+            }
+
+            if (if color == board.side() { ortho_stm } else { ortho_nstm }).get_bit(square) {
+                feat += 768 * 6 * 2;
+            }
+
+            feat += base;
 
             process_input(feat)
         });
     }
 }
 
+const PIECE_VALUES: [usize; 6] = [100, 300, 300, 500, 1000, 99999];
 fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard, defenders: Bitboard) -> usize {
     let lowest_attacker = lowest_value_piece(board, attackers);
     let lowest_defender = lowest_value_piece(board, defenders);
@@ -64,9 +75,9 @@ fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard
         return 4;
     }
 
-    let v_victim = u8::from(victim) as usize;
-    let v_attacker = u8::from(lowest_attacker) as usize;
-    let v_defender = u8::from(lowest_defender) as usize;
+    let v_victim = PIECE_VALUES[u8::from(victim) as usize];
+    let v_attacker = PIECE_VALUES[u8::from(lowest_attacker) as usize];
+    let v_defender = PIECE_VALUES[u8::from(lowest_defender) as usize];
     
     if atk_cnt == 1 && def_cnt == 1 {
         if v_attacker < v_victim {
@@ -76,6 +87,10 @@ fn calculate_state(board: &chess::ChessBoard, victim: Piece, attackers: Bitboard
         } else {
             return 2;
         }
+    }
+
+    if atk_cnt > 1 && def_cnt == 1 && lowest_defender == Piece::KING {
+        return 0;
     }
 
     if atk_cnt > 1 && def_cnt <= atk_cnt && v_victim + v_defender > v_attacker {
