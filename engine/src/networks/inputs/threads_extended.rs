@@ -1,6 +1,6 @@
 use chess::{Bitboard, Piece, Rays, Side};
 
-const STATE_INPUTS: usize = 768 * 6;
+const STATE_INPUTS: usize = 768 * 6 * 2 * 2;
 
 pub struct ThreatsExtended;
 #[allow(unused)]
@@ -45,13 +45,13 @@ impl ThreatsExtended {
 
                     let mut feat = 768 * calculate_state(board, piece, attackers, defenders);
 
-                    // if (if color == board.side() { diag_stm } else { diag_nstm }).get_bit(square) {
-                    //     feat += 768 * 6;
-                    // }
+                    if diag_stm.get_bit(square) {
+                        feat += 768 * 6;
+                    }
 
-                    // if (if color == board.side() { ortho_stm } else { ortho_nstm }).get_bit(square) {
-                    //     feat += 768 * 6 * 2;
-                    // }
+                    if ortho_stm.get_bit(square) {
+                        feat += 768 * 6 * 2;
+                    }
 
                     feat += base;
 
