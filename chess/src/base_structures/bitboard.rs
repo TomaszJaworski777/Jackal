@@ -152,6 +152,11 @@ impl Bitboard {
     }
 
     #[inline]
+    pub const fn flip_mut(&mut self) {
+        self.0 = self.0.swap_bytes()
+    }
+
+    #[inline]
     pub const fn include(&self, square: Square) -> Self {
         self.or(Bitboard(1u64 << square.get_value()))
     }

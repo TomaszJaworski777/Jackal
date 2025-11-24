@@ -8,7 +8,7 @@ impl Threats3072 {
     }
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
-         let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
+        let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
         } else {
             0
