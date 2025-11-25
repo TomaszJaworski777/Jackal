@@ -2,11 +2,11 @@ use chess::{Attacks, Bitboard, Piece, Side, Square};
 
 const KING_ALIGN_OFFSET: usize = 768 * 2 * 2;
 const PAWN_ATTACKS_OFFSET: usize = KING_ALIGN_OFFSET + 128 * 3 * 2;
-const KNIGHT_ATTACKS_OFFSET: usize = PAWN_ATTACKS_OFFSET + 96 * 2 * 2 * 4;
+const KNIGHT_ATTACKS_OFFSET: usize = PAWN_ATTACKS_OFFSET + 96 * 2 * 2 * 6;
 const BISHOP_ATTACKS_OFFSET: usize = KNIGHT_ATTACKS_OFFSET + 128 * 8 * 2 * 7;
-const ROOK_ATTACKS_OFFSET: usize = BISHOP_ATTACKS_OFFSET + 128 * 4 * 2 * 2 * 5;
-const QUEEN_ATTACKS_OFFSET: usize = ROOK_ATTACKS_OFFSET + 128 * 4 * 2 * 2 * 5;
-const KING_ATTACK_OFFSETS: usize = QUEEN_ATTACKS_OFFSET + 128 * 8 * 2 * 2 * 6;
+const ROOK_ATTACKS_OFFSET: usize = BISHOP_ATTACKS_OFFSET + 128 * 4 * 2 * 9;
+const QUEEN_ATTACKS_OFFSET: usize = ROOK_ATTACKS_OFFSET + 128 * 4 * 2 * 9;
+const KING_ATTACK_OFFSETS: usize = QUEEN_ATTACKS_OFFSET + 128 * 8 * 2 * 11;
 const SIZE: usize = KING_ATTACK_OFFSETS + 128 * 2 * 5;
 
 pub struct ThreatsExtended;
@@ -93,18 +93,17 @@ impl ThreatsExtended {
                     match piece {
                         Piece::PAWN => {
                             let attacks = Attacks::get_pawn_attacks(square, piece_color);
-                            let valid_targets = attacks & (bb_pawn | bb_knight | bb_rook);
+                            let valid_targets = attacks & occ & !bb_king;
                             
                             valid_targets.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
                                 let is_enemy = occ_nstm.get_bit(t_sq);
                                 let t_piece = piece_map[t_idx];
                                 
-                                let type_code = match t_piece { Piece::PAWN => 0, Piece::KNIGHT => 1, _ => 2 };
                                 let dir = get_pawn_dir(sq_idx, t_idx, piece_color == Side::WHITE);
                                 
                                 process_input(PAWN_ATTACKS_OFFSET 
-                                    + type_code * 384 
+                                    + usize::from(t_piece) * 384 
                                     + (is_enemy as usize) * 192 
                                     + dir * 96 
                                     + (sq_idx - 8 + pawn_attack_offset));
@@ -113,7 +112,7 @@ impl ThreatsExtended {
                             let ring_hits = attacks & enemy_ring;
                             ring_hits.map(|t_sq| {
                                 let dir = get_pawn_dir(sq_idx, usize::from(t_sq), piece_color == Side::WHITE);
-                                process_input(PAWN_ATTACKS_OFFSET + 1344 + dir * 96 + (sq_idx - 8 + pawn_attack_offset));
+                                process_input(PAWN_ATTACKS_OFFSET + 384 * 5 + 192 + dir * 96 + (sq_idx - 8 + pawn_attack_offset));
                             });
                         },
                         Piece::KNIGHT => {
@@ -202,7 +201,7 @@ impl ThreatsExtended {
                                 _ => Attacks::get_bishop_attacks(square, xray_occ) | Attacks::get_rook_attacks(square, xray_occ),
                             };
                             
-                            let valid_xray = xray_attacks_bb & xray_occ & target_mask;
+                            let valid_xray = xray_attacks_bb & xray_occ & target_mask & !bb_pawn;
                             valid_xray.map(|t_sq| {
                                 let t_idx = usize::from(t_sq);
                                 let is_enemy = occ_nstm.get_bit(t_sq);
@@ -210,7 +209,7 @@ impl ThreatsExtended {
 
                                 if t_piece == piece && t_idx < sq_idx { return; }
 
-                                let type_idx = if piece != Piece::QUEEN && t_piece == Piece::KING { 4 } else { u8::from(t_piece) as usize };
+                                let type_idx = if piece != Piece::QUEEN && t_piece == Piece::KING { 4 } else { u8::from(t_piece) as usize } - 1;
 
                                 let dir = get_slider_dir(sq_idx, t_idx, compass_mode);
                                 let type_stride = if piece == Piece::QUEEN { 4096 } else { 2048 };

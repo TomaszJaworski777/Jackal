@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-pub const VALUE_NETWORK: &str = "stageD4.network";
+pub const VALUE_NETWORK: &str = "stageD5.network";
 pub const POLICY_NETWORK: &str = "p200exp4096pwsee006q.network";
 
 fn main() {
