@@ -8,6 +8,7 @@ pub use time_manager::TimeManager;
 pub struct SearchLimits {
     depth: Option<u64>,
     iters: Option<u64>,
+    move_time: Option<u128>,
     infinite: bool,
     time_manager: TimeManager
 }
@@ -21,6 +22,10 @@ impl SearchLimits {
         self.iters = iters
     }
     
+    pub fn set_move_time(&mut self, move_time: Option<u128>) {
+        self.move_time = move_time
+    }
+
     pub fn set_infinite(&mut self, infinite: bool) {
         self.infinite = infinite
     }
@@ -50,11 +55,13 @@ impl SearchLimits {
             }
         }
 
-        false
-    }
+        if let Some(move_time) = self.move_time {
+            if search_stats.time_passesd_ms() >= move_time {
+                return true;
+            }
+        }
 
-    pub fn set_time(&mut self, time: u128) {
-        self.time_manager.set_time(time);
+        false
     }
 
     pub fn calculate_time_limit(&mut self, time_remaining: Option<u128>, increment: Option<u128>, moves_to_go: Option<u128>, options: &EngineOptions, game_ply: u16, phase: f64) {

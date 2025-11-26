@@ -4,7 +4,6 @@ members = [
   "engine",
   "terminal",
   "datagen",
-  "trainer",
 ]
 resolver = "1"
 

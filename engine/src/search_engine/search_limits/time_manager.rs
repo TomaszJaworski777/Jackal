@@ -12,11 +12,6 @@ pub struct TimeManager {
 
 #[allow(unused)]
 impl TimeManager {
-    pub fn set_time(&mut self, time: u128) {
-        self.hard_limit = Some(time);
-        self.soft_limit = Some(time)
-    }
-
     pub fn calculate_time_limit(
         &mut self,
         time_remaining: Option<u128>,

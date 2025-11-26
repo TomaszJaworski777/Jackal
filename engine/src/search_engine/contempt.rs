@@ -51,7 +51,7 @@ impl Contempt {
             let mut s = 2.0 / (a + b);
 
             if !invert {
-                s = s.min(options.max_reasonable_s());
+                s = s.min(options.max_s());
             }
 
             let mu = (a - b) / (a + b);
@@ -59,7 +59,7 @@ impl Contempt {
 
             if invert {
                 swap(&mut s, &mut s_new);
-                s = s.min(options.max_reasonable_s());
+                s = s.min(options.max_s());
             }
 
             let mu_new = mu + sign * s * s * diff;

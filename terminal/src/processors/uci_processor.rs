@@ -259,11 +259,7 @@ fn create_search_limits(args: &[String], board: &ChessBoard, search_engine: &Sea
     search_limits.set_iters(iters);
     search_limits.set_depth(depth);
     search_limits.set_infinite(infinite);
-
-    if let Some(move_time) = move_time {
-        search_limits.set_time(move_time);
-        return search_limits;
-    }
+    search_limits.set_move_time(move_time);
 
     let (time_remaining, increment) = if board.side() == Side::WHITE {
         (wtime, winc)

@@ -41,18 +41,6 @@ release: create_version_dir
 gen:
 	$(NATIVE_HEADER) -p datagen --features=datagen -- --emit link=gen$(EXT)
 
-policy_trainer:
-	$(NATIVE_HEADER) -p trainer --features=policy_trainer -- --emit link=policy_trainer$(EXT)
-
-policy_interleave:
-	$(NATIVE_HEADER) -p trainer --features=policy_interleave -- --emit link=policy_interleave$(EXT)
-
-policy_convert:
-	$(NATIVE_HEADER) -p trainer --features=policy_convert -- --emit link=policy_convert$(EXT)
-
-value_trainer:
-	$(NATIVE_HEADER) -p trainer --features=value_trainer -- --emit link=trainer$(EXT)
-
 ifneq ("$(wildcard $(RELEASE_DIR))","")
 create_version_dir:
 else
