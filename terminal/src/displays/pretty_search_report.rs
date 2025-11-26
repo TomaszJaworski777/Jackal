@@ -153,7 +153,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         engine::GameState::Loss(_) => WDLScore::WIN,
         engine::GameState::Win(_) => WDLScore::LOSE,
         engine::GameState::Draw => WDLScore::DRAW,
-        _ => pv.score()
+        _ => pv_score
     };
 
     print!("{}\r", " ".repeat(t_width));

@@ -125,4 +125,36 @@ impl ChessBoard {
         self.hash.update_piece_hash(square, piece, side);
         self.phase -= PHASE_VALUES[usize::from(piece)];
     }
+
+    #[inline]
+    pub fn flip(&mut self) {
+        self.occupancy.swap(0, 1);
+        self.occupancy[0].flip_mut();
+        self.occupancy[1].flip_mut();
+
+        for piece_mask in &mut self.pieces {
+            piece_mask.flip_mut();
+        }
+
+        self.side.flip();
+    }
+
+    #[inline]
+    pub fn mirror(&mut self) {
+        self.occupancy[0] = flip_horizontal(self.occupancy[0]);
+        self.occupancy[1] = flip_horizontal(self.occupancy[1]);
+
+        for piece_mask in &mut self.pieces {
+            *piece_mask = flip_horizontal(*piece_mask);
+        }
+    }
+}
+
+fn flip_horizontal(mut bb: Bitboard) -> Bitboard {
+    const K1: u64 = 0x5555555555555555;
+    const K2: u64 = 0x3333333333333333;
+    const K4: u64 = 0x0f0f0f0f0f0f0f0f;
+    bb = ((bb >> 1) & K1) | ((bb & K1) << 1);
+    bb = ((bb >> 2) & K2) | ((bb & K2) << 2);
+    ((bb >> 4) & K4) | ((bb & K4) << 4)
 }

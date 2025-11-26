@@ -1,9 +1,5 @@
 use chess::{Piece, Side};
 
-//-----------------------------------------------
-// This input code was written based on Monty 3072 inputs logic.
-//-----------------------------------------------
-
 pub struct Threats3072;
 #[allow(unused)]
 impl Threats3072 {
@@ -12,7 +8,7 @@ impl Threats3072 {
     }
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
-         let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
+        let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
         } else {
             0
@@ -28,46 +24,24 @@ impl Threats3072 {
             defences = defences.flip();
         }
 
-        for piece in u8::from(Piece::PAWN)..=u8::from(Piece::KING) {
-            let piece_index = 64 * (piece - u8::from(Piece::PAWN)) as usize;
+        let occupacy = board.occupancy();
+        occupacy.map(|square| {
+            let piece = board.piece_on_square(square);
+            let color = board.color_on_square(square);
+            let square = square ^ if flip { 56 } else { 0 };
 
-            let mut stm_bitboard =
-                board.piece_mask_for_side(Piece::from(piece), board.side());
-            let mut nstm_bitboard =
-                board.piece_mask_for_side(Piece::from(piece), board.side().flipped());
+            let piece_index = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
+            let mut feat = [384, 0][usize::from(color == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
 
-            if flip {
-                stm_bitboard = stm_bitboard.flip();
-                nstm_bitboard = nstm_bitboard.flip();
+            if threats.get_bit(square) {
+                feat += 768;
             }
 
-            stm_bitboard.map(|square| {
-                let mut feat = piece_index + (usize::from(square) ^ horizontal_mirror);
+            if defences.get_bit(square) {
+                feat += 768 * 2;
+            }
 
-                if threats.get_bit(square) {
-                    feat += 768;
-                }
-
-                if defences.get_bit(square) {
-                    feat += 768 * 2;
-                }
-
-                process_input(feat)
-            });
-
-            nstm_bitboard.map(|square| {
-                let mut feat = 384 + piece_index + (usize::from(square) ^ horizontal_mirror);
-
-                if threats.get_bit(square) {
-                    feat += 768;
-                }
-
-                if defences.get_bit(square) {
-                    feat += 768 * 2;
-                }
-
-                process_input(feat)
-            });
-        }
+            process_input(feat)
+        });
     }
 }

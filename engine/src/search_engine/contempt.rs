@@ -25,7 +25,7 @@ impl Contempt {
                 + 1.0 / ((0.5 * (1.0 + options.book_exit_bias()) / scale_target).cosh()).powi(2))
             * (10.0_f64).ln()
             / 200.0
-            * (options.contempt() as f64 / 100.0)
+            * options.contempt() as f64
             * options.contempt_att();
 
         Self { rescale_ratio, rescale_diff }

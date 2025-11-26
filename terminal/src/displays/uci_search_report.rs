@@ -36,7 +36,7 @@ impl SearchReport for UciSearchReport {
                 engine::GameState::Loss(_) => WDLScore::WIN,
                 engine::GameState::Win(_) => WDLScore::LOSE,
                 engine::GameState::Draw => WDLScore::DRAW,
-                _ => pv.score()
+                _ => pv_score
             };
 
             let wdl = if search_engine.options().show_wdl() {

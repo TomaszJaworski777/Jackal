@@ -7,6 +7,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 pub use attacks::Attacks;
+pub use attacks::Rays;
 pub use base_structures::Bitboard;
 pub use base_structures::Move;
 pub use base_structures::MoveFlag;

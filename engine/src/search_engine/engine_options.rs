@@ -14,9 +14,9 @@ create_options! {
             ["UCI_ShowWDL"]  show_wdl:      bool  =>  false;
 
             //======== EAS ========
-            ["Contempt"]  contempt:   i64  =>  1000,  -10000,  10000;
-            ["DrawScore"] draw_score: i64  =>  30,    -100,    100;
-            ["PolicySac"] policy_sac: i64  =>  10,    0,       100;
+            ["Contempt"]  contempt:   i64  =>  25,  -10000,  10000;
+            ["DrawScore"] draw_score: i64  =>  30,  -100,    100;
+            ["PolicySac"] policy_sac: i64  =>  10,  0,       100;
 
             //======= Debug =======
             ["MinimalPrint"] minimal_print:  bool  =>  false;
@@ -68,13 +68,13 @@ create_options! {
             depth_scaling_cap:   f64  =>  0.15,    0.0,  1.0,   0.01,    0.002;
 
             //Material Scaling
-            knight_value:         f64  =>  400.0,   150.0,  750.0,   25.0,  0.002;
-            bishop_value:         f64  =>  400.0,   150.0,  750.0,   25.0,  0.002;
+            knight_value:         f64  =>  400.0,   150.0,  750.0,   15.0,  0.002;
+            bishop_value:         f64  =>  400.0,   150.0,  750.0,   15.0,  0.002;
             rook_value:           f64  =>  750.0,   400.0,  1000.0,  30.0,  0.002;
-            queen_value:          f64  =>  1500.0,  900.0,  2000.0,  35.0,  0.002;
-            material_offset:      f64  =>  600.0,   400.0,  1200.0,  40.0,  0.002;
+            queen_value:          f64  =>  1500.0,  900.0,  2000.0,  30.0,  0.002;
+            material_offset:      f64  =>  600.0,   400.0,  1200.0,  30.0,  0.002;
             material_scale:       f64  =>  36.0,    16.0,    64.0,    3.0,  0.002; 
-            material_bonus_scale: f64  =>  1230.0,  500.0,  1500.0,  64.0,  0.002;
+            material_bonus_scale: f64  =>  1230.0,  500.0,  1500.0,  50.0,  0.002;
 
             //Policy Sac
             sac_pawn_value:   f64  =>  100.0,  50.0,  200.0,  5.0,  0.002;
@@ -128,10 +128,10 @@ create_options! {
             hash_size: f64  =>  0.04,  0.01,  0.5,  0.004,  0.002;
 
             //Contempt
-            max_reasonable_s: f64  =>  2.0,   0.0,    100.0,  0.2,    0.002;
-            book_exit_bias:   f64  =>  0.65,  0.0,    1.0,    0.065,  0.002;
-            draw_rate_target: f64  =>  0.0,   0.0,    1.0,    0.01,   0.002;
-            draw_rate_ref:    f64  =>  0.65,  0.0,    1.0,    0.065,  0.002;
+            max_reasonable_s: f64  =>  4.0,   0.0,    100.0,  0.2,    0.002;
+            book_exit_bias:   f64  =>  1.0,   0.0,    1.0,    0.065,  0.002;
+            draw_rate_target: f64  =>  0.0,  0.0,    1.0,    0.01,   0.002;
+            draw_rate_ref:    f64  =>  0.47,  0.0,    1.0,    0.065,  0.002;
             contempt_att:     f64  =>  1.0,   -10.0,  10.0,   0.1,    0.002;
 
             //Datagen
