@@ -12,5 +12,4 @@ crossbeam = "*"
 rand = "*"
 
 [features]
-policy_datagen = ["engine/policy_datagen"]
-value_datagen  = ["engine/value_datagen"]
+datagen = ["engine/datagen"]

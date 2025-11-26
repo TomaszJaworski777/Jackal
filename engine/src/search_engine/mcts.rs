@@ -84,7 +84,7 @@ impl SearchEngine {
 
             *last_best_move = Some(best_move);
 
-            #[cfg(any(feature = "policy_datagen", feature = "value_datagen"))] { 
+            #[cfg(feature = "datagen")] { 
                 if self.kld_limit(&mut latest_kld_distribution, self.options().kld_min()) {
                     self.interrupt_search();
                     break;

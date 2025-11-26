@@ -14,12 +14,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut threads = 1usize;
     let mut target_positions = 100_000_000usize;
-    #[allow(unused_mut)]
-    let mut output_path = "./value_data.bin".to_string();
-
-    #[cfg(feature = "policy_datagen")] {
-        output_path = "./policy_data.bin".to_string();
-    }
+    let output_path = "./policy_data.bin".to_string();
 
     for i in 0..args.len() {
         match args[i].as_str() {
@@ -59,8 +54,8 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
-                _ = engine.set_option("Contempt", "250");
-                _ = engine.set_option("DrawScore", "50");
+                _ = engine.set_option("Contempt", "10");
+                _ = engine.set_option("DrawScore", "49");
                 _ = engine.set_option("PolicySac", "0");
 				_ = engine.set_option("kld_min", "0.00000222");
 
@@ -87,13 +82,7 @@ fn main() {
         loop {
             clear_terminal_screen();
 
-            #[cfg(feature = "policy_datagen")] {
-                println!("Generating policy data...\n");
-            }
-
-            #[cfg(feature = "value_datagen")] {
-                println!("Generating value data...\n");
-            }
+            println!("Generating policy data...\n");
 
             let positions = datagen_stats.positions();
             let speed = positions - last_update_positions;

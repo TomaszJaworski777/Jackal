@@ -3,9 +3,10 @@ use std::{
     io::{BufReader, BufWriter},
 };
 
-use montyformat::{MontyFormat, MontyValueFormat};
+use bullet::game::formats::montyformat::{MontyFormat, MontyValueFormat};
 
-pub fn conv() {
+#[allow(unused)]
+pub fn convert() {
     let mut args = std::env::args();
     args.next();
 
