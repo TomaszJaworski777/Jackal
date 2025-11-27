@@ -1,10 +1,10 @@
-debug/
+/debug
 /target
+/resources
+/data
+/.vs
 
 Cargo.lock
-/resources/checkpoints
-/resources/books
-/.vs
 
 **/*.rs.bk
 
@@ -12,6 +12,3 @@ Cargo.lock
 *.exe
 *.bin
 *.pgn
-/policy_checkpoints
-/data
-*.network
