@@ -3,7 +3,7 @@ use chess::{Attacks, Piece, Side, Square};
 pub struct ThreatsExtended;
 
 impl ThreatsExtended {
-    pub const INPUT_SIZE: usize = ValueOffsets::END * 2 + 768;
+    pub const INPUT_SIZE: usize = ValueOffsets::END * 2 + 768 * 3;
     const THREATS_OFFSET: usize = ValueOffsets::END * 2;
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
@@ -28,6 +28,9 @@ impl ThreatsExtended {
             }
         }
 
+        let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(Side::WHITE);
+        let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(Side::BLACK);
+
         for side in [Side::WHITE, Side::BLACK] {
             let side_idx = usize::from(side);
             let side_offset = ValueOffsets::END * side_idx; 
@@ -42,7 +45,10 @@ impl ThreatsExtended {
 
                 mask.map(|src| {
                     let sq_idx = usize::from(src);
-                    process_input(exist_base + (piece_idx * 64) + sq_idx);
+                    let mut feat = exist_base + (piece_idx * 64) + sq_idx;
+                    if diag_stm.get_bit(src) { feat += 768; }
+                    if ortho_stm.get_bit(src) { feat += 768 * 2; }
+                    process_input(feat);
 
                     let attacks_bb = match piece {
                         Piece::PAWN => Attacks::get_pawn_attacks(src, side),
@@ -65,6 +71,8 @@ impl ThreatsExtended {
                     });
                 });
             }
+
+            (diag_stm, ortho_stm, diag_nstm, ortho_nstm) = (diag_nstm, ortho_nstm, diag_stm, ortho_stm);
         }
     }
 }
