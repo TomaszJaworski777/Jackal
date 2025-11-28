@@ -2,7 +2,7 @@ use chess::ChessBoard;
 
 use crate::{WDLScore, networks::{inputs::ThreatsExtended, layers::{Accumulator, NetworkLayer, TransposedNetworkLayer}}};
 
-const INPUT_SIZE: usize = ThreatsExtended::input_size();
+const INPUT_SIZE: usize = ThreatsExtended::INPUT_SIZE;
 const HL_SIZE: usize = 2048;
 
 const QA: i16 = 128;
