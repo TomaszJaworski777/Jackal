@@ -119,14 +119,7 @@ impl WDLScore {
         let l = self.lose_chance();
         let wl = w - l;
 
-        if (w >= 0.5 || l >= 0.5) && wl.abs() > 0.075 {
-            let x = w.max(l);
-            let p = 68464400000.0 * x.powi(5) - 245943166000.0 * x.powi(4) + 348794419900.0 * x.powi(3) - 243501722660.0 * x.powi(2) + 83766717849.0 * x - 11375295372.0;
-            let val = 2.0_f64.powf(p / 37906596.0) * 100.0;
-            return (val * wl.signum()) as i32;
-        }
-
-        let tan_cp = 45.0 * (1.5673 * wl).tan();
+        let tan_cp = (204.54 * (2.145 * (wl.abs() - 0.288)).tan()) * wl.signum();
         
         if w.min(l) > 0.002 {
             let a = (1.0 / l.clamp(0.0001, 0.9999) - 1.0).ln();

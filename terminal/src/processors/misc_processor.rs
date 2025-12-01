@@ -208,8 +208,8 @@ fn eval(search_engine: &SearchEngine) {
             format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", wdl_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if current_eval > 0 { "+" } else { "-" }, current_eval as f32 / 100.0, -20.0, 20.0),
-            heat_color(format!("{:.2}", current_eval.abs() as f32 / 100.0).as_str(), current_eval as f32 / 100.0, -20.0, 20.0),
+            heat_color(if current_eval > 0 { "+" } else { "-" }, wdl_score.single() as f32, 0.0, 1.0),
+            heat_color(format!("{:.2}", current_eval.abs() as f32 / 100.0).as_str(), current_eval as f32 / 100.0, -8.0, 8.0),
         ).secondary(10.0/32.0)
     ).primary(10.0/32.0));
 
@@ -222,7 +222,7 @@ fn eval(search_engine: &SearchEngine) {
             format!("{:.2}%", half_moves.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", half_moves.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", half_moves.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if half_moves_cp > 0 { "+" } else { "-" }, half_moves_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(if half_moves_cp > 0 { "+" } else { "-" }, half_moves.single() as f32, 0.0, 1.0),
             heat_color(format!("{:.2}", half_moves_cp.abs() as f32 / 100.0).as_str(), half_moves_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(14.0/32.0)
     ).primary(14.0/32.0));
@@ -236,7 +236,7 @@ fn eval(search_engine: &SearchEngine) {
             format!("{:.2}%", material_scaling.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", material_scaling.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", material_scaling.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if material_scaling_cp > 0 { "+" } else { "-" }, material_scaling_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(if material_scaling_cp > 0 { "+" } else { "-" }, material_scaling.single() as f32, 0.0, 1.0),
             heat_color(format!("{:.2}", material_scaling_cp.abs() as f32 / 100.0).as_str(), material_scaling_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(16.0/32.0)
     ).primary(16.0/32.0));
@@ -251,7 +251,7 @@ fn eval(search_engine: &SearchEngine) {
             format!("{:.2}%", pre_contempt.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", pre_contempt.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", pre_contempt.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if pre_contempt_cp > 0 { "+" } else { "-" }, pre_contempt_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(if pre_contempt_cp > 0 { "+" } else { "-" }, pre_contempt.single() as f32, 0.0, 1.0),
             heat_color(format!("{:.2}", pre_contempt_cp.abs() as f32 / 100.0).as_str(), pre_contempt_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(18.0/32.0)
     ).primary(18.0/32.0));
@@ -268,7 +268,7 @@ fn eval(search_engine: &SearchEngine) {
             format!("{:.2}%", total_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", total_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
             format!("{:.2}%", total_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if total_score_cp > 0 { "+" } else { "-" }, total_score_cp as f32 / 100.0, -20.0, 20.0),
+            heat_color(if total_score_cp > 0 { "+" } else { "-" }, total_score.single() as f32, 0.0, 1.0),
             heat_color(format!("{:.2}", total_score_cp.abs() as f32 / 100.0).as_str(), total_score_cp as f32 / 100.0, -20.0, 20.0),
         ).secondary(20.0/32.0)
     ).primary(20.0/32.0));
