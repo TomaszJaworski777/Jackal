@@ -120,7 +120,9 @@ impl WDLScore {
         let wl = w - l;
 
         if (w >= 0.5 || l >= 0.5) && wl.abs() > 0.075 {
-            let val = 2.0_f64.powf(10.0 * w.max(l) - 5.0) * 100.0;
+            let x = w.max(l);
+            let p = 68464400000.0 * x.powi(5) - 245943166000.0 * x.powi(4) + 348794419900.0 * x.powi(3) - 243501722660.0 * x.powi(2) + 83766717849.0 * x - 11375295372.0;
+            let val = 2.0_f64.powf(p / 37906596.0) * 100.0;
             return (val * wl.signum()) as i32;
         }
 
