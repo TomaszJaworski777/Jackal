@@ -16,4 +16,3 @@ pub use search_report_trait::SearchReport;
 pub use search_report_trait::NoReport;
 pub use networks::ValueNetwork;
 pub use networks::PolicyNetwork;
-pub use networks::EndgamePolicyNetwork;

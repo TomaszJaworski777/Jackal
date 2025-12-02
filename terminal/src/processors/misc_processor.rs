@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
-use engine::{EndgamePolicyNetwork, NoReport, NodeIndex, PolicyNetwork, SearchEngine, SearchLimits, ValueNetwork, WDLScore};
+use engine::{NoReport, NodeIndex, PolicyNetwork, SearchEngine, SearchLimits, ValueNetwork, WDLScore};
 use utils::{clear_terminal_screen, create_loading_bar, heat_color, time_to_string, number_to_string, AlignString, Colors, CustomColor, PieceColors, Theme, DRAW_COLOR, LOSE_COLOR, WIN_COLOR};
 
 pub struct MiscProcessor;
@@ -156,6 +156,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.draw_board();
 
+    let policy_base = PolicyNetwork.create_base(board);
     let mut max = f32::NEG_INFINITY;
     let mut total = 0f32;
 
@@ -163,27 +164,12 @@ fn draw_policy(search_engine: &SearchEngine) {
     let mut max_policy = f32::NEG_INFINITY;
     let mut moves = Vec::new();
 
-    let endgame = board.phase() <= 8;
-
-    if endgame {
-        let policy_base = EndgamePolicyNetwork.create_base(board);
-
-        board.map_legal_moves(|mv| {
-            let see = board.see(mv, -108);
-            let p = EndgamePolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
-            max = max.max(p);
-            moves.push((mv, p));
-        });
-    } else {
-        let policy_base = PolicyNetwork.create_base(board);
-
-        board.map_legal_moves(|mv| {
-            let see = board.see(mv, -108);
-            let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
-            max = max.max(p);
-            moves.push((mv, p));
-        });
-    };
+    board.map_legal_moves(|mv| {
+        let see = board.see(mv, -108);
+        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
+        max = max.max(p);
+        moves.push((mv, p));
+    });
 
     for (_, p) in moves.iter_mut() {
         *p = (*p - max).exp();
