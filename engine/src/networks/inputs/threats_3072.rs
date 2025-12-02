@@ -8,19 +8,18 @@ impl Threats3072 {
     }
 
     pub fn map_inputs<F: FnMut(usize)>(board: &chess::ChessBoard, mut process_input: F) {
+        let flip = board.side() == Side::BLACK;
         let horizontal_mirror = if board.king_square(board.side()).file() > 3 {
             7
         } else {
             0
         };
 
-        let flip = board.side() == Side::BLACK;
-
         let mut threats = board.generate_attack_map(board.side().flipped());
         let mut defences = board.generate_attack_map(board.side());
 
-        let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(board.side());
-        let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(board.side().flipped());
+        // let (mut diag_stm, mut ortho_stm) = board.generate_pin_masks(board.side());
+        // let (mut diag_nstm, mut ortho_nstm) = board.generate_pin_masks(board.side().flipped());
 
         if flip {
             threats.flip_mut();
@@ -30,57 +29,64 @@ impl Threats3072 {
         // threats.draw_bitboard();
         // defences.draw_bitboard();
 
-        let occupacy = board.occupancy();
-        for side in if flip { [Side::BLACK, Side::WHITE] } else { [Side::WHITE, Side::BLACK] } {
-            for piece_idx in 0..6 {
-                let piece = Piece::from(piece_idx);
-                let piece_index = 64 * (piece_idx - u8::from(Piece::PAWN)) as usize;
-                let mask = board.piece_mask_for_side(piece, side); 
-                
-                mask.map(|square| {
-                    let mut feat = [384, 0][usize::from(side == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
+        for piece in (0..6u8).map(|x| Piece::from(x)) {
+            let piece_idx = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
 
-                    if threats.get_bit(square) {
-                        //println!("Piece on {square} is attacked!");
-                        feat += 768;
-                    }
+            let mut stm_bb = board.piece_mask_for_side(piece, board.side());
+            let mut nstm_bb = board.piece_mask_for_side(piece, board.side().flipped());
 
-                    if defences.get_bit(square) {
-                        //println!("Piece on {square} is defended!");
-                        feat += 768 * 2;
-                    }
+            if flip {
+                stm_bb.flip_mut();
+                nstm_bb.flip_mut();
+            }
 
-                    if diag_stm.get_bit(square) {
-                        //println!("{piece} pinned diagonally!");
-                        feat += 768 * 4;
-                    }
+            stm_bb.map(|square| {
+                let mut feat = piece_idx + (usize::from(square) ^ horizontal_mirror);
 
-                    if ortho_stm.get_bit(square) {
-                        feat += 768 * 4 * 2;
-                    }
-                });
-            } 
+                if threats.get_bit(square) {
+                    feat += 768;
+                }
 
-            (diag_stm, ortho_stm, diag_nstm, ortho_nstm) = (diag_nstm, ortho_nstm, diag_stm, ortho_stm);
+                if defences.get_bit(square) {
+                    feat += 768 * 2;
+                }
+
+                // if diag_stm.get_bit(square) {
+                //     println!("{piece} pinned diagonally!");
+                //     feat += 768 * 4;
+                // }
+
+                // if ortho_stm.get_bit(square) {
+                //     println!("{piece} pinned orthodontically!");
+                //     feat += 768 * 4 * 2;
+                // }
+
+                process_input(feat)
+            });
+
+            nstm_bb.map(|square| {
+                let mut feat = 384 + piece_idx + (usize::from(square) ^ horizontal_mirror);
+
+                if threats.get_bit(square) {
+                    feat += 768;
+                }
+
+                if defences.get_bit(square) {
+                    feat += 768 * 2;
+                }
+
+                // if diag_nstm.get_bit(square) {
+                //     println!("{piece} pinned diagonally!");
+                //     feat += 768 * 4;
+                // }
+
+                // if ortho_nstm.get_bit(square) {
+                //     println!("{piece} pinned orthodontically!");
+                //     feat += 768 * 4 * 2;
+                // }
+
+                process_input(feat)
+            });
         }
-
-        occupacy.map(|square| {
-            let piece = board.piece_on_square(square);
-            let color = board.color_on_square(square);
-            let square = square ^ if flip { 56 } else { 0 };
-
-            let piece_index = 64 * (u8::from(piece) - u8::from(Piece::PAWN)) as usize;
-            let mut feat = [384, 0][usize::from(color == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
-
-            if threats.get_bit(square) {
-                feat += 768;
-            }
-
-            if defences.get_bit(square) {
-                feat += 768 * 2;
-            }
-
-            process_input(feat)
-        });
     }
 }
