@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 pub const VALUE_NETWORK: &str = "monty_threats_with_pins.network";
-pub const POLICY_NETWORK: &str = "p200exp4096pwsee006q.network";
+pub const POLICY_NETWORK: &str = "more_data_policy.network";
 
 fn main() {
     get_net(VALUE_NETWORK);
