@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicI16, Ordering};
 
-use chess::{Move, Side, Square};
+use chess::{Move, Side};
 
 use crate::{search_engine::engine_options::EngineOptions, WDLScore};
 
@@ -25,15 +25,16 @@ impl ButterflyHistory {
     }
 
     pub fn get_bonus(&self, side: Side, mv: Move, options: &EngineOptions) -> f64 {
-        f64::from(self.entry(side, mv).load(Ordering::Relaxed)) / (options.butterfly_bonus_scale() as f64)
+        f64::from(self.entry(side, mv).load(Ordering::Relaxed)) / options.butterfly_bonus_scale()
     }
 
     pub fn update_entry(&self, side: Side, mv: Move, score: WDLScore, options: &EngineOptions) {
+        let score = (-400.0 * ((1.0 / score.single().clamp(0.001, 0.999)) - 1.0).ln()).round() as i32;
         let entry = self.entry(side, mv);
 
         let mut current_entry = entry.load(Ordering::Relaxed);
         loop {
-            let delta = scale_bonus(current_entry, score.cp(), options.butterfly_reduction_factor() as i32);
+            let delta = scale_bonus(current_entry, score, options.butterfly_reduction_factor() as i32);
             let new = current_entry.saturating_add(delta);
             match entry.compare_exchange(current_entry, new, Ordering::Relaxed, Ordering::Relaxed) {
                 Ok(_) => break,
@@ -42,12 +43,8 @@ impl ButterflyHistory {
         }
     }
 
-    fn index(side: Side, from: Square, to: Square) -> usize {
-        usize::from(side) * 4096 + usize::from(from) * 64 + usize::from(to)
-    }
-
     fn entry(&self, side: Side, mv: Move) -> &AtomicI16 {
-        &self.0[Self::index(side, mv.from_square(), mv.to_square())]
+        &self.0[usize::from(side) * 4096 + usize::from(mv.from_square()) * 64 + usize::from(mv.to_square())]
     }
 }
 
