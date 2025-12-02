@@ -4,10 +4,12 @@ use std::process::Command;
 
 pub const VALUE_NETWORK: &str = "monty_threats_with_pins.network";
 pub const POLICY_NETWORK: &str = "fixed_inference.network";
+pub const ENDGAME_POLICY_NETWORK: &str = "end_games.network";
 
 fn main() {
     get_net(VALUE_NETWORK);
     get_net(POLICY_NETWORK);
+    get_net(ENDGAME_POLICY_NETWORK);
 }
 
 fn get_net(name: &str) {

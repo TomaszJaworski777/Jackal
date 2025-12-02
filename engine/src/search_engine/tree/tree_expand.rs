@@ -1,6 +1,6 @@
 use chess::{ChessBoard, Move, Piece};
 
-use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwork, Tree};
+use crate::{NodeIndex, PolicyNetwork, Tree, networks::EndgamePolicyNetwork, search_engine::engine_options::EngineOptions};
 
 impl Tree {
     pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
@@ -16,7 +16,9 @@ impl Tree {
             "Node {node_idx} already have children."
         );
 
-        let policy_base = PolicyNetwork.create_base(board);
+        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
+        let mut max = f64::NEG_INFINITY;
+        let mut total = 0f64;
 
         let pst = if node_idx == self.root_index() {
             engine_options.root_pst()
@@ -24,17 +26,29 @@ impl Tree {
             engine_options.base_pst()
         };
 
-        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
-        let mut max = f64::NEG_INFINITY;
-        let mut total = 0f64;
+        let endgame = board.phase() <= 8;
 
-        board.map_legal_moves(|mv| {
-            let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
-            p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
-            policy.push((mv, p));
-            max = max.max(p);
-        });
+        if endgame {
+            let policy_base = EndgamePolicyNetwork.create_base(board);
+
+            board.map_legal_moves(|mv| {
+                let see = board.see(mv, -108);
+                let mut p = EndgamePolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+                p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+                policy.push((mv, p));
+                max = max.max(p);
+            });
+        } else {
+            let policy_base = PolicyNetwork.create_base(board);
+
+            board.map_legal_moves(|mv| {
+                let see = board.see(mv, -108);
+                let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+                p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+                policy.push((mv, p));
+                max = max.max(p);
+            });
+        }
 
         let start_index = self.current_half().reserve_nodes(policy.len())?;
 
@@ -96,8 +110,6 @@ impl Tree {
             return;
         }
 
-        let policy_base = PolicyNetwork.create_base(board);
-
         let pst = if node_idx == self.root_index() {
             engine_options.root_pst()
         } else {
@@ -108,14 +120,31 @@ impl Tree {
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
-        self[node_idx].map_children(|child_idx| {
-            let mv = self[child_idx].mv();
-            let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
-            p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
-            policy.push(p);
-            max = max.max(p);
-        });
+        let endgame = board.phase() <= 8;
+
+        if endgame {
+            let policy_base = EndgamePolicyNetwork.create_base(board);
+
+            self[node_idx].map_children(|child_idx| {
+                let mv = self[child_idx].mv();
+                let see = board.see(mv, -108);
+                let mut p = EndgamePolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+                p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+                policy.push(p);
+                max = max.max(p);
+            });
+        } else {
+            let policy_base = PolicyNetwork.create_base(board);
+
+            self[node_idx].map_children(|child_idx| {
+                let mv = self[child_idx].mv();
+                let see = board.see(mv, -108);
+                let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+                p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+                policy.push(p);
+                max = max.max(p);
+            });
+        };
 
         for p in policy.iter_mut() {
             *p = ((*p - max)/pst).exp();
