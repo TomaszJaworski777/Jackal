@@ -25,11 +25,10 @@ impl Threats3072 {
         if flip {
             threats.flip_mut();
             defences.flip_mut();
-            diag_stm.flip_mut();
-            ortho_stm.flip_mut();
-            diag_nstm.flip_mut();
-            ortho_nstm.flip_mut();
         }
+
+        // threats.draw_bitboard();
+        // defences.draw_bitboard();
 
         let occupacy = board.occupancy();
         for side in if flip { [Side::BLACK, Side::WHITE] } else { [Side::WHITE, Side::BLACK] } {
@@ -42,14 +41,17 @@ impl Threats3072 {
                     let mut feat = [384, 0][usize::from(side == board.side())] + piece_index + (usize::from(square) ^ horizontal_mirror);
 
                     if threats.get_bit(square) {
+                        //println!("Piece on {square} is attacked!");
                         feat += 768;
                     }
 
                     if defences.get_bit(square) {
+                        //println!("Piece on {square} is defended!");
                         feat += 768 * 2;
                     }
 
                     if diag_stm.get_bit(square) {
+                        //println!("{piece} pinned diagonally!");
                         feat += 768 * 4;
                     }
 
