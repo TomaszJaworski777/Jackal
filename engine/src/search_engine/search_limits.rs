@@ -1,4 +1,4 @@
-use crate::{search_engine::{engine_options::EngineOptions, SearchStats}};
+use crate::search_engine::{engine_options::EngineOptions, search_stats::ThreadSearchStats};
 
 mod time_manager;
 
@@ -38,25 +38,25 @@ impl SearchLimits {
         self.time_manager
     }
  
-    pub fn is_limit_reached(&self, search_stats: &SearchStats) -> bool {
+    pub fn is_limit_reached(&self, thread_data: &ThreadSearchStats, iterations: u64, elapsed_ms: u128) -> bool {
         if self.infinite {
             return false;
         }
 
         if let Some(iters) = self.iters {
-            if search_stats.iterations() >= iters {
+            if iterations >= iters {
                 return true;
             }
         }
 
         if let Some(depth) = self.depth {
-            if search_stats.avg_depth() >= depth {
+            if thread_data.avg_depth() >= depth {
                 return true;
             }
         }
 
         if let Some(move_time) = self.move_time {
-            if search_stats.time_passesd_ms() >= move_time {
+            if elapsed_ms >= move_time {
                 return true;
             }
         }

@@ -74,7 +74,7 @@ impl SearchEngine {
             self.tree().clear();
             self.set_position(&ChessPosition::from(board), 0);
 
-            let result = self.search::<NoReport>(&search_limits);
+            let result = self.search::<NoReport>(&search_limits).aggregate();
             nodes += if self.options().iters_as_nodes() {
                 result.iterations()
             } else {

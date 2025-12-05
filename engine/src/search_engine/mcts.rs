@@ -3,11 +3,12 @@ use std::{thread, time::Instant};
 use chess::Move;
 
 use crate::{
-    search_engine::{search_limits::TimeManager, SearchLimits, SearchStats},
-    SearchEngine, SearchReport,
+    SearchEngine, SearchReport, search_engine::{SearchLimits, SearchStats, search_limits::TimeManager, search_stats::{SearchStatsAccumulator, ThreadSearchStats}}
 };
 
 mod iteration;
+
+const BATCH_SIZE: u64 = 256;
 
 impl SearchEngine {
     pub(super) fn mcts<Display: SearchReport>(&self, search_limits: &SearchLimits) -> SearchStats {
@@ -17,7 +18,7 @@ impl SearchEngine {
             .castle_rights()
             .get_castle_mask();
 
-        let search_stats = SearchStats::new(0);
+        let search_stats = SearchStats::new(self.options().threads() as usize);
 
         let mut search_report_timer = Instant::now();
         let mut max_avg_depth = 0;
@@ -34,9 +35,12 @@ impl SearchEngine {
                     self.main_loop::<Display>(&search_stats, &search_limits, &mut time_manager, &castle_mask, &mut search_report_timer, &mut max_avg_depth, &mut last_best_move, &mut best_move_changes);
                 });
 
-                for _ in 0..(self.options().threads() - 1) {
-                    s.spawn(|| {
-                        self.worker_loop(&search_stats, &search_limits, &castle_mask)
+                for i in 0..(self.options().threads() - 1) {
+                    let thread_stats = search_stats.thread_stats((i + 1) as usize);
+                    let castle_mask = &castle_mask;
+
+                    s.spawn(move || {
+                        self.worker_loop(thread_stats, castle_mask)
                     });
                 }
             });
@@ -64,14 +68,18 @@ impl SearchEngine {
     ) -> Option<()> {
         #[allow(unused)]
         let mut latest_kld_distribution: Vec<u32> = Vec::new();
+        let thread_stats = search_stats.thread_stats(0);
+        let accumulator = &mut SearchStatsAccumulator::default();
+        let mut stored_iterations = 0;
 
         while !self.is_search_interrupted() {
-            self.search_step(search_stats, search_limits, castle_mask)?;
+            self.search_step(accumulator, castle_mask)?;
 
-            if search_stats.avg_depth() > *max_avg_depth || search_report_timer.elapsed().as_secs_f64() > (1.0 / Display::refresh_rate_per_second()) {
-                Display::search_report(search_limits, search_stats, self);
+            let avg_depth = thread_stats.avg_depth();
+            if avg_depth > *max_avg_depth || search_report_timer.elapsed().as_secs_f64() > (1.0 / Display::refresh_rate_per_second()) {
+                Display::search_report(search_limits, &search_stats, self);
                 *search_report_timer = Instant::now();
-                *max_avg_depth = search_stats.avg_depth().max(*max_avg_depth);
+                *max_avg_depth = avg_depth.max(*max_avg_depth);
             }
 
             let draw_score = self.options().draw_score() as f64 / 100.0;
@@ -91,29 +99,45 @@ impl SearchEngine {
                 }
             }
 
-            if search_stats.iterations() % 128 != 0 {
+            if accumulator.iterations() > BATCH_SIZE {
+                stored_iterations += accumulator.iterations();
+                thread_stats.add_batch(&accumulator);
+                *accumulator = SearchStatsAccumulator::default();
+            }
+
+            let iterations = stored_iterations + accumulator.iterations();
+            let elapsed_ms = search_stats.elapsed_ms();
+            if search_limits.is_limit_reached(thread_stats, iterations, elapsed_ms) {
+                self.interrupt_search();
+            }
+
+            if iterations % 128 != 0 {
                 continue;
             }
 
-            if time_manager.hard_limit_reached(search_stats) {
+            if time_manager.hard_limit_reached(elapsed_ms) {
                 self.interrupt_search();
                 break;
             }
 
-            if search_stats.iterations() % 4096 != 0 {
+            if iterations % 4096 != 0 {
                 continue;
             }
 
-            if time_manager.soft_limit_reached(search_stats, self.tree(), self.options(), *best_move_changes) {
+            if time_manager.soft_limit_reached(elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
                 self.interrupt_search();
                 break;
             }
 
-            if search_stats.iterations() % 16384 != 0 {
+            if iterations % 16384 != 0 {
                 continue;
             }
 
             *best_move_changes = 0;
+        }
+
+        if accumulator.iterations() > 0 {
+            thread_stats.add_batch(&accumulator);
         }
 
         Some(())
@@ -121,21 +145,30 @@ impl SearchEngine {
 
     fn worker_loop(
         &self,
-        search_stats: &SearchStats,
-        search_limits: &SearchLimits,
+        thread_stats: &ThreadSearchStats,
         castle_mask: &[u8; 64],
     ) -> Option<()> {
+        let accumulator = &mut SearchStatsAccumulator::default();
+
         while !self.is_search_interrupted() {
-            self.search_step(search_stats, search_limits, castle_mask)?;
+            self.search_step(accumulator, castle_mask)?;
+
+            if accumulator.iterations() > BATCH_SIZE {
+                thread_stats.add_batch(&accumulator);
+                *accumulator = SearchStatsAccumulator::default();
+            }
+        }
+
+        if accumulator.iterations() > 0 {
+            thread_stats.add_batch(&accumulator);
         }
 
         Some(())
     }
 
     fn search_step(        
-        &self,         
-        search_stats: &SearchStats,
-        search_limits: &SearchLimits,
+        &self,
+        accumulator: &mut SearchStatsAccumulator,
         castle_mask: &[u8; 64],
     ) -> Option<()> {
         let mut depth = 0.0;
@@ -143,13 +176,9 @@ impl SearchEngine {
 
         self.perform_iteration::<true>(self.tree().root_index(), &mut position, &mut depth, castle_mask)?;
 
-        search_stats.add_iteration(depth as u64);
+        accumulator.add_iteration(depth as u64);
 
         if self.tree().root_node().is_terminal() {
-            self.interrupt_search();
-        }
-
-        if search_limits.is_limit_reached(search_stats) {
             self.interrupt_search();
         }
 

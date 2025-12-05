@@ -1,6 +1,6 @@
 use core::f64;
 
-use crate::{search_engine::engine_options::EngineOptions, SearchStats, Tree};
+use crate::{search_engine::engine_options::EngineOptions, Tree};
 
 #[derive(Debug, Default, Clone, Copy)]
 pub struct TimeManager {
@@ -60,33 +60,32 @@ impl TimeManager {
         self.hard_limit = Some(hard_time);
     } 
 
-    pub fn hard_limit_reached(&mut self, search_stats: &SearchStats) -> bool {
+    pub fn hard_limit_reached(&mut self, elapsed_ms: u128) -> bool {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
 
-        search_stats.time_passesd_ms() >= self.hard_limit.unwrap()
+        elapsed_ms >= self.hard_limit.unwrap()
     }
 
-    pub fn soft_limit_reached(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> bool {
+    pub fn soft_limit_reached(&mut self, elapsed_ms: u128, iterations: u64, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> bool {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
 
         let move_overhead = (options.move_overhead() + (options.threads() - 1) * 10) as u128;
-        let time_passed_ms = search_stats.time_passesd_ms();
         
         let mut soft_limit_multiplier = 1.0;
 
-        soft_limit_multiplier *= self.visits_distribution(search_stats, tree, options);
-        soft_limit_multiplier *= self.falling_eval(search_stats, tree, options);
-        soft_limit_multiplier *= self.best_move_instability(search_stats, tree, options, best_move_changes);
+        soft_limit_multiplier *= self.visits_distribution(iterations, tree, options);
+        soft_limit_multiplier *= self.falling_eval(iterations, tree, options);
+        soft_limit_multiplier *= self.best_move_instability(iterations, tree, options, best_move_changes);
 
-        time_passed_ms >= ((self.soft_limit.unwrap() as f64 * soft_limit_multiplier) as u128).saturating_sub(move_overhead).max(1)
+        elapsed_ms >= ((self.soft_limit.unwrap() as f64 * soft_limit_multiplier) as u128).saturating_sub(move_overhead).max(1)
     }
 
-    fn visits_distribution(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions) -> f64 {
-        if search_stats.iterations() < 2048 {
+    fn visits_distribution(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
+        if iterations < 2048 {
             return 1.0;
         }
 
@@ -142,8 +141,8 @@ impl TimeManager {
         1.0 + time_multiplier
     }
 
-    fn falling_eval(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions) -> f64 {
-        if search_stats.iterations() < 2048 {
+    fn falling_eval(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
+        if iterations < 2048 {
             return 1.0;
         }
         
@@ -163,8 +162,8 @@ impl TimeManager {
         1.0 + multiplier
     }
 
-    fn best_move_instability(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> f64 {
-        if search_stats.iterations() < 2048 {
+    fn best_move_instability(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> f64 {
+        if iterations < 2048 {
             return 1.0;
         }
 
@@ -182,8 +181,8 @@ impl TimeManager {
         1.0 + multiplier
     }
 
-    fn when_behind(&mut self, search_stats: &SearchStats, tree: &Tree, options: &EngineOptions) -> f64 {
-        if search_stats.iterations() < 1024 {
+    fn when_behind(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
+        if iterations < 1024 {
             return 1.0;
         }
 
