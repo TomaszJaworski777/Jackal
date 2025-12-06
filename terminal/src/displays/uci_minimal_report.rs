@@ -7,8 +7,9 @@ impl SearchReport for UciMinimalReport {
     }
 
     fn search_ended(_: &SearchLimits, search_stats: &SearchStats, search_engine: &SearchEngine) { 
-        let depth = search_stats.avg_depth();
-        let max_depth = search_stats.max_depth();
+        let search_stats_data = search_stats.aggregate();
+        let depth = search_stats_data.avg_depth();
+        let max_depth = search_stats_data.max_depth();
 
         let draw_score = search_engine.options().draw_score() as f64 / 100.0;
 
@@ -46,11 +47,11 @@ impl SearchReport for UciMinimalReport {
             String::new() 
         };
         
-        let time = search_stats.time_passesd_ms();
+        let time = search_stats.elapsed_ms();
         let nodes = if search_engine.options().iters_as_nodes() {
-            search_stats.iterations()
+            search_stats_data.iterations()
         } else {
-            search_stats.cumulative_depth()
+            search_stats_data.cumulative_depth()
         };
 
         let nps = (nodes as u128 * 1000) / time.max(1);

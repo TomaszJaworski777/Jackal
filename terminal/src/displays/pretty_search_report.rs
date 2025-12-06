@@ -98,10 +98,12 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         height_used += 4;
     }
 
+    let search_stats_data = search_stats.aggregate();
+
     print!("{}\r", " ".repeat(t_width));
-    println!("{}", format!(" Avg. Depth: {}", search_stats.avg_depth().to_string().secondary(grad(15))).primary(grad(15)));
+    println!("{}", format!(" Avg. Depth: {}", search_stats_data.avg_depth().to_string().secondary(grad(15))).primary(grad(15)));
     print!("{}\r", " ".repeat(t_width));
-    println!("{}", format!(" Max Depth:  {}", search_stats.max_depth().to_string().secondary(grad(16))).primary(grad(16)));
+    println!("{}", format!(" Max Depth:  {}", search_stats_data.max_depth().to_string().secondary(grad(16))).primary(grad(16)));
 
     print!("{}\r", " ".repeat(t_width));
     println!();
@@ -110,12 +112,12 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
 
     if t_height >= 21 {
         let nodes = if search_engine.options().iters_as_nodes() {
-            search_stats.iterations()
+            search_stats_data.iterations()
         } else {
-            search_stats.cumulative_depth()
+            search_stats_data.cumulative_depth()
         };
 
-        let time = search_stats.time_passesd_ms();
+        let time = search_stats.elapsed_ms();
 
         let nps = (nodes as u128 * 1000) / time.max(1);
 
@@ -168,7 +170,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     unsafe {
         #[allow(static_mut_refs)]
         if SEARCH_HISTORY.len() == 0 || SEARCH_HISTORY.last().unwrap().1.first_move() != pv.first_move() {
-            SEARCH_HISTORY.push((search_stats.time_passesd_ms(), pv.clone()));
+            SEARCH_HISTORY.push((search_stats.elapsed_ms(), pv.clone()));
         }
     }
 

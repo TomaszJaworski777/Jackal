@@ -20,7 +20,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
         engine.set_position(position, 10);
 
         let stats = engine.search::<NoReport>(limits);
-        iter_sum += stats.iterations();
+        iter_sum += stats.thread_stats(0).iterations();
         
         let mut moves = Vec::new();
         let mut best_move = Move::NULL;
