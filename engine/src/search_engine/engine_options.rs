@@ -57,8 +57,18 @@ create_options! {
             visit_increase_offset:   f64  =>  4.1092,  1.0,  10.0,   0.1,   0.002;
 
             //Butterfly history
-            butterfly_reduction_factor: i64 => 8192,     1,    65536,     819,     0.002;
-            butterfly_bonus_scale:      f64 => 16384.0,  1.0,  131072.0,  1638.0,  0.002;
+            butterfly_pawn_reduction:   i64 => 8080,      1,    65536,     819,     0.002;
+            butterfly_knight_reduction: i64 => 7704,      1,    65536,     819,     0.002;
+            butterfly_bishop_reduction: i64 => 8438,      1,    65536,     819,     0.002;
+            butterfly_rook_reduction:   i64 => 8223,      1,    65536,     819,     0.002;
+            butterfly_queen_reduction:  i64 => 8232,      1,    65536,     819,     0.002;
+            butterfly_king_reduction:   i64 => 8351,      1,    65536,     819,     0.002;
+            butterfly_pawn_scale:       f64 => 16646.82,  1.0,  131072.0,  1638.0,  0.002;
+            butterfly_knight_scale:     f64 => 16367.43,  1.0,  131072.0,  1638.0,  0.002;
+            butterfly_bishop_scale:     f64 => 15970.91,  1.0,  131072.0,  1638.0,  0.002;
+            butterfly_rook_scale:       f64 => 15908.0,   1.0,  131072.0,  1638.0,  0.002;
+            butterfly_queen_scale:      f64 => 17181.92,  1.0,  131072.0,  1638.0,  0.002;
+            butterfly_king_scale:       f64 => 16511.28,  1.0,  131072.0,  1638.0,  0.002;
 
             //Draw Scaling
             power_50mr:          f64  =>  3.0,     1.0,  10.0,  0.3,     0.002;

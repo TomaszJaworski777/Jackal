@@ -31,7 +31,7 @@ impl Tree {
         board.map_legal_moves(|mv| {
             let see = board.see(mv, -108);
             let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
-            p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+            p += self.butterfly_history().get_bonus(board.piece_on_square(mv.from_square()), board.side(), mv, engine_options);
             policy.push((mv, p));
             max = max.max(p);
         });
@@ -112,7 +112,7 @@ impl Tree {
             let mv = self[child_idx].mv();
             let see = board.see(mv, -108);
             let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
-            p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
+            p += self.butterfly_history().get_bonus(board.piece_on_square(mv.from_square()), board.side(), mv, engine_options);
             policy.push(p);
             max = max.max(p);
         });

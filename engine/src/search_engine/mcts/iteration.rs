@@ -36,6 +36,7 @@ impl SearchEngine {
 
             let old_side = position.board().side();
             let mv = self.tree()[new_idx].mv();
+            let moving_piece = position.board().piece_on_square(mv.from_square());
             position.make_move(mv, castle_mask);
 
             self.tree().inc_threads(new_idx, 1);
@@ -55,7 +56,7 @@ impl SearchEngine {
             let score = score?;
 
             if !self.tree()[new_idx].is_terminal() {
-                self.tree().butterfly_history().update_entry(old_side, mv, score, self.options());
+                self.tree().butterfly_history().update_entry(moving_piece, old_side, mv, score, self.options());
             }
 
             score
