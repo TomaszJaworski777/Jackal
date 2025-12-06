@@ -7,7 +7,7 @@ const PHASE_VALUES: [u8; 6] = [0, 1, 1, 2, 4, 0];
 
 #[repr(C)]
 #[repr(align(64))]
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChessBoard {
     occupancy: [Bitboard; 2],
     pieces: [Bitboard; 6],
@@ -17,6 +17,23 @@ pub struct ChessBoard {
     pub(super) castle_rights: CastleRights,
     pub(super) en_passant_square: Square,
     pub(super) half_moves: u8,
+    mailbox: [Piece; 64],
+}
+
+impl Default for ChessBoard {
+    fn default() -> Self {
+        Self { 
+            occupancy: [Bitboard::default(); 2], 
+            pieces: [Bitboard::default(); 6],  
+            hash: ZobristKey::default(), 
+            phase: 0, 
+            side: Side::WHITE, 
+            castle_rights: CastleRights::default(), 
+            en_passant_square: Square::NULL, 
+            half_moves: 0, 
+            mailbox: [Piece::NONE; 64]
+        }
+    }
 }
 
 impl ChessBoard {
@@ -49,22 +66,12 @@ impl ChessBoard {
 
     #[inline]
     pub fn color_on_square(&self, square: Square) -> Side {
-        if self.occupancy[usize::from(Side::BLACK)].get_bit(square) {
-            Side::BLACK
-        } else {
-            Side::WHITE
-        }
+        Side::from(self.occupancy[1].get_bit(square))
     }
 
     #[inline]
     pub fn piece_on_square(&self, square: Square) -> Piece {
-        for piece in usize::from(Piece::PAWN)..=usize::from(Piece::KING) {
-            if self.pieces[piece].get_bit(square) {
-                return Piece::from(piece);
-            }
-        }
-
-        return Piece::NONE;
+        self.mailbox[usize::from(square)]
     }
 
     #[inline]
@@ -114,6 +121,7 @@ impl ChessBoard {
         self.pieces[usize::from(piece)].set_bit(square);
         self.hash.update_piece_hash(square, piece, side);
         self.phase += PHASE_VALUES[usize::from(piece)];
+        self.mailbox[usize::from(square)] = piece;
     }
 
     #[inline]
@@ -124,6 +132,7 @@ impl ChessBoard {
         self.pieces[usize::from(piece)].pop_bit(square);
         self.hash.update_piece_hash(square, piece, side);
         self.phase -= PHASE_VALUES[usize::from(piece)];
+        self.mailbox[usize::from(square)] = Piece::NONE;
     }
 
     #[inline]
