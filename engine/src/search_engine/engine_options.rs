@@ -74,8 +74,8 @@ create_options! {
             queen_value:          f64  =>  1500.0,  900.0,  2000.0,  30.0,  0.002;
             material_offset:      f64  =>  600.0,   400.0,  1200.0,  30.0,  0.002;
             material_scale:       f64  =>  36.0,    16.0,   64.0,    3.0,   0.002; 
-            material_bonus_scale: f64  =>  1230.0,  500.0,  1500.0,  50.0,  0.002;
-            wl_dampening_power:   f64  =>  20.0,     1.0,    50.0,     0.1,   0.002;
+            material_bonus_scale: f64  =>  1000.0,  500.0,  1500.0,  50.0,  0.002;
+            wl_dampening_power:   f64  =>  20.0,    1.0,    50.0,    0.1,   0.002;
 
             //Policy Sac
             sac_pawn_value:   f64  =>  100.0,  50.0,  200.0,  5.0,  0.002;
