@@ -105,7 +105,7 @@ impl WDLScore {
 
     #[inline]
     pub const fn single(&self) -> f64 {
-        self.win_chance() + self.draw_chance() * 0.5
+        self.single_with_score(0.5)
     }
 
     #[inline]
@@ -151,26 +151,27 @@ impl WDLScore {
 
     #[inline]
     pub fn apply_material_scaling(&mut self, board: &ChessBoard, options: &EngineOptions) {
-        let material_balance = 
-            board.piece_mask(Piece::KNIGHT).pop_count() as f64 * options.knight_value() +
-            board.piece_mask(Piece::BISHOP).pop_count() as f64 * options.bishop_value() +
-            board.piece_mask(Piece::ROOK).pop_count() as f64 * options.rook_value() +
-            board.piece_mask(Piece::QUEEN).pop_count() as f64 * options.queen_value();
+        let cp = {
+            let cp_base = (-400.0 * (1.0 / self.single() - 1.0).ln()) as i64;
+            let material_balance = 
+                board.piece_mask(Piece::KNIGHT).pop_count() as i64 * options.knight_value() +
+                board.piece_mask(Piece::BISHOP).pop_count() as i64 * options.bishop_value() +
+                board.piece_mask(Piece::ROOK).pop_count() as i64 * options.rook_value() +
+                board.piece_mask(Piece::QUEEN).pop_count() as i64 * options.queen_value();
+            
+            let material_balance = options.material_offset() + material_balance / options.material_scale();
+            cp_base * material_balance / options.material_bonus_scale()
+        };
 
-        let mut scale = ((options.material_offset() + material_balance / options.material_scale()) / options.material_bonus_scale()).clamp(0.0, 1.0);
+        let score = 1.0 / (1.0 + (-(cp as f64) / 400.0).exp());
+        
+        let draw = self.draw_chance().clamp(0.0, 1.0);
+        let min_score = draw * 0.5;
+        let max_score = 1.0 - draw * 0.5;
+        let score = score.clamp(min_score.min(max_score), max_score.max(min_score));
 
-        let wl = self.win_chance() + self.lose_chance();
-        scale += (1.0 - scale) * wl.powf(options.wl_dampening_power());
-
-        let scale = 1.0 / (1.0 + (-scale * (self.single() / (1.0 - self.single())).ln()).exp());
-
-        let q = (self.win_chance() + self.lose_chance()).clamp(0.0001, 1.0);
-        let p = self.win_chance() / q;
-
-        let new_q = ((scale - 0.5) / (p - 0.5)).clamp(0.0, 1.0);
-
-        self.0 = p * new_q;
-        self.1 = 1.0 - new_q;
+        self.0 = (score - draw * 0.5).max(0.0);
+        self.1 = draw;
     }
 }
 
