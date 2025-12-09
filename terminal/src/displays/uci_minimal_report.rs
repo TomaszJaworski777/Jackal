@@ -15,11 +15,7 @@ impl SearchReport for UciMinimalReport {
 
         let pv = search_engine.tree().get_best_pv(0, draw_score);
 
-        let score = pv.score();
-        let mut v = score.win_chance() - score.lose_chance();
-        let mut d = score.draw_chance();
-
-        let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
+        let pv_score = pv.score();
 
         let state = pv.first_node().state();
         let score = match state {

@@ -142,11 +142,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     let draw_score = search_engine.options().draw_score() as f64 / 100.0;
     let pv = search_engine.tree().get_best_pv(0, draw_score);
 
-    let score = pv.score();
-    let mut v = score.win_chance() - score.lose_chance();
-    let mut d = score.draw_chance();
-
-    let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
+    let pv_score = pv.score();
 
     let score = match pv.first_node().state() {
         engine::GameState::Loss(len) => format!("+M{}", (len + 1).div_ceil(2)),

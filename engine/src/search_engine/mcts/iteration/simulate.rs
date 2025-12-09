@@ -1,6 +1,6 @@
 use chess::ChessPosition;
 
-use crate::{GameState, SearchEngine, ValueNetwork, WDLScore, search_engine::{contempt::Contempt, tree::NodeIndex}};
+use crate::{GameState, SearchEngine, ValueNetwork, WDLScore, search_engine::tree::NodeIndex};
 
 impl SearchEngine {
     pub(super) fn simulate(&self, node_idx: NodeIndex, position: &ChessPosition, depth: f64) -> WDLScore {
@@ -65,20 +65,15 @@ impl SearchEngine {
 
         score.apply_material_scaling(position.board(), self.options());
         score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.options());
-
-        let mut draw_chance= score.draw_chance();
-        let mut win_lose_delta = score.win_chance() - score.lose_chance();
         
         let is_stm = self.root_position().board().side() == position.board().side();
 
         let sign = if is_stm { 1.0 } else { -1.0 };
         
         if position.board().phase() > 8 {
-            Contempt::rescale(&mut win_lose_delta, &mut draw_chance, sign, false, self.options());
+            //Contempt::rescale(&mut win_lose_delta, &mut draw_chance, sign, false, self.options());
         }
         
-        let new_win_chance = (1.0 + win_lose_delta - draw_chance) / 2.0;
-        
-        WDLScore::new(new_win_chance, draw_chance)
+        score
     }
 }

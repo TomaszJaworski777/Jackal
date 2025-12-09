@@ -1,6 +1,6 @@
 use utils::{bytes_to_string, heat_color, number_to_string, AlignString, Colors, Theme};
 
-use crate::{SearchEngine, WDLScore, search_engine::{contempt::Contempt, tree::{GameState, NodeIndex, Tree, node::Node}}};
+use crate::{SearchEngine, search_engine::tree::{GameState, NodeIndex, Tree, node::Node}};
 
 impl Tree {
     pub fn draw_tree<const FLIP_SCORE: bool>(&self, depth: Option<u8>, node_idx: Option<NodeIndex>, search_engine: &SearchEngine) {
@@ -206,18 +206,11 @@ impl Tree {
         }
         .white();
 
-        let score = if flip {
+        let pv_score = if flip {
             node.score().reversed()
         } else {
             node.score()
         };
-
-        let mut v = score.win_chance() - score.lose_chance();
-        let mut d = score.draw_chance();
-
-        Contempt::rescale(&mut v, &mut d, 1.0, true, search_engine.options());
-
-        let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
 
         let state = if flip {
             match node.state() {
