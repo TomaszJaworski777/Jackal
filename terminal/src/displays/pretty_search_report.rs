@@ -93,14 +93,16 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         print!("{}\r", " ".repeat(t_width));
         println!("{}", format!(" Threads:    {}", search_engine.options().threads().to_string().secondary(grad(11))).primary(grad(11)));
         print!("{}\r", " ".repeat(t_width));
-        println!("{}", format!(" Tree Size:  {} | {}", format!("{}n", number_to_string(tree_size as u128)).secondary(grad(12)), format!("{}B", tree_bytes).secondary(grad(12))).primary(grad(12)));
+        println!("{}", format!(" Contempt:   {}", search_engine.options().contempt().to_string().secondary(grad(12))).primary(grad(12)));
         print!("{}\r", " ".repeat(t_width));
-        println!("{}", format!(" Tree Usage: {}", create_loading_bar(50, usage, WIN_COLOR, LOSE_COLOR).secondary(grad(13))).primary(grad(13)));
+        println!("{}", format!(" Tree Size:  {} | {}", format!("{}n", number_to_string(tree_size as u128)).secondary(grad(13)), format!("{}B", tree_bytes).secondary(grad(13))).primary(grad(13)));
+        print!("{}\r", " ".repeat(t_width));
+        println!("{}", format!(" Tree Usage: {}", create_loading_bar(50, usage, WIN_COLOR, LOSE_COLOR).secondary(grad(14))).primary(grad(14)));
 
         print!("{}\r", " ".repeat(t_width));
         println!();
 
-        height_used += 4;
+        height_used += 5;
     }
 
     let search_stats_data = search_stats.aggregate();

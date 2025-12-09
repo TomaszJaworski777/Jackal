@@ -14,9 +14,11 @@ create_options! {
             ["UCI_ShowWDL"]  show_wdl:      bool  =>  false;
 
             //======== EAS ========
-            ["Contempt"]  contempt:   i64  =>  25,  -10000,  10000;
-            ["DrawScore"] draw_score: i64  =>  30,  -100,    100;
-            ["PolicySac"] policy_sac: i64  =>  10,  0,       100;
+            ["UCI_Opponent"]  uci_opponent:   String  =>  String::from("");
+            ["UCI_RatingAdv"] uci_rating_adv: i64     =>  -1000,  -5000,  5000;
+            ["Contempt"]      min_contempt:   i64     =>  0,     -1000,  1000;
+            ["DrawScore"]     draw_score:     i64     =>  30,     -100,   100;
+            ["PolicySac"]     policy_sac:     i64     =>  10,     -100,   100;
 
             //======= Debug =======
             ["MinimalPrint"] minimal_print:  bool  =>  false;
@@ -127,15 +129,9 @@ create_options! {
           
             //Transposition Table
             hash_size: f64  =>  0.04,  0.01,  0.5,  0.004,  0.002;
-
-            //Contempt
-            max_s:            f64  =>  2.0,   0.0,    100.0,  0.2,    0.002;
-            book_exit_bias:   f64  =>  1.0,   0.0,    1.0,    0.065,  0.002;
-            draw_rate_target: f64  =>  0.0,   0.0,    1.0,    0.01,   0.002;
-            draw_rate_ref:    f64  =>  0.47,  0.0,    1.0,    0.065,  0.002;
-            contempt_att:     f64  =>  1.0,   -10.0,  10.0,   0.1,    0.002;
         }
         Variables {
+            contempt: i64 = 0;
             kld_min: f64 = 0.5;
         }
     }

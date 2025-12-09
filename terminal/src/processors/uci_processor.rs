@@ -9,7 +9,10 @@ pub struct UciProcessor {
 }
 
 impl UciProcessor {
-    pub fn new() -> Self {
+    pub fn new(search_engine: &mut SearchEngine) -> Self {
+        let contempt = calculate_contempt(search_engine);
+        search_engine.options_mut().set_contempt(contempt);
+
         Self {
             uci_initialized: false,
         }
@@ -65,6 +68,9 @@ impl UciProcessor {
                 if name.eq_ignore_ascii_case("hash") {
                     search_engine.resize_tree();
                 }
+
+                let contempt = calculate_contempt(search_engine);
+                search_engine.options_mut().set_contempt(contempt);
 
                 let str = format!("Option {name} has been set to {value}");
                 self.uci_print(str.as_str(), search_engine.options().minimal_print());
@@ -268,4 +274,27 @@ fn create_search_limits(args: &[String], board: &ChessBoard, search_engine: &Sea
     search_limits.calculate_time_limit(time_remaining, increment, moves_to_go, search_engine.options(), search_engine.game_ply(), board.phase() as f64);
 
     search_limits
+}
+
+fn calculate_contempt(search_engine: &SearchEngine) -> i64 {
+    const ELO_REFERENCE: i64 = 3400;
+    let opponent_elo = get_opponent_elo(&search_engine.options().uci_opponent()).unwrap_or(ELO_REFERENCE);
+    if search_engine.options().uci_rating_adv() != 0 {
+        search_engine.options().uci_rating_adv()
+    } else {
+        search_engine.options().uci_rating_adv().max(ELO_REFERENCE - opponent_elo)
+    }.max(search_engine.options().min_contempt()).clamp(-1000, 1000)
+}
+
+fn get_opponent_elo(uci_opponent: &String) -> Option<i64> {
+    let mut split = uci_opponent.split_whitespace();
+    if split.next().is_none() {
+        return None;
+    }
+
+    if let Some(elo_str) = split.next() {
+        return elo_str.parse::<i64>().ok();
+    }
+
+    None
 }

@@ -67,11 +67,10 @@ impl SearchEngine {
         score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.options());
         
         let is_stm = self.root_position().board().side() == position.board().side();
-
-        let sign = if is_stm { 1.0 } else { -1.0 };
+        let sign = if is_stm { 1 } else { -1};
         
         if position.board().phase() > 8 {
-            //Contempt::rescale(&mut win_lose_delta, &mut draw_chance, sign, false, self.options());
+             score.apply_contempt(self.options().contempt() * sign);
         }
         
         score

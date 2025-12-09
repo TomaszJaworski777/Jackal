@@ -242,6 +242,7 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(16.0/32.0));
 
     let mut contempt = raw_score;
+    contempt.apply_contempt(search_engine.options().contempt());
     let contempt_cp = contempt.cp();
 
     println!("{}", format!("With Contempt:        {}\n", 
@@ -257,6 +258,7 @@ fn eval(search_engine: &SearchEngine) {
     let mut total_score = raw_score;
     total_score.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
     total_score.apply_material_scaling(board, search_engine.options());
+    total_score.apply_contempt(search_engine.options().contempt());
     let total_score_cp = total_score.cp();
 
     println!("{}", format!("Total: {}", 

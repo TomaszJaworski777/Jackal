@@ -113,7 +113,6 @@ impl WDLScore {
         (self.win_chance() + self.draw_chance() * draw_score).clamp(0.0, 1.0)
     }
 
-    #[inline]
     pub fn cp(&self) -> i32 {
         let w = self.win_chance();
         let l = self.lose_chance();
@@ -139,7 +138,6 @@ impl WDLScore {
         tan_cp.clamp(-30000.0, 30000.0) as i32
     }
 
-    #[inline]
     pub fn apply_50mr_and_draw_scaling(&mut self, half_move: u8, depth: f64, options: &EngineOptions) {
         let s = (0.01 * half_move as f64).powf(options.power_50mr()).min(options.cap_50mr()) + (depth.powf(options.depth_scaling_power()) * options.depth_scaling()).min(options.depth_scaling_cap());
         let win_delta = self.win_chance() * s; 
@@ -149,7 +147,6 @@ impl WDLScore {
         self.1 += win_delta + lose_delta;
     }
 
-    #[inline]
     pub fn apply_material_scaling(&mut self, board: &ChessBoard, options: &EngineOptions) {
         let current_material = 
             board.piece_mask(Piece::KNIGHT).pop_count() as f64 * options.knight_value() +
@@ -179,6 +176,42 @@ impl WDLScore {
         self.0 = p * new_q;
         self.1 = 1.0 - new_q;
     }
+
+    pub fn apply_contempt(&mut self, contempt: i64) {
+        const EPS: f64 = 0.0001;
+
+        if contempt == 0 {
+            return;
+        }
+
+        let (w, l) = (self.win_chance(), self.lose_chance());
+
+        if w < EPS || l < EPS || w > 1.0 - EPS || l > 1.0 - EPS {
+            return;
+        }
+
+        let a = (1.0 / l - 1.0).ln();
+        let b = (1.0 / w - 1.0).ln();
+        let denom = a + b;
+
+        if denom.abs() < 0.000001 {
+            return;
+        }
+
+        let uncertainty = 2.0 / denom;
+        let advantage = (a - b) / denom;
+
+        let shift = (uncertainty.powi(2) * contempt as f64 * std::f64::consts::LN_10 / (400.0 * 16.0)).clamp(-0.8, 0.8);
+
+        let new_advantage = advantage + shift;
+
+        let new_w = fast_logistic((-1.0 + new_advantage) / uncertainty);
+        let new_l = fast_logistic((-1.0 - new_advantage) / uncertainty);
+        let new_d = (1.0 - new_w - new_l).clamp(0.0, 1.0);
+
+        self.0 = new_w;
+        self.1 = new_d;
+    }
 }
 
 impl Mul<u32> for WDLScore {
@@ -187,4 +220,8 @@ impl Mul<u32> for WDLScore {
     fn mul(self, rhs: u32) -> Self::Output {
         Self(self.win_chance() * f64::from(rhs), self.draw_chance() * f64::from(rhs))
     }
+}
+
+fn fast_logistic(x: f64) -> f64 {
+    1.0 / (1.0 + (-x).exp())
 }
