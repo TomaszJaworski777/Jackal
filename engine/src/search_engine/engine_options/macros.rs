@@ -10,7 +10,7 @@ macro_rules! create_options {
             }
             Tunables {
                 $(
-                    $(#[$meta:meta])*
+                    $(#[$tune_meta:meta])*
                     $tunable:ident : $tunable_ty:ty =>
                         $tunable_default:expr,
                         $tunable_min:expr,
@@ -19,12 +19,20 @@ macro_rules! create_options {
                         $tunable_r:expr;
                 )+
             }
+            Variables {
+                $(
+                    $(#[$var_meta:meta])*
+                    $variable:ident : $variable_ty:ty = 
+                        $variable_default:expr;
+                )+
+            }
         }
     ) => {
         #[derive(Debug, Clone)]
         pub struct $name {
             $($option: $option_ty,)+
             $($tunable: $tunable_ty,)+
+            $($variable: $variable_ty,)+
         }
 
         impl $name {
@@ -32,19 +40,36 @@ macro_rules! create_options {
                 Self {
                     $($option: $option_default,)+
                     $($tunable: $tunable_default,)+
+                    $($variable: $variable_default,)+
                 }
             }
 
             $(
-            pub const fn $option(&self) -> $option_ty {
-                self.$option
+            pub fn $option(&self) -> $option_ty {
+                self.$option.clone()
             }
             )+
 
             $(
-            $(#[$meta])*
+            $(#[$tune_meta])*
             pub const fn $tunable(&self) -> $tunable_ty {
                 self.$tunable
+            }
+            )+
+
+            $(
+            $(#[$var_meta])*
+            pub const fn $variable(&self) -> $variable_ty {
+                self.$variable
+            }
+            )+
+
+            $(
+            $(#[$var_meta])*
+            paste::paste! {
+                pub fn [< set_ $variable >] (&mut self, value: $variable_ty) {
+                    self.$variable = value;
+                }
             }
             )+
 
@@ -84,6 +109,18 @@ macro_rules! create_options {
                             }
 
                             self.$tunable = new_value;
+                            return Ok(());
+                        }
+                        Err(_) => return Err(format!("Incorrect param type for {}", name)),
+                    }
+                } else
+                )+
+
+                $(
+                if name.eq_ignore_ascii_case(stringify!($variable)) {
+                    match value.parse::<$variable_ty>() {
+                        Ok(new_value) => {
+                            self.$variable = new_value;
                             return Ok(());
                         }
                         Err(_) => return Err(format!("Incorrect param type for {}", name)),

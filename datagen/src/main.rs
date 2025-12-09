@@ -55,9 +55,9 @@ fn main() {
             s.spawn(|| {
                 let mut engine = SearchEngine::new();
                 _ = engine.set_option("Contempt", "10");
-                _ = engine.set_option("DrawScore", "49");
-                _ = engine.set_option("PolicySac", "0");
-				_ = engine.set_option("kld_min", "0.00000222");
+                _ = engine.set_option("DrawScore", "40");
+                _ = engine.set_option("PolicySac", "2");
+				_ = engine.options_mut().set_kld_min(0.00000222);
 
                 let mut rng = rand::rng();
                 

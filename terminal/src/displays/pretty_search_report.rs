@@ -14,6 +14,11 @@ impl SearchReport for PrettySearchReport {
     fn search_started(_: &SearchLimits, _: &SearchEngine) {
         clear_terminal_screen();
         
+        #[allow(static_mut_refs)]
+        unsafe {
+            SEARCH_HISTORY.clear();
+        }
+
         print!("\x1B[?25l");
         let _ = io::stdout().flush();
     }
