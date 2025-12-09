@@ -151,19 +151,30 @@ impl WDLScore {
 
     #[inline]
     pub fn apply_material_scaling(&mut self, board: &ChessBoard, options: &EngineOptions) {
-        let material_balance = 
+        let current_material = 
             board.piece_mask(Piece::KNIGHT).pop_count() as f64 * options.knight_value() +
             board.piece_mask(Piece::BISHOP).pop_count() as f64 * options.bishop_value() +
             board.piece_mask(Piece::ROOK).pop_count() as f64 * options.rook_value() +
             board.piece_mask(Piece::QUEEN).pop_count() as f64 * options.queen_value();
 
-        let scale = ((options.material_offset() + material_balance / options.material_scale()) / options.material_bonus_scale()).clamp(0.0, 1.0);
+        let max_material = 
+            4.0 * options.knight_value() + 
+            4.0 * options.bishop_value() + 
+            4.0 * options.rook_value() + 
+            2.0 * options.queen_value();
+
+        let material_factor = (1.0 - (current_material / max_material)).clamp(0.0, 1.0);
+        let mut scale = options.scale_start_pos() + material_factor.powf(options.material_power()) * (options.scale_zero_mat() - options.scale_start_pos());
+
+        let wl = self.win_chance() + self.lose_chance();
+        scale += (1.0 - scale) * wl.powf(options.wl_dampening_power());
+
         let scale = 1.0 / (1.0 + (-scale * (self.single() / (1.0 - self.single())).ln()).exp());
 
         let q = (self.win_chance() + self.lose_chance()).clamp(0.0001, 1.0);
         let p = self.win_chance() / q;
 
-        let new_q = (scale - 0.5) / (p - 0.5);
+        let new_q = ((scale - 0.5) / (p - 0.5)).clamp(0.0, 1.0);
 
         self.0 = p * new_q;
         self.1 = 1.0 - new_q;
