@@ -69,9 +69,7 @@ impl SearchEngine {
         let is_stm = self.root_position().board().side() == position.board().side();
         let sign = if is_stm { 1 } else { -1};
         
-        if position.board().phase() > 8 {
-             score.apply_contempt(self.options().contempt() * sign);
-        }
+        score.apply_contempt(self.options().contempt() * sign);
         
         score
     }
