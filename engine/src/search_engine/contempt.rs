@@ -32,6 +32,7 @@ impl Contempt {
     }
 
     pub fn rescale(&self, win_lose_delta: &mut f64, draw_chance: &mut f64, sign: f64, invert: bool, options: &EngineOptions) {
+        return;
         let mut diff = self.rescale_diff;
         let mut ratio = self.rescale_ratio;
 
