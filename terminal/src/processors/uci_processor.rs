@@ -66,8 +66,6 @@ impl UciProcessor {
                     search_engine.resize_tree();
                 }
 
-                search_engine.reinit_contempt();
-
                 let str = format!("Option {name} has been set to {value}");
                 self.uci_print(str.as_str(), search_engine.options().minimal_print());
             },

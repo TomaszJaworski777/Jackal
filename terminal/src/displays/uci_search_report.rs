@@ -22,8 +22,6 @@ impl SearchReport for UciSearchReport {
             let mut v = score.win_chance() - score.lose_chance();
             let mut d = score.draw_chance();
 
-            search_engine.contempt().rescale(&mut v, &mut d, 1.0, true, search_engine.options());
-
             let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
 
             let state = pv.first_node().state();

@@ -146,8 +146,6 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     let mut v = score.win_chance() - score.lose_chance();
     let mut d = score.draw_chance();
 
-    search_engine.contempt().rescale(&mut v, &mut d, 1.0, true, search_engine.options());
-
     let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
 
     let score = match pv.first_node().state() {

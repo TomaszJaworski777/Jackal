@@ -259,7 +259,6 @@ fn eval(search_engine: &SearchEngine) {
     let mut v = pre_contempt.win_chance() - pre_contempt.lose_chance();
     let mut d = pre_contempt.draw_chance();
 
-    search_engine.contempt().rescale(&mut v, &mut d, 1.0, false, search_engine.options());
     let total_score = WDLScore::new((1.0 + v - d) / 2.0, d);
     let total_score_cp = total_score.cp();
 
