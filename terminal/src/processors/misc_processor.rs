@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
-use engine::{NoReport, NodeIndex, PolicyNetwork, SearchEngine, SearchLimits, ValueNetwork, WDLScore};
+use engine::{NoReport, NodeIndex, PolicyNetwork, SearchEngine, SearchLimits, ValueNetwork};
 use utils::{clear_terminal_screen, create_loading_bar, heat_color, time_to_string, number_to_string, AlignString, Colors, CustomColor, PieceColors, Theme, DRAW_COLOR, LOSE_COLOR, WIN_COLOR};
 
 pub struct MiscProcessor;
@@ -217,7 +217,7 @@ fn eval(search_engine: &SearchEngine) {
     half_moves.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
     let half_moves_cp = half_moves.cp();
 
-    println!("{}", format!("50mr scaling:     {}", 
+    println!("{}", format!("With Draw Scaling:     {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", half_moves.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", half_moves.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -231,7 +231,7 @@ fn eval(search_engine: &SearchEngine) {
     material_scaling.apply_material_scaling(board, search_engine.options());
     let material_scaling_cp = material_scaling.cp();
 
-    println!("{}", format!("Material scaling: {}", 
+    println!("{}", format!("With Material Scaling: {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", material_scaling.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", material_scaling.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -241,29 +241,27 @@ fn eval(search_engine: &SearchEngine) {
         ).secondary(16.0/32.0)
     ).primary(16.0/32.0));
 
-    let mut pre_contempt = raw_score;
-    pre_contempt.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
-    pre_contempt.apply_material_scaling(board, search_engine.options());
-    let pre_contempt_cp = pre_contempt.cp();
+    let mut contempt = raw_score;
+    contempt.apply_contempt(search_engine.options().contempt());
+    let contempt_cp = contempt.cp();
 
-    println!("{}", format!("Before Contempt:  {}", 
+    println!("{}", format!("With Contempt:         {}\n", 
         format!("[{}, {}, {}] ({}{})",
-            format!("{:.2}%", pre_contempt.win_chance() * 100.0).custom_color(WIN_COLOR),
-            format!("{:.2}%", pre_contempt.draw_chance() * 100.0).custom_color(DRAW_COLOR),
-            format!("{:.2}%", pre_contempt.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-            heat_color(if pre_contempt_cp > 0 { "+" } else { "-" }, pre_contempt.single() as f32, 0.0, 1.0),
-            heat_color(format!("{:.2}", pre_contempt_cp.abs() as f32 / 100.0).as_str(), pre_contempt.single() as f32, 0.0, 1.0),
+            format!("{:.2}%", contempt.win_chance() * 100.0).custom_color(WIN_COLOR),
+            format!("{:.2}%", contempt.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+            format!("{:.2}%", contempt.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+            heat_color(if contempt_cp > 0 { "+" } else { "-" }, contempt.single() as f32, 0.0, 1.0),
+            heat_color(format!("{:.2}", contempt_cp.abs() as f32 / 100.0).as_str(), contempt.single() as f32, 0.0, 1.0),
         ).secondary(18.0/32.0)
     ).primary(18.0/32.0));
 
-    let mut v = pre_contempt.win_chance() - pre_contempt.lose_chance();
-    let mut d = pre_contempt.draw_chance();
-
-    search_engine.contempt().rescale(&mut v, &mut d, 1.0, false, search_engine.options());
-    let total_score = WDLScore::new((1.0 + v - d) / 2.0, d);
+    let mut total_score = raw_score;
+    total_score.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
+    total_score.apply_material_scaling(board, search_engine.options());
+    total_score.apply_contempt(search_engine.options().contempt());
     let total_score_cp = total_score.cp();
 
-    println!("{}", format!("After Contempt:   {}", 
+    println!("{}", format!("Total: {}\n", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", total_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", total_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),

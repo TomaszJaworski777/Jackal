@@ -25,7 +25,7 @@ fn main() {
     println!("{}", welcome_message());
 
     let mut input_wrapper = InputWrapper::new();
-    let mut uci_processor = UciProcessor::new();
+    let mut uci_processor = UciProcessor::new(&mut search_engine);
 
     while !shutdown_token {
         let input_command = input_wrapper.get_input();

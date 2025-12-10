@@ -93,14 +93,16 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
         print!("{}\r", " ".repeat(t_width));
         println!("{}", format!(" Threads:    {}", search_engine.options().threads().to_string().secondary(grad(11))).primary(grad(11)));
         print!("{}\r", " ".repeat(t_width));
-        println!("{}", format!(" Tree Size:  {} | {}", format!("{}n", number_to_string(tree_size as u128)).secondary(grad(12)), format!("{}B", tree_bytes).secondary(grad(12))).primary(grad(12)));
+        println!("{}", format!(" Contempt:   {}", search_engine.options().contempt().to_string().secondary(grad(12))).primary(grad(12)));
         print!("{}\r", " ".repeat(t_width));
-        println!("{}", format!(" Tree Usage: {}", create_loading_bar(50, usage, WIN_COLOR, LOSE_COLOR).secondary(grad(13))).primary(grad(13)));
+        println!("{}", format!(" Tree Size:  {} | {}", format!("{}n", number_to_string(tree_size as u128)).secondary(grad(13)), format!("{}B", tree_bytes).secondary(grad(13))).primary(grad(13)));
+        print!("{}\r", " ".repeat(t_width));
+        println!("{}", format!(" Tree Usage: {}", create_loading_bar(50, usage, WIN_COLOR, LOSE_COLOR).secondary(grad(14))).primary(grad(14)));
 
         print!("{}\r", " ".repeat(t_width));
         println!();
 
-        height_used += 4;
+        height_used += 5;
     }
 
     let search_stats_data = search_stats.aggregate();
@@ -142,13 +144,7 @@ fn print_search_report<const FINAL: bool>(_: &SearchLimits, search_stats: &Searc
     let draw_score = search_engine.options().draw_score() as f64 / 100.0;
     let pv = search_engine.tree().get_best_pv(0, draw_score);
 
-    let score = pv.score();
-    let mut v = score.win_chance() - score.lose_chance();
-    let mut d = score.draw_chance();
-
-    search_engine.contempt().rescale(&mut v, &mut d, 1.0, true, search_engine.options());
-
-    let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
+    let pv_score = pv.score();
 
     let score = match pv.first_node().state() {
         engine::GameState::Loss(len) => format!("+M{}", (len + 1).div_ceil(2)),

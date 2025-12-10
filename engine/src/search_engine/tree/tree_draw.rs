@@ -1,6 +1,6 @@
 use utils::{bytes_to_string, heat_color, number_to_string, AlignString, Colors, Theme};
 
-use crate::{search_engine::{tree::{node::Node, GameState, NodeIndex, Tree}}, SearchEngine, WDLScore};
+use crate::{SearchEngine, search_engine::tree::{GameState, NodeIndex, Tree, node::Node}};
 
 impl Tree {
     pub fn draw_tree<const FLIP_SCORE: bool>(&self, depth: Option<u8>, node_idx: Option<NodeIndex>, search_engine: &SearchEngine) {
@@ -206,18 +206,11 @@ impl Tree {
         }
         .white();
 
-        let score = if flip {
+        let wdl_score = if flip {
             node.score().reversed()
         } else {
             node.score()
         };
-
-        let mut v = score.win_chance() - score.lose_chance();
-        let mut d = score.draw_chance();
-
-        search_engine.contempt().rescale(&mut v, &mut d, 1.0, true, search_engine.options());
-
-        let pv_score = WDLScore::new((1.0 + v - d) / 2.0, d);
 
         let state = if flip {
             match node.state() {
@@ -232,10 +225,10 @@ impl Tree {
         let score = match state {
             GameState::Loss(len) => format!("+M{}", (len + 1).div_ceil(2)),
             GameState::Win(len) => format!("-M{}", (len + 1).div_ceil(2)),
-            _ => format!("{}{:.2}", if pv_score.single() < 0.5 { "-" } else { "+" }, pv_score.cp().abs() as f32 / 100.0)
+            _ => format!("{}{:.2}", if wdl_score.single() < 0.5 { "-" } else { "+" }, wdl_score.cp().abs() as f32 / 100.0)
         };
 
-        let score = heat_color(&score.align_to_right(6), pv_score.single() as f32, 0.0, 1.0);
+        let score = heat_color(&score.align_to_right(6), wdl_score.single() as f32, 0.0, 1.0);
 
         let visits = format!("{}", node.visits()).align_to_right(9);
 
