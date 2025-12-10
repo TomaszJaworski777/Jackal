@@ -245,7 +245,7 @@ fn eval(search_engine: &SearchEngine) {
     contempt.apply_contempt(search_engine.options().contempt());
     let contempt_cp = contempt.cp();
 
-    println!("{}", format!("With Contempt:        {}\n", 
+    println!("{}", format!("With Contempt:         {}\n", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", contempt.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", contempt.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -261,7 +261,7 @@ fn eval(search_engine: &SearchEngine) {
     total_score.apply_contempt(search_engine.options().contempt());
     let total_score_cp = total_score.cp();
 
-    println!("{}", format!("Total: {}", 
+    println!("{}", format!("Total: {}\n", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", total_score.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", total_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),

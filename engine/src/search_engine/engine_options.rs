@@ -16,7 +16,7 @@ create_options! {
             //======== EAS ========
             ["UCI_Opponent"]  uci_opponent:   String  =>  String::from("");
             ["UCI_RatingAdv"] uci_rating_adv: i64     =>  -1000,  -5000,  5000;
-            ["Contempt"]      min_contempt:   i64     =>  0,     -1000,  1000;
+            ["Contempt"]      min_contempt:   i64     =>  300,    -1000,  1000;
             ["DrawScore"]     draw_score:     i64     =>  30,     -100,   100;
             ["PolicySac"]     policy_sac:     i64     =>  10,     -100,   100;
 
