@@ -4,7 +4,7 @@ use chess::{ChessBoard, ChessPosition, FEN};
 
 use crate::{search_report_trait::NoReport, SearchEngine, SearchLimits};
 
-const DEFAULT_BENCH_DEPTH: u64 = 6;
+const DEFAULT_BENCH_DEPTH: u64 = 3;
 
 const BENCH_FENS: [&'static str; 50] = [
     "r3k2r/2pb1ppp/2pp1q2/p7/1nP1B3/1P2P3/P2N1PPP/R2QK2R w KQkq a6 0 14",

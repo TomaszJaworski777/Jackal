@@ -17,6 +17,7 @@ pub struct PolicyNetwork {
 
 impl PolicyNetwork {
     pub fn create_base(&self, board: &ChessBoard) -> Accumulator<i16, { HL_SIZE / 2 }> {
+        return Accumulator::default();
         let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
 
         for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
@@ -45,6 +46,7 @@ impl PolicyNetwork {
     }
 
     pub fn forward(&self, board: &ChessBoard, base: &Accumulator<i16, { HL_SIZE / 2 }>, mv: Move, see: bool, chess960: bool) -> f32 {
+        return 1.0;
         let idx = map_move_to_index(board, mv, see, chess960);
         let weights = self.l1.weights()[idx];
 

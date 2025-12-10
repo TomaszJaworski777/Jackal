@@ -20,6 +20,8 @@ pub struct ValueNetwork {
 
 impl ValueNetwork {
     pub fn forward(&self, board: &ChessBoard) -> WDLScore {
+        return WDLScore::DRAW;
+
         let mut inputs: Accumulator<i16, HL_SIZE> = Accumulator::default();
 
         for (i, &bias) in inputs.values_mut().iter_mut().zip(self.l0.biases().values()) {
