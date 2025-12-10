@@ -58,6 +58,8 @@ impl TimeManager {
 
         self.soft_limit = Some(soft_time);
         self.hard_limit = Some(hard_time);
+
+        self.hard_limit = Some((time_remaining - move_overhead) / 30 + increment / 2);
     } 
 
     pub fn hard_limit_reached(&mut self, elapsed_ms: u128) -> bool {
@@ -72,6 +74,8 @@ impl TimeManager {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
+
+        return elapsed_ms >= self.hard_limit.unwrap();
 
         let move_overhead = (options.move_overhead() + (options.threads() - 1) * 10) as u128;
         
