@@ -129,7 +129,7 @@ impl WDLScore {
                 let mu = (a - b) / denom;
                 let mu_cp = mu * 100.0;
 
-                if mu_cp.abs() > tan_cp.abs() && mu_cp.abs() < 100.0 { 
+                if mu_cp.abs() > tan_cp.abs() || mu_cp.abs() < 100.0 { 
                     return mu_cp as i32;
                 }
             }
