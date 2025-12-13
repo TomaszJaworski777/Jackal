@@ -63,6 +63,7 @@ impl SearchEngine {
             _ => ValueNetwork.forward(position.board())
         };
 
+        #[cfg(not(feature = "datagen"))]
         score.apply_material_scaling(position.board(), self.options());
         score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.options());
         
