@@ -16,12 +16,6 @@ impl Piece {
     }
 }
 
-impl Default for Piece {
-    fn default() -> Self {
-        Self::NONE
-    }
-}
-
 impl From<u8> for Piece {
     #[inline]
     fn from(value: u8) -> Self {
