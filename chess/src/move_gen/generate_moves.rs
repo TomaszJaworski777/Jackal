@@ -140,4 +140,98 @@ impl ChessBoard {
             );
         }
     }
+
+    pub fn count_legal_moves<const COLOR: u8>(&self) -> u32 {
+        let attack_map = self.generate_attack_map(Side::from(COLOR).flipped());
+        let king_square = self.king_square(Side::from(COLOR));
+        let (bishop_pins, rook_pins) = self.generate_pin_masks(Side::from(COLOR));
+        let checkers = if attack_map.get_bit(king_square) {
+            self.generate_checkers_mask(Side::from(COLOR))
+        } else {
+            Bitboard::EMPTY
+        };
+
+        let mut result = 0;
+
+        result += MoveGen::count_king_moves::<COLOR>(
+            self,
+            attack_map,
+            king_square,
+        );
+
+        if checkers.is_empty() {
+            result += MoveGen::count_castle_moves::<COLOR>(
+                self,
+                attack_map,
+                king_square,
+                rook_pins,
+            );
+
+            let push_map = !self.occupancy();
+            let capture_map = self.occupancy_for_side(Side::from(COLOR).flipped());
+
+            result += MoveGen::count_pawn_moves::<COLOR>(
+                self,
+                push_map,
+                capture_map,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { KNIGHT }>(
+                self,
+                push_map,
+                capture_map,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { BISHOP }>(
+                self,
+                push_map,
+                capture_map,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { ROOK }>(
+                self,
+                push_map,
+                capture_map,
+                bishop_pins,
+                rook_pins,
+            );
+        } else if (checkers & (checkers - 1)).is_empty() {
+            let checker = checkers.ls1b_square();
+            let push_map = Rays::get_ray(king_square, checker).exclude(checker);
+
+            result += MoveGen::count_pawn_moves::<COLOR>(
+                self,
+                push_map,
+                checkers,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { KNIGHT }>(
+                self,
+                push_map,
+                checkers,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { BISHOP }>(
+                self,
+                push_map,
+                checkers,
+                bishop_pins,
+                rook_pins,
+            );
+            result += MoveGen::count_piece_moves::<COLOR, { ROOK }>(
+                self,
+                push_map,
+                checkers,
+                bishop_pins,
+                rook_pins,
+            );
+        };
+
+        result
+    }
 }

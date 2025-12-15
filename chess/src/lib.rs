@@ -53,8 +53,7 @@ fn perft_internal_white<const BULK: bool, const SPLIT: bool, const CHESS_960: bo
     let mut node_count = 0u128;
 
     if BULK && depth == 1 {
-        board.map_legal_moves_templated::<_, 0>(|_| node_count += 1);
-        return node_count;
+        return board.count_legal_moves::<0>() as u128;
     }
 
     if !BULK && depth == 0 {
@@ -83,8 +82,7 @@ fn perft_internal_black<const BULK: bool, const SPLIT: bool, const CHESS_960: bo
     let mut node_count = 0u128;
 
     if BULK && depth == 1 {
-        board.map_legal_moves_templated::<_, 1>(|_| node_count += 1);
-        return node_count;
+        return board.count_legal_moves::<1>() as u128;
     }
 
     if !BULK && depth == 0 {
