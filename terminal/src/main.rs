@@ -29,6 +29,9 @@ fn main() {
 
     Attacks::get_rook_attacks(Square::A8, pos.occupancy()).draw_bitboard();
     chess::get_rook_attacks(Square::A8, pos.occupancy()).draw_bitboard();
+
+    chess::save_all_tables_to_disk();
+
     return;
 
     let mut search_engine = SearchEngine::new();

@@ -1,4 +1,6 @@
 use crate::{Bitboard, Square};
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 // -----------------------------------------------------------------------------
 //  Public API
@@ -28,9 +30,10 @@ pub fn get_bishop_attacks(sq: Square, occ: Bitboard) -> Bitboard {
 
 // PEXT (BMI2) Configuration
 #[cfg(target_feature = "bmi2")]
-const TABLE_SIZE: usize = 107_648; // Exact size for dense PEXT tables (Rooks + Bishops)
+const TABLE_SIZE: usize = 107_648;
 
 #[cfg(target_feature = "bmi2")]
+#[derive(Debug, Clone, Copy)]
 struct Magic {
     mask: u64,
     offset: u32,
@@ -38,9 +41,10 @@ struct Magic {
 
 // Legacy Black Magic Configuration
 #[cfg(not(target_feature = "bmi2"))]
-const TABLE_SIZE: usize = 87_988; // Compressed size for Black Magic tables
+const TABLE_SIZE: usize = 87_988;
 
 #[cfg(not(target_feature = "bmi2"))]
+#[derive(Debug, Clone, Copy)]
 struct Magic {
     factor: u64,
     mask: u64,
@@ -56,7 +60,6 @@ struct Magic {
 #[cfg(target_feature = "bmi2")]
 fn calculate_index(occ: u64, m: &Magic) -> usize {
     // Hardware PEXT: Extract bits of 'occ' specified by 'm.mask'
-    // SAFETY: This code path only active when target_feature="bmi2"
     unsafe { core::arch::x86_64::_pext_u64(occ, m.mask) as usize }
 }
 
@@ -72,22 +75,21 @@ const fn calculate_index(occ: u64, m: &Magic) -> usize {
 // -----------------------------------------------------------------------------
 
 #[allow(long_running_const_eval)]
-static ATTACK_TABLE: [u64; TABLE_SIZE] = generate_all_attacks();
+static ATTACK_TABLE: [u64; TABLE_SIZE] = generate_active_attacks();
 
-static MAGICS: [Magic; 128] = generate_magics();
+static MAGICS: [Magic; 128] = generate_active_magics();
 
 // -----------------------------------------------------------------------------
-//  Generators
+//  Compile-Time Generators (For the current binary)
 // -----------------------------------------------------------------------------
 
-const fn generate_magics() -> [Magic; 128] {
-    // Because Magic struct fields differ based on cfg, we handle initialization separately.
+const fn generate_active_magics() -> [Magic; 128] {
     #[cfg(target_feature = "bmi2")]
     {
-        let mut magics = [const { Magic { mask: 0, offset: 0 } }; 128];
+        let mut magics = [Magic { mask: 0, offset: 0 }; 128];
         let mut offset = 0;
         let mut i = 0;
-        
+
         // Rooks (0..64)
         while i < 64 {
             let mask = generate_rook_mask(i as u8);
@@ -108,7 +110,7 @@ const fn generate_magics() -> [Magic; 128] {
 
     #[cfg(not(target_feature = "bmi2"))]
     {
-        let mut magics = [const { Magic { factor: 0, mask: 0, offset: 0, shift: 0 } }; 128];
+        let mut magics = [Magic { factor: 0, mask: 0, offset: 0, shift: 0 }; 128];
         let mut i = 0;
         while i < 64 {
             magics[i] = Magic {
@@ -129,20 +131,23 @@ const fn generate_magics() -> [Magic; 128] {
     }
 }
 
-const fn generate_all_attacks() -> [u64; TABLE_SIZE] {
+const fn generate_active_attacks() -> [u64; TABLE_SIZE] {
     let mut table = [0; TABLE_SIZE];
+    
+    // We only generate the attacks for the ACTIVE configuration (bmi2 OR plain)
+    // To see the generation logic for both, look at the 'offline_generation' module below.
     
     // Rooks
     let mut i = 0;
-    let mut current_offset = 0; // Only used for PEXT tracking
-    
+    #[cfg(target_feature = "bmi2")]
+    let mut current_offset = 0;
+
     while i < 64 {
         let sq = i as u8;
         let mask = generate_rook_mask(sq);
         let subsets = 1 << mask.count_ones();
         let mut j = 0;
-        
-        // Get offset for this square
+
         #[cfg(target_feature = "bmi2")]
         let offset = current_offset;
         #[cfg(not(target_feature = "bmi2"))]
@@ -151,9 +156,8 @@ const fn generate_all_attacks() -> [u64; TABLE_SIZE] {
         while j < subsets {
             let blockers = scatter_bits(j, mask);
             
-            // Calculate Index for Table
             #[cfg(target_feature = "bmi2")]
-            let idx = j as usize; // For PEXT, the index IS the iteration (j)
+            let idx = j as usize;
             
             #[cfg(not(target_feature = "bmi2"))]
             let idx = calculate_index(blockers, &Magic { 
@@ -163,7 +167,7 @@ const fn generate_all_attacks() -> [u64; TABLE_SIZE] {
             table[offset as usize + idx] = calculate_rook_moves(sq, blockers);
             j += 1;
         }
-        
+
         #[cfg(target_feature = "bmi2")]
         { current_offset += subsets as u32; }
         
@@ -188,7 +192,7 @@ const fn generate_all_attacks() -> [u64; TABLE_SIZE] {
             
             #[cfg(target_feature = "bmi2")]
             let idx = j as usize;
-
+            
             #[cfg(not(target_feature = "bmi2"))]
             let idx = calculate_index(blockers, &Magic { 
                 factor: BISHOP_RAW[i].factor, mask, offset: 0, shift: 64 - 9 
@@ -259,14 +263,167 @@ const fn generate_bishop_mask(sq: u8) -> u64 {
 }
 
 // -----------------------------------------------------------------------------
-//  Raw Magic Data (Excluded when PEXT is available)
+//  File Generation Capability (Offline Tooling)
 // -----------------------------------------------------------------------------
 
-#[cfg(not(target_feature = "bmi2"))]
+pub mod offline_generation {
+    use super::*;
+
+    // Re-define structs for serialization so we can generate BOTH types 
+    // regardless of what CPU feature the main binary is compiled for.
+    
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    pub struct MagicPext {
+        pub mask: u64,
+        pub offset: u32,
+    }
+
+    #[repr(C)]
+    #[derive(Debug, Clone, Copy)]
+    pub struct MagicPlain {
+        pub factor: u64,
+        pub mask: u64,
+        pub offset: u32,
+        pub shift: u8,
+    }
+
+    /// Generates all tables for both architectures and saves them to disk.
+    /// Files generated:
+    /// 1. pext_magics.bin
+    /// 2. pext_attacks.bin
+    /// 3. plain_magics.bin
+    /// 4. plain_attacks.bin
+    pub fn save_all_tables_to_disk() -> std::io::Result<()> {
+        // 1. Generate PEXT Data
+        let (pext_magics, pext_attacks) = generate_pext_data();
+        write_to_file("pext_magics.bin", &pext_magics)?;
+        write_to_file("pext_attacks.bin", &pext_attacks)?;
+        println!("Saved PEXT tables: {} magics, {} attacks.", pext_magics.len(), pext_attacks.len());
+
+        // 2. Generate Plain Data
+        let (plain_magics, plain_attacks) = generate_plain_data();
+        write_to_file("plain_magics.bin", &plain_magics)?;
+        write_to_file("plain_attacks.bin", &plain_attacks)?;
+        println!("Saved Plain tables: {} magics, {} attacks.", plain_magics.len(), plain_attacks.len());
+
+        Ok(())
+    }
+
+    fn write_to_file<T>(path: &str, data: &[T]) -> std::io::Result<()> {
+        let file = File::create(path)?;
+        let mut writer = BufWriter::new(file);
+        let slice_u8 = unsafe {
+            std::slice::from_raw_parts(
+                data.as_ptr() as *const u8,
+                data.len() * std::mem::size_of::<T>(),
+            )
+        };
+        writer.write_all(slice_u8)?;
+        writer.flush()?;
+        Ok(())
+    }
+
+    fn generate_pext_data() -> (Vec<MagicPext>, Vec<u64>) {
+        let mut magics = Vec::with_capacity(128);
+        let mut attacks = vec![0u64; 107_648]; // PEXT table size
+        let mut current_offset = 0;
+
+        // Rooks
+        for i in 0..64 {
+            let sq = i as u8;
+            let mask = generate_rook_mask(sq);
+            magics.push(MagicPext { mask, offset: current_offset });
+            
+            let subsets = 1 << mask.count_ones();
+            for j in 0..subsets {
+                let blockers = scatter_bits(j, mask);
+                // For PEXT, the index is simply 'j' (the extracted bits)
+                attacks[(current_offset + j as u32) as usize] = calculate_rook_moves(sq, blockers);
+            }
+            current_offset += subsets as u32;
+        }
+
+        // Bishops
+        for i in 0..64 {
+            let sq = i as u8;
+            let mask = generate_bishop_mask(sq);
+            magics.push(MagicPext { mask, offset: current_offset });
+            
+            let subsets = 1 << mask.count_ones();
+            for j in 0..subsets {
+                let blockers = scatter_bits(j, mask);
+                attacks[(current_offset + j as u32) as usize] = calculate_bishop_moves(sq, blockers);
+            }
+            current_offset += subsets as u32;
+        }
+
+        (magics, attacks)
+    }
+
+    fn generate_plain_data() -> (Vec<MagicPlain>, Vec<u64>) {
+        let mut magics = Vec::with_capacity(128);
+        let mut attacks = vec![0u64; 87_988]; // Plain table size
+
+        // Helper to calculate index without the 'Magic' struct dependency
+        let calc_idx = |occ: u64, mask: u64, factor: u64, shift: u8| -> usize {
+            (occ | !mask).wrapping_mul(factor).wrapping_shr(shift as u32) as usize
+        };
+
+        // Rooks
+        for i in 0..64 {
+            let sq = i as u8;
+            let mask = generate_rook_mask(sq);
+            let raw = ROOK_RAW[i];
+            
+            magics.push(MagicPlain { 
+                factor: raw.factor, 
+                mask, 
+                offset: raw.offset, 
+                shift: 64 - 12 
+            });
+
+            let subsets = 1 << mask.count_ones();
+            for j in 0..subsets {
+                let blockers = scatter_bits(j, mask);
+                let idx = calc_idx(blockers, mask, raw.factor, 64 - 12);
+                attacks[(raw.offset as usize) + idx] = calculate_rook_moves(sq, blockers);
+            }
+        }
+
+        // Bishops
+        for i in 0..64 {
+            let sq = i as u8;
+            let mask = generate_bishop_mask(sq);
+            let raw = BISHOP_RAW[i];
+
+            magics.push(MagicPlain { 
+                factor: raw.factor, 
+                mask, 
+                offset: raw.offset, 
+                shift: 64 - 9 
+            });
+
+            let subsets = 1 << mask.count_ones();
+            for j in 0..subsets {
+                let blockers = scatter_bits(j, mask);
+                let idx = calc_idx(blockers, mask, raw.factor, 64 - 9);
+                attacks[(raw.offset as usize) + idx] = calculate_bishop_moves(sq, blockers);
+            }
+        }
+
+        (magics, attacks)
+    }
+}
+
+// -----------------------------------------------------------------------------
+//  Raw Magic Data
+//  (NOTE: cfg removed so generator works on all platforms)
+// -----------------------------------------------------------------------------
+
 #[derive(Clone, Copy)]
 struct RawMagic { factor: u64, offset: u32 }
 
-#[cfg(not(target_feature = "bmi2"))]
 #[rustfmt::skip]
 const BISHOP_RAW: [RawMagic; 64] = [
     RawMagic { factor: 0xa7020080601803d8, offset: 60984 }, RawMagic { factor: 0x13802040400801f1, offset: 66046 },
@@ -303,7 +460,6 @@ const BISHOP_RAW: [RawMagic; 64] = [
     RawMagic { factor: 0x0840800080200fda, offset: 70880 }, RawMagic { factor: 0x100000c05f582008, offset: 11140 },
 ];
 
-#[cfg(not(target_feature = "bmi2"))]
 #[rustfmt::skip]
 const ROOK_RAW: [RawMagic; 64] = [
     RawMagic { factor: 0x80280013ff84ffff, offset: 10890 }, RawMagic { factor: 0x5ffbfefdfef67fff, offset: 50579 },
