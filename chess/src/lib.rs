@@ -2,7 +2,6 @@ mod attacks;
 mod base_structures;
 mod board;
 mod move_gen;
-mod magics;
 
 use std::time::Duration;
 use std::time::Instant;
@@ -19,9 +18,6 @@ pub use base_structures::FEN;
 pub use base_structures::ZobristKey;
 pub use board::ChessBoard;
 pub use board::ChessPosition;
-pub use magics::get_bishop_attacks;
-pub use magics::get_rook_attacks;
-pub use magics::offline_generation::save_all_tables_to_disk;
 
 pub const DEFAULT_PERFT_DEPTH: u8 = 5;
 

@@ -112,6 +112,7 @@ fn perft<const BULK: bool, const CHESS_960: bool>(search_engine: &SearchEngine, 
     println!("  Running PERFT");
     println!("  Depth: {}", depth.unwrap_or(DEFAULT_PERFT_DEPTH));
     println!("  Bulk: {BULK}");
+    println!("  PEXT: {}", cfg!(target_feature = "bmi2"));
     println!("-----------------------------------------------------------\n");
 
     let (result, duration) =

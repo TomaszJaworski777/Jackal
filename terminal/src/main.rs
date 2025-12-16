@@ -1,4 +1,3 @@
-use chess::{Attacks, ChessBoard, FEN, Square};
 use engine::SearchEngine;
 use utils::clear_terminal_screen;
 
@@ -15,24 +14,6 @@ pub use input_wrapper::InputWrapper;
 
 fn main() {
     let mut shutdown_token = false;
-
-    let pos = ChessBoard::from(&FEN::kiwipete_position());
-    pos.draw_board();
-    Attacks::get_bishop_attacks(Square::E2, pos.occupancy()).draw_bitboard();
-    chess::get_bishop_attacks(Square::E2, pos.occupancy()).draw_bitboard();
-
-    Attacks::get_bishop_attacks(Square::A6, pos.occupancy()).draw_bitboard();
-    chess::get_bishop_attacks(Square::A6, pos.occupancy()).draw_bitboard();
-
-    Attacks::get_rook_attacks(Square::H1, pos.occupancy()).draw_bitboard();
-    chess::get_rook_attacks(Square::H1, pos.occupancy()).draw_bitboard();
-
-    Attacks::get_rook_attacks(Square::A8, pos.occupancy()).draw_bitboard();
-    chess::get_rook_attacks(Square::A8, pos.occupancy()).draw_bitboard();
-
-    chess::save_all_tables_to_disk();
-
-    return;
 
     let mut search_engine = SearchEngine::new();
 
