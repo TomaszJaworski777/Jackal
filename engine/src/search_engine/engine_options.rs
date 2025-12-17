@@ -37,6 +37,9 @@ create_options! {
             //Visit scaling
             cpuct_visit_scale: f64  =>  8000.00,  4096.0,  65536.0,  250.0,  0.002;
 
+            //Virtual loss
+            virtual_loss_weight: f64  =>  1.0,  1.0,  5.0,  0.25,  0.002;
+
             //Variance scaling
             cpuct_variance_scale:  f64  =>  0.2,   0.1,  50.0,  0.02,   0.002;
             cpuct_variance_weight: f64  =>  0.85,  0.0,  2.0,   0.085,  0.002;

@@ -29,14 +29,14 @@ impl SearchEngine {
 
         let draw_score = if depth as i64 % 2 == 0 { 0.5 } else { self.options().draw_score() as f64 / 100.0 };
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
-            let score = get_score(&parent_node.score(), child_node, child_node.visits()).single_with_score(draw_score) as f64;
+            let score = get_score(&parent_node.score(), child_node, child_node.visits(), self.options()).single_with_score(draw_score) as f64;
             score + child_node.policy() * cpuct * f64::from(child_node.visits() + 1).recip()
         }).expect("Failed to select a valid node.")
     }
 }
 
 #[inline(always)]
-fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32) -> WDLScore {
+fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32, opitions: &EngineOptions) -> WDLScore {
     let mut score = if child_visits == 0 {
         parent_score.reversed()
     } else {
@@ -46,8 +46,8 @@ fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32) -> W
     let threads = f64::from(child_node.threads());
     if threads > 0.0 {
         let v = f64::from(child_visits);
-        let w = (score.win_chance() * v) / (v + threads);
-        let d = (score.draw_chance() * v) / (v + threads);
+        let w = (score.win_chance() * v) / (v + 1.0 + opitions.virtual_loss_weight() * (threads - 1.0));
+        let d = (score.draw_chance() * v) / (v + 1.0 + opitions.virtual_loss_weight() * (threads - 1.0));
         score = WDLScore::new(w, d)
     }
 
