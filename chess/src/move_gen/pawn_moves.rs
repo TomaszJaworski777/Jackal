@@ -37,6 +37,36 @@ impl MoveGen {
             apply_move,
         );
     }
+
+    pub fn count_pawn_moves<const COLOR: u8>(
+        board: &ChessBoard,
+        push_map: Bitboard,
+        capture_map: Bitboard,
+        bishop_pins: Bitboard,
+        rook_pins: Bitboard,
+    ) -> u32 {
+        let pawns = board.piece_mask_for_side(Piece::PAWN, Side::from(COLOR));
+        let mut result = 0;
+
+        result += count_pawn_captures::<COLOR>(
+            pawns & !rook_pins,
+            capture_map,
+            bishop_pins,
+        );
+
+        if board.en_passant_square() != Square::NULL {
+            result += count_en_passant::<COLOR>(board, pawns);
+        }
+
+        result += count_pawn_pushes::<COLOR>(
+            board,
+            pawns & !bishop_pins,
+            push_map,
+            rook_pins,
+        );
+
+        result
+    }
 }
 
 fn handle_pawn_pushes<F: FnMut(Move), const COLOR: u8>(
@@ -252,4 +282,125 @@ fn handle_en_passant<F: FnMut(Move), const COLOR: u8>(
             apply_move(mv)
         }
     });
+}
+
+fn count_pawn_pushes<const COLOR: u8>(
+    board: &ChessBoard,
+    pawns: Bitboard,
+    push_map: Bitboard,
+    rook_pins: Bitboard,
+) -> u32 {
+    let mut result = 0;
+    let vertical_pin = rook_pins & (rook_pins << 8);
+    let vertical_pin = vertical_pin | rook_pins >> 8;
+
+    let promotion_rank = if COLOR == WHITE {
+        Bitboard::RANK_7
+    } else {
+        Bitboard::RANK_2
+    };
+    let double_push_rank = if COLOR == WHITE {
+        Bitboard::RANK_2
+    } else {
+        Bitboard::RANK_7
+    };
+
+    let moveable_pawns = pawns & !promotion_rank;
+    let moveable_pawns = (moveable_pawns & !rook_pins) | (moveable_pawns & vertical_pin);
+
+    let single_push_map = if COLOR == WHITE {
+        push_map >> 8
+    } else {
+        push_map << 8
+    };
+
+    let single_push_pawns = moveable_pawns & single_push_map;
+    result += single_push_pawns.pop_count();
+
+    let double_push_map = if COLOR == WHITE {
+        push_map >> 16
+    } else {
+        push_map << 16
+    };
+    let empty_squares_shifted_map = if COLOR == WHITE {
+        !board.occupancy() >> 8
+    } else {
+        !board.occupancy() << 8
+    };
+
+    let double_push_pawns =
+        moveable_pawns & double_push_rank & empty_squares_shifted_map & double_push_map;
+    result += double_push_pawns.pop_count();
+
+    let promotion_pawns = pawns & promotion_rank & !rook_pins;
+    let targets = if COLOR == WHITE {
+        promotion_pawns << 8
+    } else {
+        promotion_pawns >> 8
+    } & push_map;
+    result += targets.pop_count() * 4;
+
+    result
+}
+
+fn count_pawn_captures<const COLOR: u8>(
+    mut pawns: Bitboard,
+    capture_map: Bitboard,
+    bishop_pins: Bitboard,
+) -> u32 {
+    let promotion_rank = if COLOR == WHITE {
+        Bitboard::RANK_7
+    } else {
+        Bitboard::RANK_2
+    };
+    let promotion_pawns = pawns & promotion_rank;
+    pawns &= !promotion_rank;
+
+    let mut result = 0;
+
+    (pawns & !bishop_pins).map(|from_square| {
+        let attacks = Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map;
+        result += attacks.pop_count();
+    });
+
+    (pawns & bishop_pins).map(|from_square| {
+        let attacks =
+            Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map & bishop_pins;
+        result += attacks.pop_count();
+    });
+
+    (promotion_pawns & !bishop_pins).map(|from_square| {
+        let attacks = Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map;
+        result += attacks.pop_count() * 4;
+    });
+
+    (promotion_pawns & bishop_pins).map(|from_square| {
+        let attacks =
+            Attacks::get_pawn_attacks(from_square, Side::from(COLOR)) & capture_map & bishop_pins;
+        result += attacks.pop_count() * 4;
+    });
+
+    result
+}
+
+fn count_en_passant<const COLOR: u8>(
+    board: &ChessBoard,
+    mut pawns: Bitboard,
+) -> u32 {
+    let en_passant_square = board.en_passant_square();
+    pawns &= Attacks::get_pawn_attacks(en_passant_square, Side::from(COLOR).flipped());
+
+    let mut result = 0;
+
+    pawns.map(|from_square| {
+        let mut board = *board;
+        let mv = Move::from_squares(from_square, en_passant_square, MoveFlag::EN_PASSANT);
+        board.make_move_no_mask(mv);
+
+        if !board.is_square_attacked(board.king_square(Side::from(COLOR)), Side::from(COLOR)) {
+            result += 1;
+        }
+    });
+
+    result
 }

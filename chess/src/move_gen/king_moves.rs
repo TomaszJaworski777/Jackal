@@ -94,4 +94,65 @@ impl MoveGen {
             }
         }
     }
+
+    pub fn count_king_moves<const COLOR: u8>(
+        board: &ChessBoard,
+        attack_map: Bitboard,
+        king_square: Square,
+    ) -> u32 {
+        let move_mask = Attacks::get_king_attacks(king_square) & !attack_map;
+        (move_mask & board.occupancy_for_side(Side::from(COLOR).flipped())).pop_count() + (move_mask & !board.occupancy()).pop_count()
+    }
+
+    pub fn count_castle_moves<const COLOR: u8>(
+        board: &ChessBoard,
+        attack_map: Bitboard,
+        king_square: Square,
+        rook_pins: Bitboard,
+    ) -> u32 {
+        let validate_castle =
+            |rook_square: Square, king_destination: Square, rook_destination: Square| -> bool {
+                let castle_path = Rays::get_ray(rook_square, rook_destination)
+                    | Rays::get_ray(king_square, king_destination);
+                let occupancy =
+                    board.occupancy() ^ Bitboard::from(rook_square) ^ Bitboard::from(king_square);
+                return (Rays::get_ray(king_square, king_destination) & attack_map).is_empty()
+                    && (castle_path & occupancy).is_empty()
+                    && (rook_pins & Bitboard::from(rook_square)).is_empty();
+            };
+
+        let mut result = 0;
+
+        if COLOR == WHITE {
+            let rook_square = board.castle_rights().rook_square(1);
+            if board.castle_rights().has_right(CastleRights::WHITE_KING)
+                && validate_castle(rook_square, Square::G1, Square::F1)
+            {
+                result += 1;
+            }
+
+            let rook_square = board.castle_rights().rook_square(0);
+            if board.castle_rights().has_right(CastleRights::WHITE_QUEEN)
+                && validate_castle(rook_square, Square::C1, Square::D1)
+            {
+                result += 1;
+            }
+        } else {
+            let rook_square = board.castle_rights().rook_square(3);
+            if board.castle_rights().has_right(CastleRights::BLACK_KING)
+                && validate_castle(rook_square, Square::G8, Square::F8)
+            {
+                result += 1;
+            }
+
+            let rook_square = board.castle_rights().rook_square(2);
+            if board.castle_rights().has_right(CastleRights::BLACK_QUEEN)
+                && validate_castle(rook_square, Square::C8, Square::D8)
+            {
+                result += 1;
+            }
+        };
+
+        result
+    }
 }
