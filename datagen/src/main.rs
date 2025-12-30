@@ -38,7 +38,7 @@ fn main() {
         .open(output_path)
         .expect("Cannot open file");
 
-    let openings = std::io::BufReader::new(File::open("./resources/books/UHO_Lichess_4852_v1.epd")
+    let openings = std::io::BufReader::new(File::open("./resources/books/DFRC.epd")
                                     .expect("Book does not exist!"))
                                     .lines().map(|line| line.unwrap())
                                     .collect::<Vec<String>>();
