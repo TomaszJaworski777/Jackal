@@ -13,5 +13,5 @@ pub static ValueNetwork: ValueNetwork = unsafe {
 
 #[allow(non_upper_case_globals)]
 pub static PolicyNetwork: PolicyNetwork = unsafe {
-    std::mem::transmute(*include_bytes!("../../resources/networks/p4004096009q.network"))
+    std::mem::transmute(*include_bytes!("../../resources/networks/p8008192009q.network"))
 };
