@@ -29,7 +29,9 @@ impl SearchEngine {
 
         let draw_score = if depth as i64 % 2 == 0 { 0.5 } else { self.options().draw_score() as f64 / 100.0 };
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
-            let score = get_score(&parent_node.score(), child_node, child_node.visits(), self.options()).single_with_score(draw_score) as f64;
+            let wdl = get_score(&parent_node.score(), child_node, child_node.visits(), self.options());
+            let draw_score = if wdl.win_chance() < 0.2 { 0.5 } else { draw_score };
+            let score = wdl.single_with_score(draw_score) as f64;
             score + child_node.policy() * cpuct * f64::from(child_node.visits() + 1).recip()
         }).expect("Failed to select a valid node.")
     }

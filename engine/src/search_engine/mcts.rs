@@ -82,7 +82,7 @@ impl SearchEngine {
                 *max_avg_depth = avg_depth.max(*max_avg_depth);
             }
 
-            let draw_score = self.options().draw_score() as f64 / 100.0;
+            let draw_score = if self.tree().root_node().score().win_chance() < 0.2 { 0.5 } else { self.options().draw_score() as f64 / 100.0 };
             let best_move = self.tree()[self.tree().select_best_child(self.tree().root_index(), draw_score).unwrap()].mv();
             if let Some(last_move) = last_best_move {
                 if *last_move != best_move {
