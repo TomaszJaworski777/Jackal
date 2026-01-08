@@ -148,26 +148,33 @@ impl WDLScore {
     }
 
     pub fn apply_sharpness_scaling(&mut self, params: &EngineParams) {
-        let draw_chance = self.draw_chance();
+let draw = self.draw_chance();
+        
+        // 1. Calculate the "Extra Draw Mass" (The Pile)
+        // Using params like 2.5, this creates a positive number (e.g., 0.65)
+        let extra_mass = draw * params.sharpness_scale() 
+            + draw * draw * params.sharpness_scale_2();
 
-        let scale = draw_chance * params.sharpness_scale()
-            + draw_chance * draw_chance * params.sharpness_scale_2();
+        // 2. Calculate the Dilution Factor
+        // If we added 0.65 mass, the total "pile" is now 1.65x bigger
+        // We use .max(0.0) just in case negative params are used
+        let dilution = (1.0 + extra_mass).max(0.0001);
 
-        let scale = (1.0 - scale).max(0.0);
-        let score = self.single();
-        let scale = 1.0 / (1.0 + (-scale * (score / (1.0 - score)).ln()).exp());
-
+        // 3. Reconstruct P and Q
+        // Q = The size of the "Win + Loss" slice
         let q = (self.win_chance() + self.lose_chance()).clamp(0.0001, 1.0);
+        
+        // P = The ratio of Win vs Loss (This remains constant!)
         let p = self.win_chance() / q;
 
-        let new_q = if (p - 0.5).abs() < 1e-9 {
-            0.0
-        } else {
-            ((scale - 0.5) / (p - 0.5)).clamp(0.0, 1.0)
-        };
+        // 4. Calculate New Decisiveness
+        // We simply shrink the Win/Loss slice by the dilution factor
+        // Example: If dilution is 1.65, the decisive slice shrinks by ~40%
+        let new_q = (q / dilution).clamp(0.0, 1.0);
 
-        self.0 = p * new_q;
-        self.1 = 1.0 - new_q;
+        // 5. Update State
+        self.0 = p * new_q;       // New Win Chance
+        self.1 = 1.0 - new_q;     // New Draw Chance
     }
 
     pub fn apply_contempt(&mut self, contempt: i64) {
