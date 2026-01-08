@@ -14,7 +14,7 @@ fn mate_in_1() {
 
     search_engine.search::<NoReport>(&limits);
 
-    let best_move = search_engine.tree().get_best_pv(0, search_engine.options().draw_score() as f64 / 100.0).first_move();
+    let best_move = search_engine.tree().get_best_pv(0, search_engine.params().draw_score() as f64 / 100.0).first_move();
     assert_eq!(best_move, Move::from_squares(Square::B8, Square::A8, MoveFlag::QUIET_MOVE))
 }
 
@@ -31,6 +31,6 @@ fn mate_in_2() {
 
     search_engine.search::<NoReport>(&limits);
 
-    let best_move = search_engine.tree().get_best_pv(0, search_engine.options().draw_score() as f64 / 100.0).first_move();
+    let best_move = search_engine.tree().get_best_pv(0, search_engine.params().draw_score() as f64 / 100.0).first_move();
     assert_eq!(best_move, Move::from_squares(Square::D5, Square::D8, MoveFlag::QUIET_MOVE))
 }

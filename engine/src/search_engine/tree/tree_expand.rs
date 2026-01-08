@@ -1,9 +1,9 @@
 use chess::{ChessBoard, Move, Piece};
 
-use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwork, Tree};
+use crate::{search_engine::engine_params::EngineParams, NodeIndex, PolicyNetwork, Tree};
 
 impl Tree {
-    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
+    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineParams) -> Option<()> {
         let children_idx = self[node_idx].children_index_mut();
 
         if self[node_idx].children_count() > 0 {
@@ -69,11 +69,11 @@ impl Tree {
     }
 
     const RELABEL_DEPTH: u8 = 1;
-    pub fn relabel_root(&self, board: &ChessBoard, engine_options: &EngineOptions) {
+    pub fn relabel_root(&self, board: &ChessBoard, engine_options: &EngineParams) {
         self.recurse_relabel(self.root_index(), Self::RELABEL_DEPTH, board, engine_options);
     }
 
-    fn recurse_relabel(&self, node_idx: NodeIndex, depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
+    fn recurse_relabel(&self, node_idx: NodeIndex, depth: u8, board: &ChessBoard, engine_options: &EngineParams) {
         if depth == 0 {
             return;
         }
@@ -89,7 +89,7 @@ impl Tree {
         });
     }
 
-    fn relabel_node(&self, node_idx: NodeIndex, _depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
+    fn relabel_node(&self, node_idx: NodeIndex, _depth: u8, board: &ChessBoard, engine_options: &EngineParams) {
         let children_idx = self[node_idx].children_index();
 
         if self[node_idx].children_count() == 0 {
@@ -139,7 +139,7 @@ impl Tree {
     }
 }
 
-fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {
+fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineParams) -> f64 {
     let attacker = board.piece_on_square(mv.from_square());
     let victim = board.piece_on_square(mv.to_square());
 

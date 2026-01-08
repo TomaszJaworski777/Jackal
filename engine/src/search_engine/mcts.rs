@@ -18,7 +18,7 @@ impl SearchEngine {
             .castle_rights()
             .get_castle_mask();
 
-        let search_stats = SearchStats::new(self.options().threads() as usize);
+        let search_stats = SearchStats::new(self.params().threads() as usize);
 
         let mut search_report_timer = Instant::now();
         let mut max_avg_depth = 0;
@@ -35,7 +35,7 @@ impl SearchEngine {
                     self.main_loop::<Display>(&search_stats, &search_limits, &mut time_manager, &castle_mask, &mut search_report_timer, &mut max_avg_depth, &mut last_best_move, &mut best_move_changes);
                 });
 
-                for i in 0..(self.options().threads() - 1) {
+                for i in 0..(self.params().threads() - 1) {
                     let thread_stats = search_stats.thread_stats((i + 1) as usize);
                     let castle_mask = &castle_mask;
 
@@ -82,7 +82,7 @@ impl SearchEngine {
                 *max_avg_depth = avg_depth.max(*max_avg_depth);
             }
 
-            let draw_score = self.options().draw_score() as f64 / 100.0;
+            let draw_score = self.params().draw_score() as f64 / 100.0;
             let best_move = self.tree()[self.tree().select_best_child(self.tree().root_index(), draw_score).unwrap()].mv();
             if let Some(last_move) = last_best_move {
                 if *last_move != best_move {
@@ -124,7 +124,7 @@ impl SearchEngine {
                 continue;
             }
 
-            if time_manager.soft_limit_reached(elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
+            if time_manager.soft_limit_reached(elapsed_ms, iterations, self.tree(), self.params(), *best_move_changes) {
                 self.interrupt_search();
                 break;
             }

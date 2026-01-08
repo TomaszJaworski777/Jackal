@@ -167,7 +167,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.map_legal_moves(|mv| {
         let see = board.see(mv, -108);
-        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
+        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.params().chess960());
         max = max.max(p);
         moves.push((mv, p));
     });
@@ -191,7 +191,7 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     for (idx, &(mv, p)) in moves.iter().enumerate() {
         println!(" {} {}", 
-            format!("{}:", mv.to_string(search_engine.options().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
+            format!("{}:", mv.to_string(search_engine.params().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
             heat_color(&format!("{:.2}%", p * 100.0), p, min_policy, max_policy)
         )
     }
@@ -215,7 +215,7 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(10.0/32.0));
 
     let mut half_moves = raw_score;
-    half_moves.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
+    half_moves.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.params());
     let half_moves_cp = half_moves.cp();
 
     println!("{}", format!("With Draw Scaling:     {}", 
@@ -229,7 +229,7 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(14.0/32.0));
 
     let mut material_scaling = raw_score;
-    material_scaling.apply_material_scaling(board, search_engine.options());
+    material_scaling.apply_material_scaling(board, search_engine.params());
     let material_scaling_cp = material_scaling.cp();
 
     println!("{}", format!("With Material Scaling: {}", 
@@ -243,7 +243,7 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(16.0/32.0));
 
     let mut contempt = raw_score;
-    contempt.apply_contempt(search_engine.options().contempt());
+    contempt.apply_contempt(search_engine.params().contempt());
     let contempt_cp = contempt.cp();
 
     println!("{}", format!("With Contempt:         {}\n", 
@@ -257,9 +257,9 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(18.0/32.0));
 
     let mut total_score = raw_score;
-    total_score.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.options());
-    total_score.apply_material_scaling(board, search_engine.options());
-    total_score.apply_contempt(search_engine.options().contempt());
+    total_score.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.params());
+    total_score.apply_material_scaling(board, search_engine.params());
+    total_score.apply_contempt(search_engine.params().contempt());
     let total_score_cp = total_score.cp();
 
     println!("{}", format!("Total: {}\n", 
@@ -296,7 +296,7 @@ fn analyse(search_engine: &mut SearchEngine, iters: Option<u64>) {
     print!("{} {}\r", " Progress:".primary(5.0/32.0), create_loading_bar(50, progress / piece_count as f32, (225,225,225), (225,225,225)).secondary(5.0/32.0));
     let _ = std::io::stdout().flush();
 
-    let draw_score = search_engine.options().draw_score() as f64 / 100.0;
+    let draw_score = search_engine.params().draw_score() as f64 / 100.0;
     let wdl_score = search_engine.tree().get_best_pv(0, draw_score).score();
     let current_eval = wdl_score.cp();
 

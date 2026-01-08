@@ -1,22 +1,22 @@
-use crate::{search_engine::{engine_options::EngineOptions, tree::NodeIndex}, Node, SearchEngine, WDLScore};
+use crate::{search_engine::{engine_params::EngineParams, tree::NodeIndex}, Node, SearchEngine, WDLScore};
 
 impl SearchEngine {
     pub(super) fn select(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
         let parent_node = &self.tree()[node_idx];
 
-        let cpuct = get_cpuct(&self.options(), &parent_node, depth);
+        let cpuct = get_cpuct(&self.params(), &parent_node, depth);
 
         let start_idx = parent_node.children_index();
         let mut total_policy = 0.0;
         let mut k = 0;
-        while k < parent_node.children_count() && total_policy < self.options().policy_percentage() {
+        while k < parent_node.children_count() && total_policy < self.params().policy_percentage() {
             total_policy += self.tree[start_idx + k].policy();
             k += 1;
         }
 
-        let mut limit = k.max(self.options().min_policy_actions() as usize);
-        if parent_node.visits() >= self.options().initial_visit_threshold() as u32 {
-            limit += (self.options().visit_increase_multi() * (parent_node.visits() as f64).log2() - self.options().visit_increase_offset()).floor() as usize;
+        let mut limit = k.max(self.params().min_policy_actions() as usize);
+        if parent_node.visits() >= self.params().initial_visit_threshold() as u32 {
+            limit += (self.params().visit_increase_multi() * (parent_node.visits() as f64).log2() - self.params().visit_increase_offset()).floor() as usize;
         }
 
         #[allow(unused_assignments)]{
@@ -27,16 +27,16 @@ impl SearchEngine {
             limit = parent_node.children_count()
         }
 
-        let draw_score = if depth as i64 % 2 == 0 { 0.5 } else { self.options().draw_score() as f64 / 100.0 };
+        let draw_score = if depth as i64 % 2 == 0 { 0.5 } else { self.params().draw_score() as f64 / 100.0 };
         self.tree().select_child_by_key_with_limit(node_idx, limit, |child_node| {
-            let score = get_score(&parent_node.score(), child_node, child_node.visits(), self.options()).single_with_score(draw_score) as f64;
+            let score = get_score(&parent_node.score(), child_node, child_node.visits(), self.params()).single_with_score(draw_score) as f64;
             score + child_node.policy() * cpuct * f64::from(child_node.visits() + 1).recip()
         }).expect("Failed to select a valid node.")
     }
 }
 
 #[inline(always)]
-fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32, opitions: &EngineOptions) -> WDLScore {
+fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32, params: &EngineParams) -> WDLScore {
     let mut score = if child_visits == 0 {
         parent_score.reversed()
     } else {
@@ -46,15 +46,15 @@ fn get_score(parent_score: &WDLScore, child_node: &Node, child_visits: u32, opit
     let threads = f64::from(child_node.threads());
     if threads > 0.0 {
         let v = f64::from(child_visits);
-        let w = (score.win_chance() * v) / (v + 1.0 + opitions.virtual_loss_weight() * (threads - 1.0));
-        let d = (score.draw_chance() * v) / (v + 1.0 + opitions.virtual_loss_weight() * (threads - 1.0));
+        let w = (score.win_chance() * v) / (v + 1.0 + params.virtual_loss_weight() * (threads - 1.0));
+        let d = (score.draw_chance() * v) / (v + 1.0 + params.virtual_loss_weight() * (threads - 1.0));
         score = WDLScore::new(w, d)
     }
 
     score
 }
 
-fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
+fn get_cpuct(options: &EngineParams, parent_node: &Node, depth: f64) -> f64 {
     let mut cpuct = options.end_cpuct() + (options.start_cpuct() - options.end_cpuct()) * (-options.cpuct_depth_decay() * (depth - 1.0)).exp();
 
     let visit_scale = options.cpuct_visit_scale();

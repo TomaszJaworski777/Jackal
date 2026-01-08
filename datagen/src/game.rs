@@ -51,7 +51,7 @@ pub fn play_game(engine: &mut SearchEngine, position: &mut ChessPosition, limits
 
             moves.push((monty_move, node.visits()));
 
-            let score = node.score().single_with_score(engine.options().draw_score() as f64 / 100.0);
+            let score = node.score().single_with_score(engine.params().draw_score() as f64 / 100.0);
 
             if temperature < 0.2 && score > best_score {
                 best_score = score;

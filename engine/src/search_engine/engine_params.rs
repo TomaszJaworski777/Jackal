@@ -3,7 +3,7 @@ use crate::create_options;
 mod macros;
 
 create_options! {
-    EngineOptions {
+    EngineParams {
         Options {
             //====== General ======
             ["Hash"]         hash:          i64   =>  32,  1,  524288;

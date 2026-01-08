@@ -2,7 +2,7 @@ use std::{ops::Mul, sync::atomic::{AtomicU64, Ordering}};
 
 use chess::{ChessBoard, Piece};
 
-use crate::search_engine::engine_options::EngineOptions;
+use crate::search_engine::engine_params::EngineParams;
 
 pub const SCORE_SCALE: u32 = 1024 * 64;
 
@@ -138,7 +138,7 @@ impl WDLScore {
         tan_cp.clamp(-30000.0, 30000.0) as i32
     }
 
-    pub fn apply_50mr_and_draw_scaling(&mut self, half_move: u8, depth: f64, options: &EngineOptions) {
+    pub fn apply_50mr_and_draw_scaling(&mut self, half_move: u8, depth: f64, options: &EngineParams) {
         let s = (0.01 * half_move as f64).powf(options.power_50mr()).min(options.cap_50mr()) + (depth.powf(options.depth_scaling_power()) * options.depth_scaling()).min(options.depth_scaling_cap());
         let win_delta = self.win_chance() * s; 
         let lose_delta = self.lose_chance() * s; 
@@ -147,24 +147,24 @@ impl WDLScore {
         self.1 += win_delta + lose_delta;
     }
 
-    pub fn apply_material_scaling(&mut self, board: &ChessBoard, options: &EngineOptions) {
+    pub fn apply_material_scaling(&mut self, board: &ChessBoard, params: &EngineParams) {
         let current_material = 
-            board.piece_mask(Piece::KNIGHT).pop_count() as f64 * options.knight_value() +
-            board.piece_mask(Piece::BISHOP).pop_count() as f64 * options.bishop_value() +
-            board.piece_mask(Piece::ROOK).pop_count() as f64 * options.rook_value() +
-            board.piece_mask(Piece::QUEEN).pop_count() as f64 * options.queen_value();
+            board.piece_mask(Piece::KNIGHT).pop_count() as f64 * params.knight_value() +
+            board.piece_mask(Piece::BISHOP).pop_count() as f64 * params.bishop_value() +
+            board.piece_mask(Piece::ROOK).pop_count() as f64 * params.rook_value() +
+            board.piece_mask(Piece::QUEEN).pop_count() as f64 * params.queen_value();
 
         let max_material = 
-            4.0 * options.knight_value() + 
-            4.0 * options.bishop_value() + 
-            4.0 * options.rook_value() + 
-            2.0 * options.queen_value();
+            4.0 * params.knight_value() + 
+            4.0 * params.bishop_value() + 
+            4.0 * params.rook_value() + 
+            2.0 * params.queen_value();
 
         let material_factor = (1.0 - (current_material / max_material)).clamp(0.0, 1.0);
-        let mut scale = options.scale_start_pos() + material_factor.powf(options.material_power()) * (options.scale_zero_mat() - options.scale_start_pos());
+        let mut scale = params.scale_start_pos() + material_factor.powf(params.material_power()) * (params.scale_zero_mat() - params.scale_start_pos());
 
         let wl = self.win_chance() + self.lose_chance();
-        scale += (1.0 - scale) * wl.powf(options.wl_dampening_power());
+        scale += (1.0 - scale) * wl.powf(params.wl_dampening_power());
 
         let scale = 1.0 / (1.0 + (-scale * (self.single() / (1.0 - self.single())).ln()).exp());
 

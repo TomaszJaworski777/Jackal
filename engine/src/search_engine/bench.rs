@@ -75,7 +75,7 @@ impl SearchEngine {
             self.set_position(&ChessPosition::from(board), 0);
 
             let result = self.search::<NoReport>(&search_limits).aggregate();
-            nodes += if self.options().iters_as_nodes() {
+            nodes += if self.params().iters_as_nodes() {
                 result.iterations()
             } else {
                 result.cumulative_depth()

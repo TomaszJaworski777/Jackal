@@ -1,4 +1,4 @@
-use crate::search_engine::{engine_options::EngineOptions, search_stats::ThreadSearchStats};
+use crate::search_engine::{engine_params::EngineParams, search_stats::ThreadSearchStats};
 
 mod time_manager;
 
@@ -64,7 +64,7 @@ impl SearchLimits {
         false
     }
 
-    pub fn calculate_time_limit(&mut self, time_remaining: Option<u128>, increment: Option<u128>, moves_to_go: Option<u128>, options: &EngineOptions, game_ply: u16, phase: f64) {
+    pub fn calculate_time_limit(&mut self, time_remaining: Option<u128>, increment: Option<u128>, moves_to_go: Option<u128>, options: &EngineParams, game_ply: u16, phase: f64) {
         self.time_manager.calculate_time_limit(time_remaining, increment, moves_to_go, options, game_ply, phase);
     }
 }

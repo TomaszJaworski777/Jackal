@@ -16,7 +16,7 @@ use half::TreeHalf;
 pub use node::{Node, GameState, AtomicWDLScore, WDLScore, NodeIndex};
 pub use pv_line::PvLine;
 
-use crate::search_engine::{butterfly_history::ButterflyHistory, engine_options::EngineOptions, hash_table::HashTable};
+use crate::search_engine::{butterfly_history::ButterflyHistory, engine_params::EngineParams, hash_table::HashTable};
 
 #[derive(Debug)]
 pub struct Tree {
@@ -52,7 +52,7 @@ impl IndexMut<NodeIndex> for Tree {
 }
 
 impl Tree {
-    pub fn from_bytes(megabytes: usize, options: &EngineOptions) -> Self {
+    pub fn from_bytes(megabytes: usize, options: &EngineParams) -> Self {
         let bytes = megabytes * 1024 * 1024;
         let hash_bytes = (bytes as f64 * options.hash_size()) as usize;
         let tree_size = Self::bytes_to_size(bytes - hash_bytes);

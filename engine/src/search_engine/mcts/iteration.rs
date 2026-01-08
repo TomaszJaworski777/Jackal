@@ -25,7 +25,7 @@ impl SearchEngine {
             *depth += 1.0;
 
             if node.children_count() == 0 {
-                self.tree().expand_node(node_idx, position.board(), self.options())?
+                self.tree().expand_node(node_idx, position.board(), self.params())?
             }
 
             self.tree().update_node(node_idx)?;
@@ -55,7 +55,7 @@ impl SearchEngine {
             let score = score?;
 
             if !self.tree()[new_idx].is_terminal() {
-                self.tree().butterfly_history().update_entry(old_side, mv, score, self.options());
+                self.tree().butterfly_history().update_entry(old_side, mv, score, self.params());
             }
 
             score

@@ -64,13 +64,13 @@ impl SearchEngine {
         };
 
         #[cfg(not(feature = "datagen"))]
-        score.apply_material_scaling(position.board(), self.options());
-        score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.options());
+        score.apply_material_scaling(position.board(), self.params());
+        score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.params());
         
         let is_stm = self.root_position().board().side() == position.board().side();
         let sign = if is_stm { 1 } else { -1};
         
-        score.apply_contempt(self.options().contempt() * sign);
+        score.apply_contempt(self.params().contempt() * sign);
         
         score
     }

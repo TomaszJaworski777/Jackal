@@ -2,14 +2,14 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use chess::{ChessBoard, ChessPosition, FEN};
 
-use crate::{search_engine::engine_options::EngineOptions, search_report_trait::SearchReport};
+use crate::{search_engine::engine_params::EngineParams, search_report_trait::SearchReport};
 
 mod bench;
 mod mcts;
 mod search_limits;
 mod search_stats;
 mod tree;
-mod engine_options;
+mod engine_params;
 mod hash_table;
 mod butterfly_history;
 
@@ -21,7 +21,7 @@ pub use tree::{Tree, Node, GameState, AtomicWDLScore, WDLScore, PvLine, NodeInde
 pub struct SearchEngine {
     position: ChessPosition,
     tree: Tree,
-    options: EngineOptions,
+    params: EngineParams,
     interruption_token: AtomicBool,
     game_ply: u16,
 }
@@ -31,7 +31,7 @@ impl Clone for SearchEngine {
         Self {
             position: self.position,
             tree: self.tree.clone(),
-            options: self.options.clone(),
+            params: self.params.clone(),
             interruption_token: AtomicBool::new(self.interruption_token.load(Ordering::Relaxed)),
             game_ply: self.game_ply,
         }
@@ -40,12 +40,12 @@ impl Clone for SearchEngine {
 
 impl SearchEngine {
     pub fn new() -> Self {
-        let options = EngineOptions::new();
+        let params = EngineParams::new();
 
         Self {
             position: ChessPosition::from(ChessBoard::from(&FEN::start_position())),
-            tree: Tree::from_bytes(options.hash() as usize, &options),
-            options,
+            tree: Tree::from_bytes(params.hash() as usize, &params),
+            params,
             interruption_token: AtomicBool::new(false),
             game_ply: 0,
         }
@@ -63,22 +63,22 @@ impl SearchEngine {
 
     #[inline]
     pub fn resize_tree(&mut self) {
-        self.tree = Tree::from_bytes(self.options.hash() as usize, self.options())
+        self.tree = Tree::from_bytes(self.params.hash() as usize, self.params())
     }
 
     #[inline]
-    pub fn options(&self) -> &EngineOptions {
-        &self.options
+    pub fn params(&self) -> &EngineParams {
+        &self.params
     }
 
     #[inline]
-    pub fn options_mut(&mut self) -> &mut EngineOptions {
-        &mut self.options
+    pub fn params_mut(&mut self) -> &mut EngineParams {
+        &mut self.params
     }
 
     #[inline]
     pub fn set_option(&mut self, name: &str, value: &str) -> Result<(), String> {
-        self.options.set_option(name, value)
+        self.params.set_option(name, value)
     }
 
     #[inline]
@@ -112,7 +112,7 @@ impl SearchEngine {
         self.interruption_token.store(false, Ordering::Relaxed);
 
         if self.tree().root_node().children_count() == 0 {
-            self.tree().expand_node(self.tree().root_index(), self.root_position().board(), self.options());
+            self.tree().expand_node(self.tree().root_index(), self.root_position().board(), self.params());
         }
 
         Display::search_started(search_limits, self);

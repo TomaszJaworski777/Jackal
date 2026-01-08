@@ -188,7 +188,7 @@ impl Tree {
             if node_idx == self.root_index() {
                 String::from("root")
             } else {
-                node.mv().to_string(search_engine.options().chess960()).align_to_left(5)
+                node.mv().to_string(search_engine.params().chess960()).align_to_left(5)
             }
             .primary(color_gradient)
         } else {
@@ -199,7 +199,7 @@ impl Tree {
                     .primary(color_gradient),
                 ">".secondary(color_gradient),
                 node.mv()
-                    .to_string(search_engine.options().chess960())
+                    .to_string(search_engine.params().chess960())
                     .align_to_left(5)
                     .primary(color_gradient)
             )

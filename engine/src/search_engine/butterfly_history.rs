@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicI16, Ordering};
 
 use chess::{Move, Side};
 
-use crate::{search_engine::engine_options::EngineOptions, WDLScore};
+use crate::{search_engine::engine_params::EngineParams, WDLScore};
 
 #[derive(Debug)]
 pub struct ButterflyHistory(Vec<AtomicI16>);
@@ -24,11 +24,11 @@ impl ButterflyHistory {
         }
     }
 
-    pub fn get_bonus(&self, side: Side, mv: Move, options: &EngineOptions) -> f64 {
+    pub fn get_bonus(&self, side: Side, mv: Move, options: &EngineParams) -> f64 {
         f64::from(self.entry(side, mv).load(Ordering::Relaxed)) / options.butterfly_bonus_scale()
     }
 
-    pub fn update_entry(&self, side: Side, mv: Move, score: WDLScore, options: &EngineOptions) {
+    pub fn update_entry(&self, side: Side, mv: Move, score: WDLScore, options: &EngineParams) {
         let score = (-400.0 * ((1.0 / score.single().clamp(0.001, 0.999)) - 1.0).ln()).round() as i32;
         let entry = self.entry(side, mv);
 
