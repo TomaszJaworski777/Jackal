@@ -64,7 +64,7 @@ impl SearchEngine {
         };
 
         #[cfg(not(feature = "datagen"))]
-        score.apply_material_scaling(position.board(), self.params());
+        score.apply_sharpness_scaling(self.params());
         score.apply_50mr_and_draw_scaling(position.board().half_moves(), depth, self.params());
         
         let is_stm = self.root_position().board().side() == position.board().side();

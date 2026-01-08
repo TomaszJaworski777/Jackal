@@ -229,10 +229,10 @@ fn eval(search_engine: &SearchEngine) {
     ).primary(14.0/32.0));
 
     let mut material_scaling = raw_score;
-    material_scaling.apply_material_scaling(board, search_engine.params());
+    material_scaling.apply_sharpness_scaling(search_engine.params());
     let material_scaling_cp = material_scaling.cp();
 
-    println!("{}", format!("With Material Scaling: {}", 
+    println!("{}", format!("With Sharpness Scaling: {}", 
         format!("[{}, {}, {}] ({}{})",
             format!("{:.2}%", material_scaling.win_chance() * 100.0).custom_color(WIN_COLOR),
             format!("{:.2}%", material_scaling.draw_chance() * 100.0).custom_color(DRAW_COLOR),
@@ -258,7 +258,7 @@ fn eval(search_engine: &SearchEngine) {
 
     let mut total_score = raw_score;
     total_score.apply_50mr_and_draw_scaling(board.half_moves(), 0.0, search_engine.params());
-    total_score.apply_material_scaling(board, search_engine.params());
+    total_score.apply_sharpness_scaling(search_engine.params());
     total_score.apply_contempt(search_engine.params().contempt());
     let total_score_cp = total_score.cp();
 

@@ -73,14 +73,8 @@ create_options! {
             depth_scaling_cap:   f64  =>  0.15,    0.0,  1.0,   0.01,    0.002;
 
             //Material Scaling
-            knight_value:       f64  =>  397.6990,   150.0,  750.0,   15.0,  0.002;
-            bishop_value:       f64  =>  401.4182,   150.0,  750.0,   15.0,  0.002;
-            rook_value:         f64  =>  758.7151,   400.0,  1000.0,  30.0,  0.002;
-            queen_value:        f64  =>  1505.7605,  900.0,  2000.0,  30.0,  0.002;
-            scale_start_pos:    f64  =>  0.6859,     0.5,    1.5,     0.05,  0.002;
-            scale_zero_mat:     f64  =>  0.6051,     0.1,    1.0,     0.05,  0.002;
-            material_power:     f64  =>  0.9812,     0.1,    5.0,     0.1,   0.002;
-            wl_dampening_power: f64  =>  20.1599,    1.0,    50.0,    2.0,   0.002;
+            sharpness_scale:   f64  =>  1.0,  -10.0,  10.0,  0.1,  0.002;
+            sharpness_scale_2: f64  =>  0.0,  -10.0,  10.0,  0.1,  0.002;
 
             //Policy Sac
             sac_pawn_value:   f64  =>  100.0,  50.0,  200.0,  5.0,  0.002;

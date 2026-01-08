@@ -147,31 +147,24 @@ impl WDLScore {
         self.1 += win_delta + lose_delta;
     }
 
-    pub fn apply_material_scaling(&mut self, board: &ChessBoard, params: &EngineParams) {
-        let current_material = 
-            board.piece_mask(Piece::KNIGHT).pop_count() as f64 * params.knight_value() +
-            board.piece_mask(Piece::BISHOP).pop_count() as f64 * params.bishop_value() +
-            board.piece_mask(Piece::ROOK).pop_count() as f64 * params.rook_value() +
-            board.piece_mask(Piece::QUEEN).pop_count() as f64 * params.queen_value();
+    pub fn apply_sharpness_scaling(&mut self, params: &EngineParams) {
+        let draw_chance = self.draw_chance();
 
-        let max_material = 
-            4.0 * params.knight_value() + 
-            4.0 * params.bishop_value() + 
-            4.0 * params.rook_value() + 
-            2.0 * params.queen_value();
+        let scale = draw_chance * params.sharpness_scale()
+            + draw_chance * draw_chance * params.sharpness_scale_2();
 
-        let material_factor = (1.0 - (current_material / max_material)).clamp(0.0, 1.0);
-        let mut scale = params.scale_start_pos() + material_factor.powf(params.material_power()) * (params.scale_zero_mat() - params.scale_start_pos());
-
-        let wl = self.win_chance() + self.lose_chance();
-        scale += (1.0 - scale) * wl.powf(params.wl_dampening_power());
-
-        let scale = 1.0 / (1.0 + (-scale * (self.single() / (1.0 - self.single())).ln()).exp());
+        let scale = (1.0 - scale).max(0.0);
+        let score = self.single();
+        let scale = 1.0 / (1.0 + (-scale * (score / (1.0 - score)).ln()).exp());
 
         let q = (self.win_chance() + self.lose_chance()).clamp(0.0001, 1.0);
         let p = self.win_chance() / q;
 
-        let new_q = ((scale - 0.5) / (p - 0.5)).clamp(0.0, 1.0);
+        let new_q = if (p - 0.5).abs() < 1e-9 {
+            0.0
+        } else {
+            ((scale - 0.5) / (p - 0.5)).clamp(0.0, 1.0)
+        };
 
         self.0 = p * new_q;
         self.1 = 1.0 - new_q;
