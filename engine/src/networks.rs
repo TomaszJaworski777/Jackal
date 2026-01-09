@@ -8,7 +8,7 @@ use crate::networks::policy_network::PolicyNetwork;
 
 #[allow(non_upper_case_globals)]
 pub static ValueNetwork: ValueNetwork = unsafe {
-    std::mem::transmute(*include_bytes!("../../resources/networks/v20003072002q.network"))
+    std::mem::transmute(*include_bytes!("../../resources/networks/v40004096001q.network"))
 };
 
 #[allow(non_upper_case_globals)]
