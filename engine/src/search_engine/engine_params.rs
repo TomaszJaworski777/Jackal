@@ -73,8 +73,8 @@ create_options! {
             depth_scaling_cap:   f64  =>  0.15,    0.0,  1.0,   0.01,    0.002;
 
             //Material Scaling
-            sharpness_scale:   f64  =>  2.5,  -10.0,  10.0,  0.1,  0.002;
-            sharpness_scale_2: f64  =>  0.8,  -10.0,  10.0,  0.1,  0.002;
+            sharpness_scale:   f64  =>  2.50625,  -10.0,  10.0,  0.1,  0.002;
+            sharpness_scale_2: f64  =>  0.74264,  -10.0,  10.0,  0.1,  0.002;
 
             //Policy Sac
             sac_pawn_value:   f64  =>  100.0,  50.0,  200.0,  5.0,  0.002;
