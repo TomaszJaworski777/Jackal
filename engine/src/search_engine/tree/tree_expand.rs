@@ -1,9 +1,9 @@
 use chess::{ChessBoard, Move, Piece};
 
-use crate::{search_engine::engine_options::EngineOptions, NodeIndex, PolicyNetwork, Tree};
+use crate::{BasePolicyNetwork, NodeIndex, Stage1PolicyNetwork, Tree, WDLScore, search_engine::engine_options::EngineOptions};
 
 impl Tree {
-    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions) -> Option<()> {
+    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, _parent_score: WDLScore) -> Option<()> {
         let children_idx = self[node_idx].children_index_mut();
 
         if self[node_idx].children_count() > 0 {
@@ -16,7 +16,13 @@ impl Tree {
             "Node {node_idx} already have children."
         );
 
-        let policy_base = PolicyNetwork.create_base(board);
+        let network = if depth % 2 == 1 && board.phase() > 8 {
+            &Stage1PolicyNetwork
+        } else {
+            &BasePolicyNetwork
+        };
+
+        let policy_base = network.create_base(board);
 
         let pst = if node_idx == self.root_index() {
             engine_options.root_pst()
@@ -30,7 +36,7 @@ impl Tree {
 
         board.map_legal_moves(|mv| {
             let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+            let mut p = network.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
             policy.push((mv, p));
             max = max.max(p);
@@ -68,35 +74,30 @@ impl Tree {
         Some(())
     }
 
-    const RELABEL_DEPTH: u8 = 1;
     pub fn relabel_root(&self, board: &ChessBoard, engine_options: &EngineOptions) {
-        self.recurse_relabel(self.root_index(), Self::RELABEL_DEPTH, board, engine_options);
+        let root_score = if self.root_node().visits() == 0 {
+            WDLScore::DRAW
+        } else {
+            self.root_node().score()
+        };
+
+        self.relabel_node(self.root_index(), board, engine_options, 1, root_score);
     }
 
-    fn recurse_relabel(&self, node_idx: NodeIndex, depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
-        if depth == 0 {
-            return;
-        }
-
-        self.relabel_node(node_idx, Self::RELABEL_DEPTH + 1 - depth, board, engine_options);
-
-        let mask = board.castle_rights().get_castle_mask();
-        self[node_idx].map_children(|child_idx| {
-            let mut board_copy = board.clone();
-            board_copy.make_move(self[child_idx].mv(), &mask);
-
-            self.recurse_relabel(child_idx, depth - 1, &board_copy, engine_options);
-        });
-    }
-
-    fn relabel_node(&self, node_idx: NodeIndex, _depth: u8, board: &ChessBoard, engine_options: &EngineOptions) {
+    fn relabel_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, _parent_score: WDLScore) {
         let children_idx = self[node_idx].children_index();
 
         if self[node_idx].children_count() == 0 {
             return;
         }
 
-        let policy_base = PolicyNetwork.create_base(board);
+        let network = if depth % 2 == 1 && board.phase() > 8 {
+            &Stage1PolicyNetwork
+        } else {
+            &BasePolicyNetwork
+        };
+
+        let policy_base = network.create_base(board);
 
         let pst = if node_idx == self.root_index() {
             engine_options.root_pst()
@@ -111,7 +112,7 @@ impl Tree {
         self[node_idx].map_children(|child_idx| {
             let mv = self[child_idx].mv();
             let see = board.see(mv, -108);
-            let mut p = PolicyNetwork.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
+            let mut p = network.forward(board, &policy_base, mv, see, engine_options.chess960()) as f64 + usize::from(!see) as f64 * mva_lvv(mv, board, engine_options);
             p += self.butterfly_history().get_bonus(board.side(), mv, engine_options);
             policy.push(p);
             max = max.max(p);

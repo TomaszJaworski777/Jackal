@@ -12,6 +12,7 @@ impl SearchEngine {
         node_idx: NodeIndex,
         position: &mut ChessPosition,
         depth: &mut f64,
+        parent_score: WDLScore,
         castle_mask: &[u8; 64],
     ) -> Option<WDLScore> { 
         let hash = position.board().hash();
@@ -20,16 +21,17 @@ impl SearchEngine {
         let mut selected_child_idx = None;
 
         let score = if !ROOT && (node.is_terminal() || node.visits() == 0) {
-            self.simulate(node_idx, position, *depth)
+            self.simulate(node_idx, position, *depth, parent_score)
         } else {
             *depth += 1.0;
 
             if node.children_count() == 0 {
-                self.tree().expand_node(node_idx, position.board(), self.options())?
+                self.tree().expand_node(node_idx, position.board(), self.options(), *depth as i32, parent_score)?
             }
 
             self.tree().update_node(node_idx)?;
 
+            let score = node.score();
             let new_idx = self.select(node_idx, *depth);
 
             selected_child_idx = Some(new_idx);
@@ -46,7 +48,7 @@ impl SearchEngine {
                 None
             };
 
-            let score = self.perform_iteration::<false>(new_idx, position, depth, castle_mask);
+            let score = self.perform_iteration::<false>(new_idx, position, depth, score, castle_mask);
 
             drop(lock);
 
