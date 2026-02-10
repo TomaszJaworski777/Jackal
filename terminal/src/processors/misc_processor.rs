@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
-use engine::{BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits, Stage1PolicyNetwork, Stage1ValueNetwork, Stage2ValueNetwork, ValueNetwork};
+use engine::{BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits, Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage2ValueNetwork, Stage3PolicyNetwork, ValueNetwork};
 use utils::{clear_terminal_screen, create_loading_bar, heat_color, time_to_string, number_to_string, AlignString, Colors, CustomColor, PieceColors, Theme, DRAW_COLOR, LOSE_COLOR, WIN_COLOR};
 
 pub struct MiscProcessor;
@@ -191,7 +191,11 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.draw_board();
 
-    for (name, network) in [("Base", &BasePolicyNetwork), ("Stage 1", &Stage1PolicyNetwork)] {
+    for (name, network) in [
+        ("Base", &BasePolicyNetwork), 
+        ("Stage 1", &Stage1PolicyNetwork), 
+        ("Stage 2", &Stage2PolicyNetwork), 
+        ("Stage 3", &Stage3PolicyNetwork)] {
         let policy_base = network.create_base(board);
 
         let mut max = f32::NEG_INFINITY;

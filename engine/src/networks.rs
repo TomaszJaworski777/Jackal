@@ -28,5 +28,15 @@ pub static BasePolicyNetwork: PolicyNetwork = unsafe {
 
 #[allow(non_upper_case_globals)]
 pub static Stage1PolicyNetwork: PolicyNetwork = unsafe {
-    std::mem::transmute(*include_bytes!("../../resources/networks/p1.network"))
+    std::mem::transmute(*include_bytes!("../../resources/networks/p3.network"))
+};
+
+#[allow(non_upper_case_globals)]
+pub static Stage2PolicyNetwork: PolicyNetwork = unsafe {
+    std::mem::transmute(*include_bytes!("../../resources/networks/p4.network"))
+};
+
+#[allow(non_upper_case_globals)]
+pub static Stage3PolicyNetwork: PolicyNetwork = unsafe {
+    std::mem::transmute(*include_bytes!("../../resources/networks/p5.network"))
 };

@@ -55,14 +55,16 @@ impl SearchEngine {
         false
     }
 
-    fn get_position_score(&self, position: &ChessPosition, node_state: GameState, depth: f64, stm: bool, mut score: WDLScore) -> WDLScore {
+    fn get_position_score(&self, position: &ChessPosition, node_state: GameState, depth: f64, stm: bool, mut parent_score: WDLScore) -> WDLScore {
         let mut score = match node_state {
             GameState::Draw => WDLScore::DRAW,
             GameState::Loss(_) => WDLScore::LOSE,
             GameState::Win(_) => WDLScore::WIN,
             _ => {
                 if stm && position.board().phase() > 8 {
-                    return if score.win_chance() > 0.575 {
+                    return if parent_score.win_chance() > 0.9 {
+                        BaseValueNetwork.forward(position.board())
+                    } else if parent_score.win_chance() > 0.575 {
                         Stage2ValueNetwork.forward(position.board())
                     } else {
                         Stage1ValueNetwork.forward(position.board())
@@ -70,10 +72,10 @@ impl SearchEngine {
                 }
 
                 if !stm {
-                    score = score.reversed();
+                    parent_score = parent_score.reversed();
                 }
 
-                return if score.win_chance() > 0.85 && position.board().phase() > 8 {
+                return if parent_score.win_chance() > 0.85 && position.board().phase() > 8 {
                     Stage1ValueNetwork.forward(position.board())
                 } else {
                     BaseValueNetwork.forward(position.board())

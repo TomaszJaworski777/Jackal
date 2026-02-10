@@ -1,9 +1,9 @@
 use chess::{ChessBoard, Move, Piece};
 
-use crate::{BasePolicyNetwork, NodeIndex, Stage1PolicyNetwork, Tree, WDLScore, search_engine::engine_options::EngineOptions};
+use crate::{BasePolicyNetwork, NodeIndex, Stage1PolicyNetwork, Stage2PolicyNetwork, Stage3PolicyNetwork, Tree, WDLScore, search_engine::engine_options::EngineOptions};
 
 impl Tree {
-    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, _parent_score: WDLScore) -> Option<()> {
+    pub fn expand_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, parent_score: WDLScore) -> Option<()> {
         let children_idx = self[node_idx].children_index_mut();
 
         if self[node_idx].children_count() > 0 {
@@ -17,7 +17,15 @@ impl Tree {
         );
 
         let network = if depth % 2 == 1 && board.phase() > 8 {
-            &Stage1PolicyNetwork
+            if parent_score.win_chance() > 0.9 {
+                &BasePolicyNetwork 
+            } else if parent_score.win_chance() > 0.575 {
+                &Stage3PolicyNetwork 
+            } else if parent_score.win_chance() > 0.325 {
+                &Stage2PolicyNetwork 
+            } else {
+                &Stage1PolicyNetwork 
+            }
         } else {
             &BasePolicyNetwork
         };
@@ -84,7 +92,7 @@ impl Tree {
         self.relabel_node(self.root_index(), board, engine_options, 1, root_score);
     }
 
-    fn relabel_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, _parent_score: WDLScore) {
+    fn relabel_node(&self, node_idx: NodeIndex, board: &ChessBoard, engine_options: &EngineOptions, depth: i32, parent_score: WDLScore) {
         let children_idx = self[node_idx].children_index();
 
         if self[node_idx].children_count() == 0 {
@@ -92,11 +100,20 @@ impl Tree {
         }
 
         let network = if depth % 2 == 1 && board.phase() > 8 {
-            &Stage1PolicyNetwork
+            if parent_score.win_chance() > 0.9 {
+                &BasePolicyNetwork 
+            } else if parent_score.win_chance() > 0.575 {
+                &Stage3PolicyNetwork 
+            } else if parent_score.win_chance() > 0.325 {
+                &Stage2PolicyNetwork 
+            } else {
+                &Stage1PolicyNetwork 
+            }
         } else {
             &BasePolicyNetwork
         };
 
+        
         let policy_base = network.create_base(board);
 
         let pst = if node_idx == self.root_index() {
