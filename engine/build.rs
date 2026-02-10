@@ -2,12 +2,16 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-pub const VALUE_NETWORK: &str = "v40004096001q.network";
-pub const POLICY_NETWORK: &str = "p8008192009q.network";
 
 fn main() {
-    get_net(VALUE_NETWORK);
-    get_net(POLICY_NETWORK);
+    get_net("v40004096001q.network");
+    get_net("v40004096001qft3.network");
+    get_net("v40004096001qft5.network");
+
+    get_net("p8008192009q.network");
+    get_net("p3.network");
+    get_net("p4.network");
+    get_net("p5.network");
 }
 
 fn get_net(name: &str) {
