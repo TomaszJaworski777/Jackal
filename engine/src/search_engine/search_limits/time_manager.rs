@@ -68,7 +68,7 @@ impl TimeManager {
         elapsed_ms >= self.hard_limit.unwrap()
     }
 
-    pub fn soft_limit_reached(&mut self, elapsed_ms: u128, iterations: u64, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> bool {
+    pub fn soft_limit_reached(&mut self, draw_score: f64, elapsed_ms: u128, iterations: u64, tree: &Tree, options: &EngineOptions, best_move_changes: usize) -> bool {
         if self.soft_limit.is_none() || self.hard_limit.is_none() {
             return false;
         }
@@ -78,8 +78,9 @@ impl TimeManager {
         let mut soft_limit_multiplier = 1.0;
 
         soft_limit_multiplier *= self.visits_distribution(iterations, tree, options);
-        soft_limit_multiplier *= self.falling_eval(iterations, tree, options);
+        soft_limit_multiplier *= self.falling_eval(draw_score, iterations, tree, options);
         soft_limit_multiplier *= self.best_move_instability(iterations, tree, options, best_move_changes);
+        soft_limit_multiplier *= self.when_behind(draw_score, iterations, tree, options);
 
         elapsed_ms >= ((self.soft_limit.unwrap() as f64 * soft_limit_multiplier) as u128).saturating_sub(move_overhead).max(1)
     }
@@ -141,12 +142,11 @@ impl TimeManager {
         1.0 + time_multiplier
     }
 
-    fn falling_eval(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
+    fn falling_eval(&mut self, draw_score: f64, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
         if iterations < 2048 {
             return 1.0;
         }
         
-        let draw_score = options.draw_score() as f64 / 100.0;
         let current_score = tree[tree.select_best_child(tree.root_index(), draw_score).unwrap()].score().cp() as f64 / 100.0;
         let score_trend = if let Some(previous_score) = self.previous_score {
             let trend = current_score - previous_score;
@@ -181,12 +181,11 @@ impl TimeManager {
         1.0 + multiplier
     }
 
-    fn when_behind(&mut self, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
+    fn when_behind(&mut self, draw_score: f64, iterations: u64, tree: &Tree, options: &EngineOptions) -> f64 {
         if iterations < 1024 {
             return 1.0;
         }
 
-        let draw_score = options.draw_score() as f64 / 100.0;
         let current_score = tree[tree.select_best_child(tree.root_index(), draw_score).unwrap()].score().cp() as f64 / 100.0;
 
         if current_score >= 0.0 {
@@ -200,6 +199,6 @@ impl TimeManager {
 }
 
 fn curve(value: f64, power: f64, scale: f64) -> f64 {
-    let ln = (1.0 / value.clamp(0.0, 1.0) - 1.0).ln();
+    let ln = (1.0 / value.clamp(0.001, 0.999) - 0.999).ln();
     ln.abs().powf(power).copysign(ln) * scale
 }

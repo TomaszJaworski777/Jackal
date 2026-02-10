@@ -1,24 +1,24 @@
 use chess::ChessPosition;
 
-use crate::{GameState, SearchEngine, ValueNetwork, WDLScore, search_engine::tree::NodeIndex};
+use crate::{BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork, Stage2ValueNetwork, WDLScore, search_engine::tree::NodeIndex};
 
 impl SearchEngine {
-    pub(super) fn simulate(&self, node_idx: NodeIndex, position: &ChessPosition, depth: f64) -> WDLScore {
+    pub(super) fn simulate(&self, node_idx: NodeIndex, position: &ChessPosition, depth: f64, parent_score: WDLScore) -> WDLScore {
         if self.tree()[node_idx].visits() == 0 {
             let state = self.get_node_state(position);
             self.tree().set_state(node_idx, state);
         }
 
-        
+        let stm = depth as i32 % 2 == 0;
 
         if self.tree[node_idx].state() == GameState::Ongoing {
             if let Some(entry) = self.tree().hash_table().get(position.board().hash()) {
                 entry
             } else {
-                self.get_position_score(position, self.tree()[node_idx].state(), depth)
+                self.get_position_score(position, self.tree()[node_idx].state(), depth, stm, parent_score)
             }
         } else {
-            self.get_position_score(position, self.tree()[node_idx].state(), depth)
+            self.get_position_score(position, self.tree()[node_idx].state(), depth, stm, parent_score)
         }
     }
 
@@ -55,12 +55,32 @@ impl SearchEngine {
         false
     }
 
-    fn get_position_score(&self, position: &ChessPosition, node_state: GameState, depth: f64) -> WDLScore {
+    fn get_position_score(&self, position: &ChessPosition, node_state: GameState, depth: f64, stm: bool, mut parent_score: WDLScore) -> WDLScore {
         let mut score = match node_state {
             GameState::Draw => WDLScore::DRAW,
             GameState::Loss(_) => WDLScore::LOSE,
             GameState::Win(_) => WDLScore::WIN,
-            _ => ValueNetwork.forward(position.board())
+            _ => {
+                if stm && position.board().phase() > 8 {
+                    return if parent_score.win_chance() > 0.9 {
+                        BaseValueNetwork.forward(position.board())
+                    } else if parent_score.win_chance() > 0.575 {
+                        Stage2ValueNetwork.forward(position.board())
+                    } else {
+                        Stage1ValueNetwork.forward(position.board())
+                    }
+                }
+
+                if !stm {
+                    parent_score = parent_score.reversed();
+                }
+
+                return if parent_score.win_chance() > 0.85 && position.board().phase() > 8 {
+                    Stage1ValueNetwork.forward(position.board())
+                } else {
+                    BaseValueNetwork.forward(position.board())
+                };
+            }
         };
 
         #[cfg(not(feature = "datagen"))]

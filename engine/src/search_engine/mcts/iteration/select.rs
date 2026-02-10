@@ -1,3 +1,5 @@
+use chess::ChessBoard;
+
 use crate::{search_engine::{engine_options::EngineOptions, tree::NodeIndex}, Node, SearchEngine, WDLScore};
 
 impl SearchEngine {

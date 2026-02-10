@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
-use engine::{NoReport, NodeIndex, PolicyNetwork, SearchEngine, SearchLimits, ValueNetwork};
+use engine::{BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits, Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage2ValueNetwork, Stage3PolicyNetwork, ValueNetwork};
 use utils::{clear_terminal_screen, create_loading_bar, heat_color, time_to_string, number_to_string, AlignString, Colors, CustomColor, PieceColors, Theme, DRAW_COLOR, LOSE_COLOR, WIN_COLOR};
 
 pub struct MiscProcessor;
@@ -129,17 +129,51 @@ fn perft<const BULK: bool, const CHESS_960: bool>(search_engine: &SearchEngine, 
 }
 
 fn eval_bench() {
-    const FENS: [&str; 5] = [
+    const FENS: [&str; 8] = [
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
         "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
         "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+        "8/kpp5/b7/8/2Q5/8/8/5K2 w - - 0 1",
+        "1k1rqb2/2ppprpp/pp3p2/8/2P5/8/1QPPPPPP/RR4K1 w - - 0 1",
+        "1k1rqbb1/2ppprpp/pp3p2/8/2P5/8/1QPPPPPP/RR4K1 w - - 0 1"
     ];
 
+    println!("{}", "Base".secondary(0.5));
     for fen in FENS {
         let board = ChessBoard::from(&FEN::from(fen));
-        let wdl_score = ValueNetwork.forward(&board);
+        let wdl_score = BaseValueNetwork.forward(&board);
+        println!("{}",
+            format!("{fen}: {}", 
+                format!("[{}, {}, {}]",
+                    format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
+                    format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+                    format!("{:.2}%", wdl_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+                ).secondary(10.0/18.0)
+            ).primary(10.0/18.0)
+        )
+    }
+
+    println!("\n{}", "Stage 1".secondary(0.5));
+    for fen in FENS {
+        let board = ChessBoard::from(&FEN::from(fen));
+        let wdl_score = Stage1ValueNetwork.forward(&board);
+        println!("{}",
+            format!("{fen}: {}", 
+                format!("[{}, {}, {}]",
+                    format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
+                    format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+                    format!("{:.2}%", wdl_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+                ).secondary(10.0/18.0)
+            ).primary(10.0/18.0)
+        )
+    }
+
+    println!("\n{}", "Stage 2".secondary(0.5));
+    for fen in FENS {
+        let board = ChessBoard::from(&FEN::from(fen));
+        let wdl_score = Stage2ValueNetwork.forward(&board);
         println!("{}",
             format!("{fen}: {}", 
                 format!("[{}, {}, {}]",
@@ -157,43 +191,52 @@ fn draw_policy(search_engine: &SearchEngine) {
 
     board.draw_board();
 
-    let policy_base = PolicyNetwork.create_base(board);
-    let mut max = f32::NEG_INFINITY;
-    let mut total = 0f32;
+    for (name, network) in [
+        ("Base", &BasePolicyNetwork), 
+        ("Stage 1", &Stage1PolicyNetwork), 
+        ("Stage 2", &Stage2PolicyNetwork), 
+        ("Stage 3", &Stage3PolicyNetwork)] {
+        let policy_base = network.create_base(board);
 
-    let mut min_policy = f32::INFINITY;
-    let mut max_policy = f32::NEG_INFINITY;
-    let mut moves = Vec::new();
+        let mut max = f32::NEG_INFINITY;
+        let mut total = 0f32;
 
-    board.map_legal_moves(|mv| {
-        let see = board.see(mv, -108);
-        let p = PolicyNetwork.forward(board, &policy_base, mv, see, search_engine.options().chess960());
-        max = max.max(p);
-        moves.push((mv, p));
-    });
+        let mut min_policy = f32::INFINITY;
+        let mut max_policy = f32::NEG_INFINITY;
+        let mut moves = Vec::new();
 
-    for (_, p) in moves.iter_mut() {
-        *p = (*p - max).exp();
-        total += *p;
-    }
+        board.map_legal_moves(|mv| {
+            let see = board.see(mv, -108);
+            let p = network.forward(board, &policy_base, mv, see, search_engine.options().chess960());
+            max = max.max(p);
+            moves.push((mv, p));
+        });
 
-    for (_, p) in moves.iter_mut() {
-        *p = *p / total;
-        min_policy = min_policy.min(*p);
-        max_policy = max_policy.max(*p);
-    }
+        for (_, p) in moves.iter_mut() {
+            *p = (*p - max).exp();
+            total += *p;
+        }
 
-    if moves.len() == 1 {
-        moves[0].1 = 1.0
-    }
+        for (_, p) in moves.iter_mut() {
+            *p = *p / total;
+            min_policy = min_policy.min(*p);
+            max_policy = max_policy.max(*p);
+        }
 
-    moves.sort_by(|&a, &b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        if moves.len() == 1 {
+            moves[0].1 = 1.0
+        }
 
-    for (idx, &(mv, p)) in moves.iter().enumerate() {
-        println!(" {} {}", 
-            format!("{}:", mv.to_string(search_engine.options().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
-            heat_color(&format!("{:.2}%", p * 100.0), p, min_policy, max_policy)
-        )
+        moves.sort_by(|&a, &b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        println!("{}", name.secondary(0.5));
+        for (idx, &(mv, p)) in moves.iter().enumerate() {
+            println!(" {} {}", 
+                format!("{}:", mv.to_string(search_engine.options().chess960())).align_to_left(6).primary((idx as f32 + 10.0)/(moves.len() as f32 + 18.0)), 
+                heat_color(&format!("{:.2}%", p * 100.0), p, min_policy, max_policy)
+            )
+        }
+        println!();
     }
 }
 
@@ -201,7 +244,18 @@ fn eval(search_engine: &SearchEngine) {
     let board = search_engine.root_position().board();
     board.draw_board();
 
-    let raw_score = ValueNetwork.forward(board);
+    println!("{}", "Base".secondary(0.5));
+    print_network_eval(board, &BaseValueNetwork, search_engine);
+    
+    println!("{}", "Stage 1".secondary(0.5));
+    print_network_eval(board, &Stage1ValueNetwork, search_engine);
+
+    println!("{}", "Stage 2".secondary(0.5));
+    print_network_eval(board, &Stage2ValueNetwork, search_engine);
+}
+
+fn print_network_eval(board: &ChessBoard, network: &ValueNetwork, search_engine: &SearchEngine) {
+    let raw_score = network.forward(board);
     let raw_score_cp = raw_score.cp();
 
     println!("{}\n", format!("Raw: {}", 

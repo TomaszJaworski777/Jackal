@@ -3,7 +3,7 @@ use std::{thread, time::Instant};
 use chess::Move;
 
 use crate::{
-    SearchEngine, SearchReport, search_engine::{SearchLimits, SearchStats, search_limits::TimeManager, search_stats::{SearchStatsAccumulator, ThreadSearchStats}}
+    SearchEngine, SearchReport, WDLScore, search_engine::{SearchLimits, SearchStats, search_limits::TimeManager, search_stats::{SearchStatsAccumulator, ThreadSearchStats}}
 };
 
 mod iteration;
@@ -124,7 +124,7 @@ impl SearchEngine {
                 continue;
             }
 
-            if time_manager.soft_limit_reached(elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
+            if time_manager.soft_limit_reached(draw_score, elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
                 self.interrupt_search();
                 break;
             }
@@ -174,7 +174,7 @@ impl SearchEngine {
         let mut depth = 0.0;
         let mut position = *self.root_position();
 
-        self.perform_iteration::<true>(self.tree().root_index(), &mut position, &mut depth, castle_mask)?;
+        self.perform_iteration::<true>(self.tree().root_index(), &mut position, &mut depth, WDLScore::DRAW, castle_mask)?;
 
         accumulator.add_iteration(depth as u64);
 
