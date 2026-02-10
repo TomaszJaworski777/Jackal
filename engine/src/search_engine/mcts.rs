@@ -124,7 +124,7 @@ impl SearchEngine {
                 continue;
             }
 
-            if time_manager.soft_limit_reached(elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
+            if time_manager.soft_limit_reached(draw_score, elapsed_ms, iterations, self.tree(), self.options(), *best_move_changes) {
                 self.interrupt_search();
                 break;
             }
