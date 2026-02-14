@@ -21,7 +21,7 @@ impl TimeManager {
         game_ply: u16,
         phase: f64
     ) {
-        let move_overhead = (options.move_overhead() + (options.threads() - 1) * 10) as u128;
+        let move_overhead = (options.move_overhead() + (options.threads() - 1) * 3) as u128;
         let increment = increment.unwrap_or(0);
 
         let time_remaining = if let Some(time_remaining) = time_remaining {
