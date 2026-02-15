@@ -27,7 +27,7 @@ create_options! {
         Tunables {
             //PST
             root_pst: f64  =>  3.515,  0.5,  5.0,  0.30,  0.002;
-            base_pst: f64  =>  1.1,  0.5,  2.0,  0.20,  0.002;
+            base_pst: f64  =>  1.275,  0.5,  2.0,  0.20,  0.002;
 
             //CPUCT
             start_cpuct:       f64  =>  0.65,  0.1,  5.0,  0.10,  0.002;
