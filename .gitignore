@@ -1,0 +1,15 @@
+/debug
+/target
+/resources
+/data
+/.vs
+
+Cargo.lock
+
+**/*.rs.bk
+
+*.pdb
+*.exe
+*.bin
+*.pgn
+/releases

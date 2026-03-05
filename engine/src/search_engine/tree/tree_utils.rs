@@ -1,0 +1,189 @@
+use crate::{
+    search_engine::{
+        engine_options::EngineOptions,
+        proof::get_proof_bonus,
+        tree::{node::Node, pv_line::PvLine, NodeIndex, Tree},
+    },
+    GameState,
+};
+
+impl Tree {
+    pub fn bytes_to_size(bytes: usize) -> usize {
+        bytes / std::mem::size_of::<Node>()
+    }
+
+    pub fn size_to_bytes(size: usize) -> usize {
+        size * std::mem::size_of::<Node>()
+    }
+
+    pub fn select_child_by_key<F: FnMut(&Node) -> f64>(
+        &self,
+        parent_idx: NodeIndex,
+        key: F,
+    ) -> Option<NodeIndex> {
+        self.select_child_by_key_with_limit(parent_idx, self[parent_idx].children_count(), key)
+    }
+
+    pub fn select_child_by_key_with_limit<F: FnMut(&Node) -> f64>(
+        &self,
+        parent_idx: NodeIndex,
+        limit: usize,
+        mut key: F,
+    ) -> Option<NodeIndex> {
+        let mut best_idx = None;
+        let mut best_score = f64::NEG_INFINITY;
+
+        self[parent_idx].map_children_with_limit(limit, |child_idx| {
+            let new_score = key(&self[child_idx]);
+            if new_score > best_score {
+                best_idx = Some(child_idx);
+                best_score = new_score;
+            }
+        });
+
+        best_idx
+    }
+
+    pub fn select_best_child(
+        &self,
+        parent_idx: NodeIndex,
+        draw_score: f64,
+        options: &EngineOptions,
+    ) -> Option<NodeIndex> {
+        let parent_node = &self[parent_idx];
+        let parent_score = parent_node.score().reversed();
+
+        self.select_child_by_key(parent_idx, |node| match node.state() {
+            GameState::Loss(x) => 256.0 - x as f64,
+            GameState::Win(x) => -256.0 + x as f64,
+            _ => {
+                let mut score = node.score().single_with_score(draw_score);
+                score += get_proof_bonus(&parent_score, parent_node, node);
+
+                if node.sac_strength() != 0 && parent_score.single() > 0.51 {
+                    let sac_multiplier =
+                        1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
+                    score += (options.selection_sac_bonus() + node.sac_strength() as f64 / 20000.0)
+                        * sac_multiplier;
+                }
+
+                score
+            }
+        })
+    }
+
+    pub fn get_pv(
+        &self,
+        node_idx: NodeIndex,
+        draw_score: f64,
+        flip: bool,
+        options: &EngineOptions,
+    ) -> PvLine {
+        let node = &self[node_idx];
+
+        if node.children_count() == 0 {
+            return PvLine::new(node);
+        }
+
+        let best_child_idx = self.select_best_child(node_idx, draw_score, options);
+
+        if best_child_idx.is_none() {
+            return PvLine::new(node);
+        }
+
+        let best_child_idx = best_child_idx.unwrap();
+
+        let mut result = self.get_pv(
+            best_child_idx,
+            if flip { 0.5 } else { draw_score },
+            !flip,
+            options,
+        );
+        result.add_node(node);
+
+        result
+    }
+
+    pub fn get_best_pv(&self, index: usize, options: &EngineOptions) -> PvLine {
+        let mut chilren_nodes = Vec::new();
+        let root = self.root_node();
+
+        let draw_score = options.get_draw_score_blend(root.score());
+        let parent_score = root.score().reversed();
+
+        root.map_children(|child_idx| {
+            let node = &self[child_idx];
+
+            if node.visits() == 0 {
+                return;
+            }
+
+            let mut child_score = node.score().single_with_score(draw_score);
+            let proof_bonus = get_proof_bonus(&parent_score, root, node);
+
+            child_score += proof_bonus;
+
+            if node.sac_strength() != 0 && parent_score.single() > 0.51 {
+                let sac_multiplier =
+                    1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
+                child_score += (options.selection_sac_bonus()
+                    + node.sac_strength() as f64 / 20000.0)
+                    * sac_multiplier;
+            }
+
+            chilren_nodes.push((child_idx, child_score))
+        });
+
+        if chilren_nodes.is_empty() {
+            return PvLine::new(&Node::new());
+        }
+
+        chilren_nodes.sort_by(|(_, a), (_, b)| b.total_cmp(a));
+
+        let (pv_node_idx, _) = chilren_nodes[index.min(chilren_nodes.len() - 1)];
+
+        self.get_pv(pv_node_idx, draw_score, false, options)
+    }
+
+    pub fn find_node_depth(
+        &self,
+        start_node_idx: NodeIndex,
+        target_node_idx: NodeIndex,
+    ) -> Option<u64> {
+        if start_node_idx == target_node_idx {
+            return Some(0);
+        }
+
+        let node = &self[start_node_idx];
+
+        let mut chilren_nodes = Vec::new();
+        let mut found_node = false;
+
+        node.map_children(|child_idx| {
+            if child_idx == target_node_idx {
+                found_node = true
+            }
+
+            if self[child_idx].children_count() == 0 {
+                return;
+            }
+
+            chilren_nodes.push(child_idx)
+        });
+
+        if found_node {
+            return Some(1);
+        }
+
+        for child_idx in chilren_nodes {
+            let result = self.find_node_depth(child_idx, target_node_idx);
+            if result.is_none() {
+                continue;
+            }
+
+            return Some(result.unwrap() + 1);
+        }
+
+        None
+    }
+}
