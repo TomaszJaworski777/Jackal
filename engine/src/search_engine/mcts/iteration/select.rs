@@ -44,9 +44,16 @@ impl SearchEngine {
 
         let is_stm_parent = depth as i64 % 2 != 0;
 
+        let skip_terminal = if ROOT {
+            let start_idx = parent_node.children_index();
+            (0..limit).any(|i| !self.tree()[start_idx + i].is_terminal())
+        } else {
+            false
+        };
+
         self.tree()
             .select_child_by_key_with_limit(node_idx, limit, |child_node| {
-                if ROOT && child_node.is_terminal() {
+                if skip_terminal && child_node.is_terminal() {
                     return f64::NEG_INFINITY;
                 }
 
