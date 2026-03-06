@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl SearchEngine {
-    pub(super) fn select(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
+    pub(super) fn select<const ROOT: bool>(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
         let parent_node = &self.tree()[node_idx];
         let parent_score = parent_node.score().reversed();
 
@@ -46,6 +46,10 @@ impl SearchEngine {
 
         self.tree()
             .select_child_by_key_with_limit(node_idx, limit, |child_node| {
+                if ROOT && child_node.is_terminal() {
+                    return f64::NEG_INFINITY;
+                }
+
                 let score = get_score(
                     &parent_score,
                     child_node,
