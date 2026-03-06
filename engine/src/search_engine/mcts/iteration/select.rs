@@ -67,6 +67,7 @@ impl SearchEngine {
                 let exploration_sac_bonus = if child_node.sac_strength() != 0
                     && is_stm_parent
                     && parent_score.single() > 0.51
+                    && parent_score.single() < 0.9
                 {
                     let sac_multiplier = 1.0
                         + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling();

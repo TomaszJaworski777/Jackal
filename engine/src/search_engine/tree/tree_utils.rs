@@ -60,7 +60,10 @@ impl Tree {
                 let mut score = node.score().single_with_score(draw_score);
                 score += get_proof_bonus(&parent_score, parent_node, node);
 
-                if node.sac_strength() != 0 && parent_score.single() > 0.51 {
+                if node.sac_strength() != 0
+                    && parent_score.single() > 0.51
+                    && parent_score.single() < 0.9
+                {
                     let sac_multiplier =
                         1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
                     score += (options.selection_sac_bonus() + node.sac_strength() as f64 / 20000.0)
@@ -123,7 +126,10 @@ impl Tree {
 
             child_score += proof_bonus;
 
-            if node.sac_strength() != 0 && parent_score.single() > 0.51 {
+            if node.sac_strength() != 0
+                && parent_score.single() > 0.51
+                && parent_score.single() < 0.9
+            {
                 let sac_multiplier =
                     1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
                 child_score += (options.selection_sac_bonus()

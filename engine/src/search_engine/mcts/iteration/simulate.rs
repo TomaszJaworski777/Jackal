@@ -127,7 +127,9 @@ impl SearchEngine {
         let is_stm = self.root_position().board().side() == position.board().side();
         let sign = if is_stm { 1 } else { -1 };
 
-        score.apply_contempt(self.options().contempt() * sign);
+        if (score.single() - 0.5).abs() < 0.4 {
+            score.apply_contempt(self.options().contempt() * sign);
+        }
 
         score
     }
