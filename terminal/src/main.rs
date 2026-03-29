@@ -28,7 +28,10 @@ fn main() {
     let mut uci_processor = UciProcessor::new(&mut search_engine);
 
     while !shutdown_token {
-        let input_command = input_wrapper.get_input();
+        let input_command = match input_wrapper.get_input() {
+            Some(cmd) => cmd,
+            None => break,
+        };
 
         let command_parts: Vec<&str> = input_command.split_whitespace().collect();
         if command_parts.is_empty() {
