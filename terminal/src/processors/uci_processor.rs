@@ -170,7 +170,14 @@ impl UciProcessor {
             });
 
             loop {
-                let input_command = input_wrapper.get_input_no_queue();
+                let input_command = match input_wrapper.get_input_no_queue() {
+                    Some(cmd) => cmd,
+                    None => {
+                        search_engine.interrupt_search();
+                        *shutdown_token = true;
+                        break;
+                    }
+                };
 
                 match input_command.trim() {
                     "isready" => println!("readyok"),
