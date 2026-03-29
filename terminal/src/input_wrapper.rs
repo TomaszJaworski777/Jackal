@@ -17,30 +17,32 @@ impl InputWrapper {
         }
     }
 
-    pub fn get_input(&mut self) -> String {
+    pub fn get_input(&mut self) -> Option<String> {
         if !self.command_queue.is_empty() {
             let command = self.command_queue.first().unwrap().clone();
             self.command_queue.remove(0);
-            return command;
+            return Some(command);
         }
 
         let mut input_command = String::new();
 
-        if stdin().read_line(&mut input_command).is_err() {
-            println!("Error reading input, please try again.");
+        match stdin().read_line(&mut input_command) {
+            Ok(0) | Err(_) => return None,
+            _ => {}
         }
 
-        input_command.trim().to_string()
+        Some(input_command.trim().to_string())
     }
 
-    pub fn get_input_no_queue(&mut self) -> String {
+    pub fn get_input_no_queue(&mut self) -> Option<String> {
         let mut input_command = String::new();
 
-        if stdin().read_line(&mut input_command).is_err() {
-            println!("Error reading input, please try again.");
+        match stdin().read_line(&mut input_command) {
+            Ok(0) | Err(_) => return None,
+            _ => {}
         }
 
-        input_command.trim().to_string()
+        Some(input_command.trim().to_string())
     }
 
     pub fn push_back(&mut self, command: String) {
