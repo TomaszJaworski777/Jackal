@@ -4,7 +4,7 @@ use crate::{
 };
 
 impl SearchEngine {
-    pub(super) fn select<const ROOT: bool>(&self, node_idx: NodeIndex, depth: f64) -> NodeIndex {
+    pub(super) fn select<const ROOT: bool>(&self, node_idx: NodeIndex, depth: f64) -> Option<NodeIndex> {
         let parent_node = &self.tree()[node_idx];
         let parent_score = parent_node.score().reversed();
 
@@ -36,6 +36,10 @@ impl SearchEngine {
             limit = parent_node.children_count()
         }
 
+        if ROOT {
+            limit = parent_node.children_count();
+        }
+
         let draw_score = if depth as i64 % 2 == 0 {
             0.5
         } else {
@@ -44,16 +48,9 @@ impl SearchEngine {
 
         let is_stm_parent = depth as i64 % 2 != 0;
 
-        let skip_terminal = if ROOT {
-            let start_idx = parent_node.children_index();
-            (0..limit).any(|i| !self.tree()[start_idx + i].is_terminal())
-        } else {
-            false
-        };
-
-        self.tree()
+        let result = self.tree()
             .select_child_by_key_with_limit(node_idx, limit, |child_node| {
-                if skip_terminal && child_node.is_terminal() {
+                if ROOT && child_node.is_terminal() {
                     return f64::NEG_INFINITY;
                 }
 
@@ -93,8 +90,13 @@ impl SearchEngine {
                     + child_node.policy() * cpuct * visit_scale
                     + proof_bonus
                     + exploration_sac_bonus
-            })
-            .expect("Failed to select a valid node.")
+            });
+
+        if ROOT && result.is_none() {
+            self.interrupt_search();
+        }
+
+        result
     }
 }
 
