@@ -120,7 +120,7 @@ impl Tree {
             }
 
             let mut child_score = node.score().single_with_score(draw_score);
-            
+
             if node.sac_strength() != 0
                 && parent_score.single() > 0.51
                 && parent_score.single() < 0.9

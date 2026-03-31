@@ -59,8 +59,6 @@ impl SearchEngine {
                     &parent_score,
                     child_node,
                     child_node.visits(),
-                    child_node.policy(),
-                    parent_node.children_count(),
                     self.options(),
                 )
                 .single_with_score(draw_score) as f64;
@@ -81,9 +79,7 @@ impl SearchEngine {
                     0.0
                 };
 
-                score
-                    + child_node.policy() * cpuct * visit_scale
-                    + exploration_sac_bonus
+                score + child_node.policy() * cpuct * visit_scale + exploration_sac_bonus
             });
 
         if ROOT && result.is_none() {
@@ -99,15 +95,10 @@ fn get_score(
     parent_score: &WDLScore,
     child_node: &Node,
     child_visits: u32,
-    child_policy: f64,
-    children_count: usize,
     options: &EngineOptions,
 ) -> WDLScore {
     let mut score = if child_visits == 0 {
-        let reduction =
-            (1.0 - child_policy * children_count as f64).max(0.0) * options.fpu_reduction();
-        let w = (parent_score.win_chance() - reduction).max(0.0);
-        WDLScore::new(w, parent_score.draw_chance())
+        *parent_score
     } else {
         child_node.score()
     };
