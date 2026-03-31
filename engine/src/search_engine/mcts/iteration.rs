@@ -15,7 +15,6 @@ impl SearchEngine {
         parent_score: WDLScore,
         castle_mask: &[u8; 64],
     ) -> Option<WDLScore> {
-        let current_depth = *depth;
         let hash = position.board().hash();
         let node = &self.tree()[node_idx];
 
@@ -74,7 +73,7 @@ impl SearchEngine {
         }
         .reversed();
 
-        self.backpropagate(node_idx, selected_child_idx, score, hash, current_depth);
+        self.backpropagate(node_idx, selected_child_idx, score, hash);
 
         Some(score)
     }

@@ -265,22 +265,14 @@ impl Tree {
             _ => String::new(),
         };
 
-        let proof_str = if node.proof() == u16::MAX {
-            String::from("INF")
-        } else {
-            format!("{}", node.proof())
-        }
-        .align_to_right(6);
-
         let sac_str = format!("{}", node.sac_strength()).align_to_right(3);
 
         println!(
             "{}",
             format!(
-                "{prefix}  {score} score  {} visits  {} policy  {} proof  {} sac  {}",
+                "{prefix}  {score} score  {} visits  {} policy  {}  sac  {}",
                 visits.to_string().white(),
                 policy,
-                proof_str.white(),
                 sac_str.white(),
                 state.white()
             )
