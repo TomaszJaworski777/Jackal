@@ -1,7 +1,6 @@
 use crate::{
     search_engine::{
         engine_options::EngineOptions,
-        proof::get_proof_bonus,
         tree::{node::Node, pv_line::PvLine, NodeIndex, Tree},
     },
     GameState,
@@ -58,7 +57,6 @@ impl Tree {
             GameState::Win(x) => -256.0 + x as f64,
             _ => {
                 let mut score = node.score().single_with_score(draw_score);
-                score += get_proof_bonus(&parent_score, parent_node, node);
 
                 if node.sac_strength() != 0
                     && parent_score.single() > 0.51
@@ -122,10 +120,7 @@ impl Tree {
             }
 
             let mut child_score = node.score().single_with_score(draw_score);
-            let proof_bonus = get_proof_bonus(&parent_score, root, node);
-
-            child_score += proof_bonus;
-
+            
             if node.sac_strength() != 0
                 && parent_score.single() > 0.51
                 && parent_score.single() < 0.9

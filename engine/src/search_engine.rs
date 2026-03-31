@@ -9,7 +9,6 @@ mod butterfly_history;
 mod engine_options;
 mod hash_table;
 mod mcts;
-mod proof;
 mod search_limits;
 mod search_stats;
 mod tree;

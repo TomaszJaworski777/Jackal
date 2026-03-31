@@ -29,7 +29,6 @@ pub struct Node {
     state: AtomicGameState,
     threads: AtomicU8,
     gini_impurity: AtomicU16,
-    proof: AtomicU16,
     sac_strength: AtomicU8,
 }
 
@@ -46,7 +45,6 @@ impl Clone for Node {
             policy: AtomicU16::new(self.policy.load(Ordering::Relaxed)),
             threads: AtomicU8::new(self.threads.load(Ordering::Relaxed)),
             gini_impurity: AtomicU16::new(self.gini_impurity.load(Ordering::Relaxed)),
-            proof: AtomicU16::new(self.proof.load(Ordering::Relaxed)),
             sac_strength: AtomicU8::new(self.sac_strength.load(Ordering::Relaxed)),
         }
     }
@@ -71,7 +69,6 @@ impl Node {
             policy: AtomicU16::new(0),
             threads: AtomicU8::new(0),
             gini_impurity: AtomicU16::new(0),
-            proof: AtomicU16::new(1),
             sac_strength: AtomicU8::new(0),
         }
     }
@@ -94,7 +91,6 @@ impl Node {
             node.gini_impurity.load(Ordering::Relaxed),
             Ordering::Relaxed,
         );
-        self.proof.store(node.proof(), Ordering::Relaxed);
         self.sac_strength
             .store(node.sac_strength(), Ordering::Relaxed);
     }
@@ -109,7 +105,6 @@ impl Node {
         self.policy.store(0, Ordering::Relaxed);
         self.threads.store(0, Ordering::Relaxed);
         self.gini_impurity.store(0, Ordering::Relaxed);
-        self.proof.store(1, Ordering::Relaxed);
         self.sac_strength.store(0, Ordering::Relaxed);
         self.clear_children();
     }
@@ -176,11 +171,6 @@ impl Node {
     }
 
     #[inline]
-    pub fn proof(&self) -> u16 {
-        self.proof.load(Ordering::Relaxed)
-    }
-
-    #[inline]
     pub fn sac_strength(&self) -> u8 {
         self.sac_strength.load(Ordering::Relaxed)
     }
@@ -222,11 +212,6 @@ impl Node {
     #[inline]
     pub fn set_sac_strength(&self, strength: u8) {
         self.sac_strength.store(strength, Ordering::Relaxed);
-    }
-
-    #[inline]
-    pub fn set_proof(&self, proof: u16) {
-        self.proof.store(proof, Ordering::Relaxed);
     }
 
     #[inline]

@@ -1,5 +1,5 @@
 use crate::{
-    search_engine::{engine_options::EngineOptions, proof::get_proof_bonus, tree::NodeIndex},
+    search_engine::{engine_options::EngineOptions, tree::NodeIndex},
     Node, SearchEngine, WDLScore,
 };
 
@@ -65,12 +65,6 @@ impl SearchEngine {
                 )
                 .single_with_score(draw_score) as f64;
 
-                let proof_bonus = if is_stm_parent {
-                    get_proof_bonus(&parent_score, parent_node, child_node)
-                } else {
-                    0.0
-                };
-
                 let visit_scale = f64::from(child_node.visits() + 1).recip();
 
                 let exploration_sac_bonus = if child_node.sac_strength() != 0
@@ -89,7 +83,6 @@ impl SearchEngine {
 
                 score
                     + child_node.policy() * cpuct * visit_scale
-                    + proof_bonus
                     + exploration_sac_bonus
             });
 
