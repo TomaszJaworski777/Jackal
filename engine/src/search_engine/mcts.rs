@@ -198,7 +198,7 @@ impl SearchEngine {
         accumulator: &mut SearchStatsAccumulator,
         castle_mask: &[u8; 64],
     ) -> Option<()> {
-        let mut depth = 0.0;
+        let mut depth = 0;
         let mut position = *self.root_position();
 
         self.perform_iteration::<true>(
@@ -209,7 +209,7 @@ impl SearchEngine {
             castle_mask,
         )?;
 
-        accumulator.add_iteration(depth as u64);
+        accumulator.add_iteration(depth);
 
         Some(())
     }

@@ -7,7 +7,7 @@ impl SearchEngine {
     pub(super) fn select<const ROOT: bool>(
         &self,
         node_idx: NodeIndex,
-        depth: f64,
+        depth: u64,
     ) -> Option<NodeIndex> {
         let parent_node = &self.tree()[node_idx];
         let parent_score = parent_node.score().reversed();
@@ -116,10 +116,14 @@ fn get_score(
     score
 }
 
-fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
-    let mut cpuct = options.end_cpuct()
-        + (options.start_cpuct() - options.end_cpuct())
-            * (-options.cpuct_depth_decay() * (depth - 1.0)).exp();
+fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: u64) -> f64 {
+    let mut cpuct = match depth {
+        1 => options.depth_1_cpuct(),
+        2 => options.depth_2_cpuct(),
+        3 => options.depth_3_cpuct(),
+        4 => options.depth_4_cpuct(),
+        _ => options.depth_5_cpuct(),
+    };
 
     let visit_scale = options.cpuct_visit_scale();
     cpuct *= 1.0 + ((f64::from(parent_node.visits()) + visit_scale) / visit_scale).ln();
