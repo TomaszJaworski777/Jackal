@@ -119,7 +119,11 @@ impl Tree {
                 return;
             }
 
-            let mut child_score = node.score().single_with_score(draw_score);
+            let mut child_score = match node.state() {
+                GameState::Loss(x) => 256.0 - x as f64,
+                GameState::Win(x) => -256.0 + x as f64,
+                _ => node.score().single_with_score(draw_score),
+            };
 
             if node.sac_strength() != 0
                 && parent_score.single() > 0.51
