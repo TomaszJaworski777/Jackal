@@ -2,9 +2,7 @@ use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
 use engine::{
-    BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits,
-    Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage2ValueNetwork,
-    Stage3PolicyNetwork, ValueNetwork,
+    BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits, Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage3PolicyNetwork, ValueNetwork,
 };
 use utils::{
     clear_terminal_screen, create_loading_bar, heat_color, number_to_string, time_to_string,
@@ -199,25 +197,25 @@ fn eval_bench() {
         )
     }
 
-    println!("\n{}", "Stage 2".secondary(0.5));
-    for fen in FENS {
-        let board = ChessBoard::from(&FEN::from(fen));
-        let wdl_score = Stage2ValueNetwork.forward(&board);
-        println!(
-            "{}",
-            format!(
-                "{fen}: {}",
-                format!(
-                    "[{}, {}, {}]",
-                    format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
-                    format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
-                    format!("{:.2}%", wdl_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
-                )
-                .secondary(10.0 / 18.0)
-            )
-            .primary(10.0 / 18.0)
-        )
-    }
+    // println!("\n{}", "Stage 2".secondary(0.5));
+    // for fen in FENS {
+    //     let board = ChessBoard::from(&FEN::from(fen));
+    //     let wdl_score = Stage2ValueNetwork.forward(&board);
+    //     println!(
+    //         "{}",
+    //         format!(
+    //             "{fen}: {}",
+    //             format!(
+    //                 "[{}, {}, {}]",
+    //                 format!("{:.2}%", wdl_score.win_chance() * 100.0).custom_color(WIN_COLOR),
+    //                 format!("{:.2}%", wdl_score.draw_chance() * 100.0).custom_color(DRAW_COLOR),
+    //                 format!("{:.2}%", wdl_score.lose_chance() * 100.0).custom_color(LOSE_COLOR),
+    //             )
+    //             .secondary(10.0 / 18.0)
+    //         )
+    //         .primary(10.0 / 18.0)
+    //     )
+    // }
 }
 
 fn draw_policy(search_engine: &SearchEngine) {
@@ -294,8 +292,8 @@ fn eval(search_engine: &SearchEngine) {
     println!("{}", "Stage 1".secondary(0.5));
     print_network_eval(board, &Stage1ValueNetwork, search_engine);
 
-    println!("{}", "Stage 2".secondary(0.5));
-    print_network_eval(board, &Stage2ValueNetwork, search_engine);
+    // println!("{}", "Stage 2".secondary(0.5));
+    // print_network_eval(board, &Stage2ValueNetwork, search_engine);
 }
 
 fn print_network_eval(board: &ChessBoard, network: &ValueNetwork, search_engine: &SearchEngine) {

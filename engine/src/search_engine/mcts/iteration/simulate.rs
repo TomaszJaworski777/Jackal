@@ -1,8 +1,7 @@
 use chess::ChessPosition;
 
 use crate::{
-    search_engine::tree::NodeIndex, BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork,
-    Stage2ValueNetwork, WDLScore,
+    search_engine::tree::NodeIndex, BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork, WDLScore,
 };
 
 impl SearchEngine {
@@ -85,7 +84,7 @@ impl SearchEngine {
         node_state: GameState,
         depth: f64,
         stm: bool,
-        mut parent_score: WDLScore,
+        parent_score: WDLScore,
     ) -> WDLScore {
         let mut score = match node_state {
             GameState::Draw => return WDLScore::DRAW,
@@ -96,20 +95,12 @@ impl SearchEngine {
                     if parent_score.win_chance() > 0.9 {
                         BaseValueNetwork.forward(position.board())
                     } else if parent_score.win_chance() > 0.575 {
-                        Stage2ValueNetwork.forward(position.board())
-                    } else {
-                        Stage1ValueNetwork.forward(position.board())
-                    }
-                } else {
-                    if !stm {
-                        parent_score = parent_score.reversed();
-                    }
-
-                    if parent_score.win_chance() > 0.85 && position.board().phase() > 8 {
                         Stage1ValueNetwork.forward(position.board())
                     } else {
                         BaseValueNetwork.forward(position.board())
                     }
+                } else {
+                    BaseValueNetwork.forward(position.board())
                 };
 
                 score
