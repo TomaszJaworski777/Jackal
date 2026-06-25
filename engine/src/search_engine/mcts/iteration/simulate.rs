@@ -92,9 +92,7 @@ impl SearchEngine {
             GameState::Win(_) => return WDLScore::WIN,
             _ => {
                 let score = if stm && position.board().phase() > 8 {
-                    if parent_score.win_chance() > 0.9 {
-                        BaseValueNetwork.forward(position.board())
-                    } else if parent_score.win_chance() > 0.575 {
+                    if hash01(u64::from(position.board().hash())) < stage1_prob(parent_score.win_chance()) {
                         Stage1ValueNetwork.forward(position.board())
                     } else {
                         BaseValueNetwork.forward(position.board())
@@ -124,4 +122,40 @@ impl SearchEngine {
 
         score
     }
+}
+
+fn stage1_prob(win_chance: f64) -> f64 {
+    const LO: f64 = 0.55;    // start ramping up
+    const HI: f64 = 0.999;    // fully ramped down
+    const RAMP: f64 = 0.25;  // width of each cosine edge (in win_chance units)
+    const PMAX: f64 = 0.85;
+
+    if win_chance <= LO || win_chance >= HI {
+        return 0.0;
+    }
+
+    let up_end   = LO + RAMP; // plateau starts here
+    let down_beg = HI - RAMP; // plateau ends here
+
+    let bump = if win_chance < up_end {
+        // rising edge: 0 -> 1 over [LO, up_end]
+        let t = (win_chance - LO) / RAMP;
+        0.5 * (1.0 - (std::f64::consts::PI * t).cos())
+    } else if win_chance > down_beg {
+        // falling edge: 1 -> 0 over [down_beg, HI]
+        let t = (win_chance - down_beg) / RAMP;
+        0.5 * (1.0 + (std::f64::consts::PI * t).cos())
+    } else {
+        1.0 // flat top
+    };
+
+    PMAX * bump
+}
+
+fn hash01(h: u64) -> f64 {
+    let mut x = h.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    x ^= x >> 30; x = x.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    x ^= x >> 27; x = x.wrapping_mul(0x94D0_49BB_1331_11EB);
+    x ^= x >> 31;
+    (x >> 12) as f64 / (1u64 << 52) as f64   // top 52 bits -> [0,1)
 }

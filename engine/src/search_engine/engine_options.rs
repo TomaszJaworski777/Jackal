@@ -140,7 +140,7 @@ create_options! {
             policy_sac:            f64  =  0.001;
             draw_pessimism:        f64  =  0.1;
             selection_sac_bonus:   f64  =  0.015;
-            exploration_sac_bonus: f64  =  0.01;
+            exploration_sac_bonus: f64  =  0.025;
             sac_scaling:           f64  =  15.0;
         }
         Variables {
