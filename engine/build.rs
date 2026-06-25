@@ -3,9 +3,8 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() {
-    get_net("v40004096001q.network");
-    get_net("v40004096001qft3.network");
-    get_net("v40004096001qft5.network");
+    get_net("v5000_8192_s1.network");
+    get_net("v5000_8192_f2.network");
 
     get_net("p8008192009q.network");
     get_net("p8008192009qft3.network");

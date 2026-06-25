@@ -9,14 +9,14 @@ pub use crate::networks::value_network::ValueNetwork;
 #[allow(non_upper_case_globals)]
 pub static BaseValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../resources/networks/FineNet-S1.network"
+        "../../resources/networks/v5000_8192_s1.network"
     ))
 };
 
 #[allow(non_upper_case_globals)]
 pub static Stage1ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../resources/networks/FineNet-2.network"
+        "../../resources/networks/v5000_8192_f2.network"
     ))
 };
 
