@@ -1,7 +1,8 @@
 use chess::ChessPosition;
 
 use crate::{
-    BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork, WDLScore, search_engine::{engine_options::EngineOptions, tree::NodeIndex},
+    search_engine::{engine_options::EngineOptions, tree::NodeIndex},
+    BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork, WDLScore,
 };
 
 impl SearchEngine {
@@ -92,7 +93,9 @@ impl SearchEngine {
             GameState::Win(_) => return WDLScore::WIN,
             _ => {
                 let score = if stm && position.board().phase() > 8 {
-                    if hash(u64::from(position.board().hash())) < stage1_prob(parent_score.win_chance(), self.options()) {
+                    if hash(u64::from(position.board().hash()))
+                        < stage1_prob(parent_score.win_chance(), self.options())
+                    {
                         Stage1ValueNetwork.forward(position.board())
                     } else {
                         BaseValueNetwork.forward(position.board())
@@ -125,11 +128,13 @@ impl SearchEngine {
 }
 
 fn stage1_prob(win_chance: f64, options: &EngineOptions) -> f64 {
-    if win_chance <= options.value_stage_low_bound() || win_chance >= options.value_stage_high_bound() {
+    if win_chance <= options.value_stage_low_bound()
+        || win_chance >= options.value_stage_high_bound()
+    {
         return 0.0;
     }
 
-    let up_end   = options.value_stage_low_bound() + options.value_stage_left_ramp();
+    let up_end = options.value_stage_low_bound() + options.value_stage_left_ramp();
     let down_beg = options.value_stage_high_bound() - options.value_stage_right_ramp();
 
     let bump = if win_chance < up_end {
@@ -147,8 +152,10 @@ fn stage1_prob(win_chance: f64, options: &EngineOptions) -> f64 {
 
 fn hash(h: u64) -> f64 {
     let mut x = h.wrapping_mul(0x9E37_79B9_7F4A_7C15);
-    x ^= x >> 30; x = x.wrapping_mul(0xBF58_476D_1CE4_E5B9);
-    x ^= x >> 27; x = x.wrapping_mul(0x94D0_49BB_1331_11EB);
+    x ^= x >> 30;
+    x = x.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    x ^= x >> 27;
+    x = x.wrapping_mul(0x94D0_49BB_1331_11EB);
     x ^= x >> 31;
     (x >> 12) as f64 / (1u64 << 52) as f64
 }

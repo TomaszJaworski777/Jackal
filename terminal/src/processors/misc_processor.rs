@@ -2,7 +2,9 @@ use std::io::Write;
 
 use chess::{ChessBoard, ChessPosition, Piece, Side, Square, DEFAULT_PERFT_DEPTH, FEN};
 use engine::{
-    BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits, Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage3PolicyNetwork, ValueNetwork,
+    BasePolicyNetwork, BaseValueNetwork, NoReport, NodeIndex, SearchEngine, SearchLimits,
+    Stage1PolicyNetwork, Stage1ValueNetwork, Stage2PolicyNetwork, Stage3PolicyNetwork,
+    ValueNetwork,
 };
 use utils::{
     clear_terminal_screen, create_loading_bar, heat_color, number_to_string, time_to_string,

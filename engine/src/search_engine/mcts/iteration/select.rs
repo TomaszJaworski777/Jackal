@@ -61,7 +61,7 @@ impl SearchEngine {
                     child_node.visits(),
                     self.options(),
                 )
-                .single_with_score(draw_score) as f64;
+                .single_with_score(draw_score);
 
                 let visit_scale = f64::from(child_node.visits() + 1).recip();
 
