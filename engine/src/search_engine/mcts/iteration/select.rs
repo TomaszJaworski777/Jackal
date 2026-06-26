@@ -79,7 +79,22 @@ impl SearchEngine {
                     0.0
                 };
 
-                score + child_node.policy() * cpuct * visit_scale + exploration_sac_bonus
+                let mut exploration_extra_bonus =
+                    f64::from(child_node.pawn_push_strength())
+                        * self.options().exploration_pawn_push_bonus();
+
+                if child_node.is_king_opposite_sides() {
+                    exploration_extra_bonus += self.options().exploration_castle_bonus();
+                }
+
+                if child_node.is_queen_trade() {
+                    exploration_extra_bonus -= self.options().exploration_queen_trade_penalty();
+                }
+
+                score
+                    + child_node.policy() * cpuct * visit_scale
+                    + exploration_sac_bonus
+                    + exploration_extra_bonus
             });
 
         if ROOT && result.is_none() {

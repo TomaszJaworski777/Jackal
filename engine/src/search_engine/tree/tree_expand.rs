@@ -1,4 +1,4 @@
-use chess::{ChessBoard, Move, Piece};
+use chess::{ChessBoard, Move, Piece, Side};
 
 use crate::{
     search_engine::engine_options::EngineOptions, BasePolicyNetwork, NodeIndex,
@@ -79,13 +79,22 @@ impl Tree {
 
             p += policy_bonus + history_bonus;
 
-            policy.push((mv, p, sac_strength));
+            let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
+
+            policy.push((
+                mv,
+                p,
+                sac_strength,
+                king_opposite_sides,
+                is_queen_trade,
+                pawn_push_strength,
+            ));
             max = max.max(p);
         });
 
         let start_index = self.current_half().reserve_nodes(policy.len())?;
 
-        for (_, p, _) in policy.iter_mut() {
+        for (_, p, _, _, _, _) in policy.iter_mut() {
             *p = ((*p - max) / pst).exp();
             total += *p;
         }
@@ -96,12 +105,19 @@ impl Tree {
         policy.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let mut squares = 0.0;
-        for (idx, &(mv, p, sac_strength)) in policy.iter().enumerate() {
+        for (idx, &(mv, p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength)) in
+            policy.iter().enumerate()
+        {
             let p = if policy.len() == 1 { 1.0 } else { p / total };
 
             self[start_index + idx].clear(mv);
             self[start_index + idx].set_policy(p);
             self[start_index + idx].set_sac_strength(sac_strength);
+            self[start_index + idx].set_move_traits(
+                king_opposite_sides,
+                is_queen_trade,
+                pawn_push_strength,
+            );
 
             squares += p * p;
         }
@@ -191,27 +207,70 @@ impl Tree {
 
             p += policy_bonus + history_bonus;
 
-            policy.push((p, sac_strength));
+            let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
+
+            policy.push((
+                p,
+                sac_strength,
+                king_opposite_sides,
+                is_queen_trade,
+                pawn_push_strength,
+            ));
             max = max.max(p);
         });
 
-        for (p, _) in policy.iter_mut() {
+        for (p, _, _, _, _) in policy.iter_mut() {
             *p = ((*p - max) / pst).exp();
             total += *p;
         }
 
         let mut squares = 0.0;
-        for (idx, &(p, sac_strength)) in policy.iter().enumerate() {
+        for (idx, &(p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength)) in
+            policy.iter().enumerate()
+        {
             let p = if policy.len() == 1 { 1.0 } else { p / total };
 
             self[children_idx + idx].set_policy(p);
             self[children_idx + idx].set_sac_strength(sac_strength);
+            self[children_idx + idx].set_move_traits(
+                king_opposite_sides,
+                is_queen_trade,
+                pawn_push_strength,
+            );
             squares += p * p;
         }
 
         let gini_impurity = (1.0 - squares).clamp(0.0, 1.0);
         self[node_idx].set_gini_impurity(gini_impurity);
     }
+}
+
+fn move_traits(mv: Move, board: &ChessBoard) -> (bool, bool, u8) {
+    let attacker = board.piece_on_square(mv.from_square());
+    let victim = board.piece_on_square(mv.to_square());
+
+    let own_king_square = if attacker == Piece::KING {
+        mv.to_square()
+    } else {
+        board.king_square(board.side())
+    };
+    let opp_king_square = board.king_square(board.side().flipped());
+
+    let king_opposite_sides = (own_king_square.file() < 4) != (opp_king_square.file() < 4);
+    let is_queen_trade = attacker == Piece::QUEEN && victim == Piece::QUEEN;
+
+    let pawn_push_strength = if attacker == Piece::PAWN {
+        let to_rank = mv.to_square().get_rank();
+        if board.side() == Side::WHITE {
+            to_rank
+        } else {
+            7 - to_rank
+        }
+    } else {
+        0
+    };
+
+    (king_opposite_sides, is_queen_trade, pawn_push_strength)
 }
 
 fn mva_lvv(mv: Move, board: &ChessBoard, options: &EngineOptions) -> f64 {

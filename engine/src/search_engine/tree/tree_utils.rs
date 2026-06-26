@@ -68,6 +68,16 @@ impl Tree {
                         * sac_multiplier;
                 }
 
+                score += f64::from(node.pawn_push_strength()) * options.selection_pawn_push_bonus();
+
+                if node.is_king_opposite_sides() {
+                    score += options.selection_castle_bonus();
+                }
+
+                if node.is_queen_trade() {
+                    score -= options.selection_queen_trade_penalty();
+                }
+
                 score
             }
         })
@@ -134,6 +144,16 @@ impl Tree {
                 child_score += (options.selection_sac_bonus()
                     + node.sac_strength() as f64 / 20000.0)
                     * sac_multiplier;
+            }
+
+            child_score += f64::from(node.pawn_push_strength()) * options.selection_pawn_push_bonus();
+
+            if node.is_king_opposite_sides() {
+                child_score += options.selection_castle_bonus();
+            }
+
+            if node.is_queen_trade() {
+                child_score -= options.selection_queen_trade_penalty();
             }
 
             chilren_nodes.push((child_idx, child_score))
