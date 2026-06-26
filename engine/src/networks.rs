@@ -9,23 +9,23 @@ pub use crate::networks::value_network::ValueNetwork;
 #[allow(non_upper_case_globals)]
 pub static BaseValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../resources/networks/v40004096001q.network"
+        "../../resources/networks/v5000_8192_s1.network"
     ))
 };
 
 #[allow(non_upper_case_globals)]
 pub static Stage1ValueNetwork: ValueNetwork = unsafe {
     std::mem::transmute(*include_bytes!(
-        "../../resources/networks/v40004096001qft3.network"
+        "../../resources/networks/v5000_8192_f2.network"
     ))
 };
 
-#[allow(non_upper_case_globals)]
-pub static Stage2ValueNetwork: ValueNetwork = unsafe {
-    std::mem::transmute(*include_bytes!(
-        "../../resources/networks/v40004096001qft5.network"
-    ))
-};
+// #[allow(non_upper_case_globals)]
+// pub static Stage2ValueNetwork: ValueNetwork = unsafe {
+//     std::mem::transmute(*include_bytes!(
+//         "../../resources/networks/BigNet-100.network"
+//     ))
+// };
 
 #[allow(non_upper_case_globals)]
 pub static BasePolicyNetwork: PolicyNetwork = unsafe {

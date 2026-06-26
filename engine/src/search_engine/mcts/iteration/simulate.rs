@@ -1,8 +1,8 @@
 use chess::ChessPosition;
 
 use crate::{
-    search_engine::tree::NodeIndex, BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork,
-    Stage2ValueNetwork, WDLScore,
+    search_engine::{engine_options::EngineOptions, tree::NodeIndex},
+    BaseValueNetwork, GameState, SearchEngine, Stage1ValueNetwork, WDLScore,
 };
 
 impl SearchEngine {
@@ -85,7 +85,7 @@ impl SearchEngine {
         node_state: GameState,
         depth: f64,
         stm: bool,
-        mut parent_score: WDLScore,
+        parent_score: WDLScore,
     ) -> WDLScore {
         let mut score = match node_state {
             GameState::Draw => return WDLScore::DRAW,
@@ -93,23 +93,15 @@ impl SearchEngine {
             GameState::Win(_) => return WDLScore::WIN,
             _ => {
                 let score = if stm && position.board().phase() > 8 {
-                    if parent_score.win_chance() > 0.9 {
-                        BaseValueNetwork.forward(position.board())
-                    } else if parent_score.win_chance() > 0.575 {
-                        Stage2ValueNetwork.forward(position.board())
-                    } else {
+                    if hash(u64::from(position.board().hash()))
+                        < stage1_prob(parent_score.win_chance(), self.options())
+                    {
                         Stage1ValueNetwork.forward(position.board())
+                    } else {
+                        BaseValueNetwork.forward(position.board())
                     }
                 } else {
-                    if !stm {
-                        parent_score = parent_score.reversed();
-                    }
-
-                    if parent_score.win_chance() > 0.85 && position.board().phase() > 8 {
-                        Stage1ValueNetwork.forward(position.board())
-                    } else {
-                        BaseValueNetwork.forward(position.board())
-                    }
+                    BaseValueNetwork.forward(position.board())
                 };
 
                 score
@@ -133,4 +125,37 @@ impl SearchEngine {
 
         score
     }
+}
+
+fn stage1_prob(win_chance: f64, options: &EngineOptions) -> f64 {
+    if win_chance <= options.value_stage_low_bound()
+        || win_chance >= options.value_stage_high_bound()
+    {
+        return 0.0;
+    }
+
+    let up_end = options.value_stage_low_bound() + options.value_stage_left_ramp();
+    let down_beg = options.value_stage_high_bound() - options.value_stage_right_ramp();
+
+    let bump = if win_chance < up_end {
+        let t = (win_chance - options.value_stage_low_bound()) / options.value_stage_left_ramp();
+        0.5 * (1.0 - (std::f64::consts::PI * t).cos())
+    } else if win_chance > down_beg {
+        let t = (win_chance - down_beg) / options.value_stage_right_ramp();
+        0.5 * (1.0 + (std::f64::consts::PI * t).cos())
+    } else {
+        1.0
+    };
+
+    options.value_stage_pmax() * bump
+}
+
+fn hash(h: u64) -> f64 {
+    let mut x = h.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    x ^= x >> 30;
+    x = x.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    x ^= x >> 27;
+    x = x.wrapping_mul(0x94D0_49BB_1331_11EB);
+    x ^= x >> 31;
+    (x >> 12) as f64 / (1u64 << 52) as f64
 }
