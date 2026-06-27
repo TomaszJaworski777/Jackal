@@ -68,7 +68,7 @@ impl Tree {
                         * sac_multiplier;
                 }
 
-                score += f64::from(node.pawn_push_strength()) * options.selection_pawn_push_bonus();
+                score += f64::from(node.pawn_push_strength()).sqrt() * options.selection_pawn_push_bonus();
 
                 if node.is_king_opposite_sides() {
                     score += options.selection_castle_bonus();

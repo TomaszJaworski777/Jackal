@@ -80,7 +80,7 @@ impl SearchEngine {
                 };
 
                 let mut exploration_extra_bonus =
-                    f64::from(child_node.pawn_push_strength())
+                    f64::from(child_node.pawn_push_strength()).sqrt()
                         * self.options().exploration_pawn_push_bonus();
 
                 if child_node.is_king_opposite_sides() {

@@ -142,10 +142,10 @@ create_options! {
             selection_sac_bonus:             f64  =  0.015;
             exploration_sac_bonus:           f64  =  0.025;
             sac_scaling:                     f64  =  15.0;
-            selection_castle_bonus:          f64  =  0.01;
-            exploration_castle_bonus:        f64  =  0.015;
-            selection_pawn_push_bonus:       f64  =  0.001;
-            exploration_pawn_push_bonus:     f64  =  0.0015;
+            selection_castle_bonus:          f64  =  0.02;
+            exploration_castle_bonus:        f64  =  0.02;
+            selection_pawn_push_bonus:       f64  =  0.00125;
+            exploration_pawn_push_bonus:     f64  =  0.00175;
             selection_queen_trade_penalty:   f64  =  0.015;
             exploration_queen_trade_penalty: f64  =  0.015;
             value_stage_low_bound:           f64  =  0.575;
