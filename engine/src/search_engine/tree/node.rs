@@ -30,6 +30,7 @@ pub struct Node {
     threads: AtomicU8,
     gini_impurity: AtomicU16,
     sac_strength: AtomicU8,
+    move_traits: AtomicU8,
 }
 
 impl Clone for Node {
@@ -46,6 +47,7 @@ impl Clone for Node {
             threads: AtomicU8::new(self.threads.load(Ordering::Relaxed)),
             gini_impurity: AtomicU16::new(self.gini_impurity.load(Ordering::Relaxed)),
             sac_strength: AtomicU8::new(self.sac_strength.load(Ordering::Relaxed)),
+            move_traits: AtomicU8::new(self.move_traits.load(Ordering::Relaxed)),
         }
     }
 }
@@ -70,6 +72,7 @@ impl Node {
             threads: AtomicU8::new(0),
             gini_impurity: AtomicU16::new(0),
             sac_strength: AtomicU8::new(0),
+            move_traits: AtomicU8::new(0),
         }
     }
 
@@ -93,6 +96,8 @@ impl Node {
         );
         self.sac_strength
             .store(node.sac_strength(), Ordering::Relaxed);
+        self.move_traits
+            .store(node.move_traits.load(Ordering::Relaxed), Ordering::Relaxed);
     }
 
     #[inline]
@@ -106,6 +111,7 @@ impl Node {
         self.threads.store(0, Ordering::Relaxed);
         self.gini_impurity.store(0, Ordering::Relaxed);
         self.sac_strength.store(0, Ordering::Relaxed);
+        self.move_traits.store(0, Ordering::Relaxed);
         self.clear_children();
     }
 
@@ -176,6 +182,21 @@ impl Node {
     }
 
     #[inline]
+    pub fn is_king_opposite_sides(&self) -> bool {
+        self.move_traits.load(Ordering::Relaxed) & 1 != 0
+    }
+
+    #[inline]
+    pub fn is_queen_trade(&self) -> bool {
+        self.move_traits.load(Ordering::Relaxed) & 2 != 0
+    }
+
+    #[inline]
+    pub fn pawn_push_strength(&self) -> u8 {
+        (self.move_traits.load(Ordering::Relaxed) >> 2) & 0b0111
+    }
+
+    #[inline]
     pub fn is_terminal(&self) -> bool {
         self.state() != GameState::Ongoing
     }
@@ -212,6 +233,19 @@ impl Node {
     #[inline]
     pub fn set_sac_strength(&self, strength: u8) {
         self.sac_strength.store(strength, Ordering::Relaxed);
+    }
+
+    #[inline]
+    pub fn set_move_traits(
+        &self,
+        king_opposite_sides: bool,
+        is_queen_trade: bool,
+        pawn_push_strength: u8,
+    ) {
+        let traits = king_opposite_sides as u8
+            | (is_queen_trade as u8) << 1
+            | (pawn_push_strength & 0b0111) << 2;
+        self.move_traits.store(traits, Ordering::Relaxed);
     }
 
     #[inline]
