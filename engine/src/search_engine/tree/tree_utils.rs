@@ -59,11 +59,12 @@ impl Tree {
                 let mut score = node.score().single_with_score(draw_score);
 
                 if node.sac_strength() != 0
-                    && parent_score.single() > 0.51
+                    && parent_score.single() > 0.4
                     && parent_score.single() < 0.9
                 {
-                    let sac_multiplier =
-                        1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
+                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+                    let sac_multiplier = below_ramp
+                        * (1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling());
                     score += (options.selection_sac_bonus() + node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier;
                 }
@@ -136,11 +137,12 @@ impl Tree {
             };
 
             if node.sac_strength() != 0
-                && parent_score.single() > 0.51
+                && parent_score.single() > 0.4
                 && parent_score.single() < 0.9
             {
-                let sac_multiplier =
-                    1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling();
+                let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(2);
+                let sac_multiplier = below_ramp
+                    * (1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling());
                 child_score += (options.selection_sac_bonus()
                     + node.sac_strength() as f64 / 20000.0)
                     * sac_multiplier;

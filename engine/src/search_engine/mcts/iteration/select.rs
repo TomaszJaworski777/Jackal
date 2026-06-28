@@ -67,11 +67,13 @@ impl SearchEngine {
 
                 let exploration_sac_bonus = if child_node.sac_strength() != 0
                     && is_stm_parent
-                    && parent_score.single() > 0.51
+                    && parent_score.single() > 0.4
                     && parent_score.single() < 0.9
                 {
-                    let sac_multiplier = 1.0
-                        + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling();
+                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+                    let sac_multiplier = below_ramp
+                        * (1.0
+                            + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling());
                     (self.options().exploration_sac_bonus()
                         + child_node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier
