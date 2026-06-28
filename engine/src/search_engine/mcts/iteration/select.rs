@@ -67,11 +67,13 @@ impl SearchEngine {
 
                 let exploration_sac_bonus = if child_node.sac_strength() != 0
                     && is_stm_parent
-                    && parent_score.single() > 0.51
+                    && parent_score.single() > 0.4
                     && parent_score.single() < 0.9
                 {
-                    let sac_multiplier = 1.0
-                        + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling();
+                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+                    let sac_multiplier = below_ramp
+                        * (1.0
+                            + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling());
                     (self.options().exploration_sac_bonus()
                         + child_node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier
@@ -79,7 +81,22 @@ impl SearchEngine {
                     0.0
                 };
 
-                score + child_node.policy() * cpuct * visit_scale + exploration_sac_bonus
+                let mut exploration_extra_bonus =
+                    f64::from(child_node.pawn_push_strength()).sqrt()
+                        * self.options().exploration_pawn_push_bonus();
+
+                if child_node.is_king_opposite_sides() {
+                    exploration_extra_bonus += self.options().exploration_castle_bonus();
+                }
+
+                if child_node.is_queen_trade() {
+                    exploration_extra_bonus -= self.options().exploration_queen_trade_penalty();
+                }
+
+                score
+                    + child_node.policy() * cpuct * visit_scale
+                    + exploration_sac_bonus
+                    + exploration_extra_bonus
             });
 
         if ROOT && result.is_none() {

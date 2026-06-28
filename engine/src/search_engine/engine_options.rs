@@ -136,17 +136,23 @@ create_options! {
             hash_size: f64  =>  0.1,  0.01,  0.5,  0.004,  0.002;
         }
         ConstVariables {
-            draw_score:             f64  =  0.30;
-            policy_sac:             f64  =  0.001;
-            draw_pessimism:         f64  =  0.1;
-            selection_sac_bonus:    f64  =  0.015;
-            exploration_sac_bonus:  f64  =  0.025;
-            sac_scaling:            f64  =  15.0;
-            value_stage_low_bound:  f64  =  0.575;
-            value_stage_high_bound: f64  =  0.999;
-            value_stage_left_ramp:  f64  =  0.1;
-            value_stage_right_ramp: f64  =  0.1;
-            value_stage_pmax:       f64  =  0.85;
+            draw_score:                      f64  =  0.30;
+            policy_sac:                      f64  =  0.001;
+            draw_pessimism:                  f64  =  0.1;
+            selection_sac_bonus:             f64  =  0.015;
+            exploration_sac_bonus:           f64  =  0.025;
+            sac_scaling:                     f64  =  15.0;
+            selection_castle_bonus:          f64  =  0.01;
+            exploration_castle_bonus:        f64  =  0.01;
+            selection_pawn_push_bonus:       f64  =  0.001;
+            exploration_pawn_push_bonus:     f64  =  0.0015;
+            selection_queen_trade_penalty:   f64  =  0.01;
+            exploration_queen_trade_penalty: f64  =  0.01;
+            value_stage_low_bound:           f64  =  0.575;
+            value_stage_high_bound:          f64  =  0.999;
+            value_stage_left_ramp:           f64  =  0.1;
+            value_stage_right_ramp:          f64  =  0.1;
+            value_stage_pmax:                f64  =  0.85;
         }
         Variables {
             contempt: i64  =  0;
