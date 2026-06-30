@@ -134,9 +134,15 @@ fn get_score(
 }
 
 fn get_cpuct(options: &EngineOptions, parent_node: &Node, depth: f64) -> f64 {
-    let mut cpuct = options.end_cpuct()
-        + (options.start_cpuct() - options.end_cpuct())
-            * (-options.cpuct_depth_decay() * (depth - 1.0)).exp();
+    let cpuct_steps = [
+        options.cpuct_step1(),
+        options.cpuct_step2(),
+        options.cpuct_step3(),
+        options.cpuct_step4(),
+        options.cpuct_step5(),
+    ];
+    let step_idx = ((depth as usize).saturating_sub(1)).min(cpuct_steps.len() - 1);
+    let mut cpuct = cpuct_steps[step_idx];
 
     let visit_scale = options.cpuct_visit_scale();
     cpuct *= 1.0 + ((f64::from(parent_node.visits()) + visit_scale) / visit_scale).ln();
