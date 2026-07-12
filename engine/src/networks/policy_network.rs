@@ -30,15 +30,37 @@ impl PolicyNetwork {
             *i = i16::from(bias)
         }
 
+        let mut features = [0u16; 48];
+        let mut feature_count = 0usize;
         Threats3072::map_inputs(board, |weight_idx| {
-            for (i, &weight) in inputs
-                .values_mut()
-                .iter_mut()
-                .zip(self.l0.weights()[weight_idx].values())
-            {
-                *i += i16::from(weight);
-            }
+            features[feature_count] = weight_idx as u16;
+            feature_count += 1;
         });
+
+        let mut chunks = features[..feature_count].chunks_exact(4);
+        for chunk in &mut chunks {
+            let w0 = self.l0.weights()[chunk[0] as usize].values();
+            let w1 = self.l0.weights()[chunk[1] as usize].values();
+            let w2 = self.l0.weights()[chunk[2] as usize].values();
+            let w3 = self.l0.weights()[chunk[3] as usize].values();
+            let acc = inputs.values_mut();
+
+            for i in 0..HL_SIZE {
+                acc[i] += i16::from(w0[i])
+                    + i16::from(w1[i])
+                    + i16::from(w2[i])
+                    + i16::from(w3[i]);
+            }
+        }
+
+        for &weight_idx in chunks.remainder() {
+            let weights = self.l0.weights()[weight_idx as usize].values();
+            let acc = inputs.values_mut();
+
+            for i in 0..HL_SIZE {
+                acc[i] += i16::from(weights[i]);
+            }
+        }
 
         let mut result = Accumulator::default();
 

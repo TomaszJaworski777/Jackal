@@ -23,6 +23,27 @@ use crate::search_engine::{
     butterfly_history::ButterflyHistory, engine_options::EngineOptions, hash_table::HashTable,
 };
 
+pub(crate) const PAWN_PUSH_SQRT: [f64; 8] = [
+    0.0,
+    1.0,
+    1.4142135623730951,
+    1.7320508075688772,
+    2.0,
+    2.23606797749979,
+    2.449489742783178,
+    2.6457513110645907,
+];
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn pawn_push_sqrt() {
+        for (i, &value) in super::PAWN_PUSH_SQRT.iter().enumerate() {
+            assert_eq!(value.to_bits(), (i as f64).sqrt().to_bits());
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Tree {
     halves: [TreeHalf; 2],

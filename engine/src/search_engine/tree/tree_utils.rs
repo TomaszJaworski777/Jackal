@@ -1,7 +1,7 @@
 use crate::{
     search_engine::{
         engine_options::EngineOptions,
-        tree::{node::Node, pv_line::PvLine, NodeIndex, Tree},
+        tree::{node::Node, pv_line::PvLine, NodeIndex, Tree, PAWN_PUSH_SQRT},
     },
     GameState,
 };
@@ -52,24 +52,27 @@ impl Tree {
         let parent_node = &self[parent_idx];
         let parent_score = parent_node.score().reversed();
 
+        let parent_single = parent_score.single();
+        let sac_active = parent_single > 0.4 && parent_single < 0.9;
+        let sac_multiplier = if sac_active {
+            let below_ramp = (((parent_single - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+            below_ramp * (1.0 + (parent_single - 0.75).max(0.0) * options.sac_scaling())
+        } else {
+            0.0
+        };
+
         self.select_child_by_key(parent_idx, |node| match node.state() {
             GameState::Loss(x) => 256.0 - x as f64,
             GameState::Win(x) => -256.0 + x as f64,
             _ => {
                 let mut score = node.score().single_with_score(draw_score);
 
-                if node.sac_strength() != 0
-                    && parent_score.single() > 0.4
-                    && parent_score.single() < 0.9
-                {
-                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
-                    let sac_multiplier = below_ramp
-                        * (1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling());
+                if sac_active && node.sac_strength() != 0 {
                     score += (options.selection_sac_bonus() + node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier;
                 }
 
-                score += f64::from(node.pawn_push_strength()).sqrt() * options.selection_pawn_push_bonus();
+                score += PAWN_PUSH_SQRT[usize::from(node.pawn_push_strength())] * options.selection_pawn_push_bonus();
 
                 if node.is_king_opposite_sides() {
                     score += options.selection_castle_bonus();

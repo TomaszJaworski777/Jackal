@@ -20,7 +20,7 @@ impl Tree {
             return Some(());
         }
 
-        assert_eq!(
+        debug_assert_eq!(
             self[node_idx].children_count(),
             0,
             "Node {node_idx} already have children."
@@ -48,7 +48,8 @@ impl Tree {
             engine_options.base_pst()
         };
 
-        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
+        let mut policy = [(Move::NULL, 0f64, 0u8, false, false, 0u8); 256];
+        let mut policy_len = 0usize;
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
@@ -81,16 +82,19 @@ impl Tree {
 
             let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
 
-            policy.push((
+            policy[policy_len] = (
                 mv,
                 p,
                 sac_strength,
                 king_opposite_sides,
                 is_queen_trade,
                 pawn_push_strength,
-            ));
+            );
+            policy_len += 1;
             max = max.max(p);
         });
+
+        let policy = &mut policy[..policy_len];
 
         let start_index = self.current_half().reserve_nodes(policy.len())?;
 
@@ -105,6 +109,8 @@ impl Tree {
         policy.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let mut squares = 0.0;
+        let mut prefix_policy = 0.0;
+        let mut policy_prefix = 0u8;
         for (idx, &(mv, p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength)) in
             policy.iter().enumerate()
         {
@@ -119,8 +125,15 @@ impl Tree {
                 pawn_push_strength,
             );
 
+            if prefix_policy < engine_options.policy_percentage() {
+                prefix_policy += f64::from((p * f64::from(u16::MAX)) as u16) / f64::from(u16::MAX);
+                policy_prefix += 1;
+            }
+
             squares += p * p;
         }
+
+        self[node_idx].set_policy_prefix(policy_prefix);
 
         let gini_impurity = (1.0 - squares).clamp(0.0, 1.0);
         self[node_idx].set_gini_impurity(gini_impurity);
@@ -174,7 +187,8 @@ impl Tree {
             engine_options.base_pst()
         };
 
-        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
+        let mut policy = [(0f64, 0u8, false, false, 0u8); 256];
+        let mut policy_len = 0usize;
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
@@ -209,15 +223,18 @@ impl Tree {
 
             let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
 
-            policy.push((
+            policy[policy_len] = (
                 p,
                 sac_strength,
                 king_opposite_sides,
                 is_queen_trade,
                 pawn_push_strength,
-            ));
+            );
+            policy_len += 1;
             max = max.max(p);
         });
+
+        let policy = &mut policy[..policy_len];
 
         for (p, _, _, _, _) in policy.iter_mut() {
             *p = ((*p - max) / pst).exp();
@@ -225,6 +242,8 @@ impl Tree {
         }
 
         let mut squares = 0.0;
+        let mut prefix_policy = 0.0;
+        let mut policy_prefix = 0u8;
         for (idx, &(p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength)) in
             policy.iter().enumerate()
         {
@@ -237,8 +256,16 @@ impl Tree {
                 is_queen_trade,
                 pawn_push_strength,
             );
+
+            if prefix_policy < engine_options.policy_percentage() {
+                prefix_policy += f64::from((p * f64::from(u16::MAX)) as u16) / f64::from(u16::MAX);
+                policy_prefix += 1;
+            }
+
             squares += p * p;
         }
+
+        self[node_idx].set_policy_prefix(policy_prefix);
 
         let gini_impurity = (1.0 - squares).clamp(0.0, 1.0);
         self[node_idx].set_gini_impurity(gini_impurity);

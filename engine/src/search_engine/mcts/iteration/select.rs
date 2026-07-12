@@ -1,5 +1,8 @@
 use crate::{
-    search_engine::{engine_options::EngineOptions, tree::NodeIndex},
+    search_engine::{
+        engine_options::EngineOptions,
+        tree::{NodeIndex, PAWN_PUSH_SQRT},
+    },
     Node, SearchEngine, WDLScore,
 };
 
@@ -14,14 +17,22 @@ impl SearchEngine {
 
         let cpuct = get_cpuct(self.options(), parent_node, depth);
 
-        let start_idx = parent_node.children_index();
-        let mut total_policy = 0.0;
-        let mut k = 0;
-        while k < parent_node.children_count() && total_policy < self.options().policy_percentage()
-        {
-            total_policy += self.tree[start_idx + k].policy();
-            k += 1;
-        }
+        #[cfg(not(feature = "tunable"))]
+        let k = usize::from(parent_node.policy_prefix());
+
+        #[cfg(feature = "tunable")]
+        let k = {
+            let start_idx = parent_node.children_index();
+            let mut total_policy = 0.0;
+            let mut k = 0;
+            while k < parent_node.children_count()
+                && total_policy < self.options().policy_percentage()
+            {
+                total_policy += self.tree[start_idx + k].policy();
+                k += 1;
+            }
+            k
+        };
 
         let mut limit = k.max(self.options().min_policy_actions() as usize);
         if parent_node.visits() >= self.options().initial_visit_threshold() as u32 {
@@ -48,6 +59,15 @@ impl SearchEngine {
 
         let is_stm_parent = depth as i64 % 2 != 0;
 
+        let parent_single = parent_score.single();
+        let sac_active = is_stm_parent && parent_single > 0.4 && parent_single < 0.9;
+        let sac_multiplier = if sac_active {
+            let below_ramp = (((parent_single - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+            below_ramp * (1.0 + (parent_single - 0.75).max(0.0) * self.options().sac_scaling())
+        } else {
+            0.0
+        };
+
         let result = self
             .tree()
             .select_child_by_key_with_limit(node_idx, limit, |child_node| {
@@ -65,15 +85,7 @@ impl SearchEngine {
 
                 let visit_scale = f64::from(child_node.visits() + 1).recip();
 
-                let exploration_sac_bonus = if child_node.sac_strength() != 0
-                    && is_stm_parent
-                    && parent_score.single() > 0.4
-                    && parent_score.single() < 0.9
-                {
-                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
-                    let sac_multiplier = below_ramp
-                        * (1.0
-                            + (parent_score.single() - 0.75).max(0.0) * self.options().sac_scaling());
+                let exploration_sac_bonus = if sac_active && child_node.sac_strength() != 0 {
                     (self.options().exploration_sac_bonus()
                         + child_node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier
@@ -82,7 +94,7 @@ impl SearchEngine {
                 };
 
                 let mut exploration_extra_bonus =
-                    f64::from(child_node.pawn_push_strength()).sqrt()
+                    PAWN_PUSH_SQRT[usize::from(child_node.pawn_push_strength())]
                         * self.options().exploration_pawn_push_bonus();
 
                 if child_node.is_king_opposite_sides() {
