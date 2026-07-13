@@ -44,7 +44,10 @@ impl SearchEngine {
     }
 
     fn get_node_state(&self, position: &ChessPosition) -> GameState {
-        if !position.board().has_legal_moves() {
+        let mut possible_moves = 0;
+        position.board().map_legal_moves(|_| possible_moves += 1);
+
+        if possible_moves == 0 {
             if position.board().is_in_check() {
                 GameState::Loss(0)
             } else {

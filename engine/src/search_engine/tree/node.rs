@@ -98,7 +98,6 @@ impl Node {
             .store(node.sac_strength(), Ordering::Relaxed);
         self.move_traits
             .store(node.move_traits.load(Ordering::Relaxed), Ordering::Relaxed);
-        self.children_start_index.set_payload(node.policy_prefix());
     }
 
     #[inline]
@@ -113,7 +112,6 @@ impl Node {
         self.gini_impurity.store(0, Ordering::Relaxed);
         self.sac_strength.store(0, Ordering::Relaxed);
         self.move_traits.store(0, Ordering::Relaxed);
-        self.children_start_index.set_payload(0);
         self.clear_children();
     }
 
@@ -235,16 +233,6 @@ impl Node {
     #[inline]
     pub fn set_sac_strength(&self, strength: u8) {
         self.sac_strength.store(strength, Ordering::Relaxed);
-    }
-
-    #[inline]
-    pub fn policy_prefix(&self) -> u8 {
-        self.children_start_index.payload()
-    }
-
-    #[inline]
-    pub fn set_policy_prefix(&self, prefix: u8) {
-        self.children_start_index.set_payload(prefix);
     }
 
     #[inline]

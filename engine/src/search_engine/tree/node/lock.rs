@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 use crate::NodeIndex;
 
@@ -25,7 +25,6 @@ impl IndexLockGuard<'_> {
 pub struct IndexLock {
     value: AtomicU32,
     lock: AtomicBool,
-    payload: AtomicU8,
 }
 
 impl Clone for IndexLock {
@@ -33,7 +32,6 @@ impl Clone for IndexLock {
         Self {
             value: AtomicU32::new(self.value.load(Ordering::Relaxed)),
             lock: AtomicBool::new(self.lock.load(Ordering::Relaxed)),
-            payload: AtomicU8::new(self.payload.load(Ordering::Relaxed)),
         }
     }
 }
@@ -43,18 +41,7 @@ impl IndexLock {
         Self {
             value: AtomicU32::new(u32::from(index)),
             lock: AtomicBool::new(false),
-            payload: AtomicU8::new(0),
         }
-    }
-
-    #[inline]
-    pub fn payload(&self) -> u8 {
-        self.payload.load(Ordering::Relaxed)
-    }
-
-    #[inline]
-    pub fn set_payload(&self, value: u8) {
-        self.payload.store(value, Ordering::Relaxed);
     }
 
     pub fn read(&self) -> NodeIndex {

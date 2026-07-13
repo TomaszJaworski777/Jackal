@@ -26,35 +26,6 @@ fn standard() {
 }
 
 #[test]
-fn has_legal_moves_matches_movegen() {
-    fn check(board: &ChessBoard, depth: u8) {
-        let mut moves = Vec::new();
-        board.map_legal_moves(|mv| moves.push(mv));
-
-        assert_eq!(board.has_legal_moves(), !moves.is_empty());
-
-        if depth == 0 {
-            return;
-        }
-
-        for mv in moves {
-            let mut next = *board;
-            next.make_move_no_mask(mv);
-            check(&next, depth - 1);
-        }
-    }
-
-    let file = File::open("./tests/standard.epd").unwrap();
-    let reader = BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = line.unwrap();
-        let fen = FEN::from(line.split(';').next().unwrap());
-        check(&ChessBoard::from(&fen), 2);
-    }
-}
-
-#[test]
 fn frc() {
     let file = File::open("./tests/fischer.epd").unwrap();
     let reader = BufReader::new(file);
