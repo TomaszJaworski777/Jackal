@@ -32,13 +32,13 @@ impl ChessBoard {
 
     #[inline]
     pub fn piece_mask(&self, piece: Piece) -> Bitboard {
-        assert_ne!(piece, Piece::NONE);
+        debug_assert_ne!(piece, Piece::NONE);
         self.pieces[usize::from(piece)]
     }
 
     #[inline]
     pub fn piece_mask_for_side(&self, piece: Piece, side: Side) -> Bitboard {
-        assert_ne!(piece, Piece::NONE);
+        debug_assert_ne!(piece, Piece::NONE);
         self.piece_mask(piece) & self.occupancy_for_side(side)
     }
 
@@ -108,8 +108,8 @@ impl ChessBoard {
 
     #[inline]
     pub fn set_piece_on_square(&mut self, square: Square, piece: Piece, side: Side) {
-        assert_ne!(square, Square::NULL);
-        assert_ne!(piece, Piece::NONE);
+        debug_assert_ne!(square, Square::NULL);
+        debug_assert_ne!(piece, Piece::NONE);
         self.occupancy[usize::from(side)].set_bit(square);
         self.pieces[usize::from(piece)].set_bit(square);
         self.hash.update_piece_hash(square, piece, side);
@@ -118,8 +118,8 @@ impl ChessBoard {
 
     #[inline]
     pub fn remove_piece_on_square(&mut self, square: Square, piece: Piece, side: Side) {
-        assert_ne!(square, Square::NULL);
-        assert_ne!(piece, Piece::NONE);
+        debug_assert_ne!(square, Square::NULL);
+        debug_assert_ne!(piece, Piece::NONE);
         self.occupancy[usize::from(side)].pop_bit(square);
         self.pieces[usize::from(piece)].pop_bit(square);
         self.hash.update_piece_hash(square, piece, side);

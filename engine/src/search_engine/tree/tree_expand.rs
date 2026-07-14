@@ -20,7 +20,7 @@ impl Tree {
             return Some(());
         }
 
-        assert_eq!(
+        debug_assert_eq!(
             self[node_idx].children_count(),
             0,
             "Node {node_idx} already have children."
@@ -48,7 +48,8 @@ impl Tree {
             engine_options.base_pst()
         };
 
-        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
+        let mut policy = [(Move::NULL, 0f64, 0u8, false, false, 0u8); 256];
+        let mut policy_len = 0usize;
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
@@ -81,16 +82,19 @@ impl Tree {
 
             let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
 
-            policy.push((
+            policy[policy_len] = (
                 mv,
                 p,
                 sac_strength,
                 king_opposite_sides,
                 is_queen_trade,
                 pawn_push_strength,
-            ));
+            );
+            policy_len += 1;
             max = max.max(p);
         });
+
+        let policy = &mut policy[..policy_len];
 
         let start_index = self.current_half().reserve_nodes(policy.len())?;
 
@@ -174,7 +178,8 @@ impl Tree {
             engine_options.base_pst()
         };
 
-        let mut policy = Vec::with_capacity(board.occupancy().pop_count() as usize);
+        let mut policy = [(0f64, 0u8, false, false, 0u8); 256];
+        let mut policy_len = 0usize;
         let mut max = f64::NEG_INFINITY;
         let mut total = 0f64;
 
@@ -209,15 +214,18 @@ impl Tree {
 
             let (king_opposite_sides, is_queen_trade, pawn_push_strength) = move_traits(mv, board);
 
-            policy.push((
+            policy[policy_len] = (
                 p,
                 sac_strength,
                 king_opposite_sides,
                 is_queen_trade,
                 pawn_push_strength,
-            ));
+            );
+            policy_len += 1;
             max = max.max(p);
         });
+
+        let policy = &mut policy[..policy_len];
 
         for (p, _, _, _, _) in policy.iter_mut() {
             *p = ((*p - max) / pst).exp();
@@ -237,6 +245,7 @@ impl Tree {
                 is_queen_trade,
                 pawn_push_strength,
             );
+
             squares += p * p;
         }
 
