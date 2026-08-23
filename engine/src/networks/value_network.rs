@@ -76,10 +76,7 @@ impl ValueNetwork {
             let acc = inputs.values_mut();
 
             for i in 0..HL_SIZE {
-                acc[i] += i16::from(w0[i])
-                    + i16::from(w1[i])
-                    + i16::from(w2[i])
-                    + i16::from(w3[i]);
+                acc[i] += i16::from(w0[i]) + i16::from(w1[i]) + i16::from(w2[i]) + i16::from(w3[i]);
             }
         }
 

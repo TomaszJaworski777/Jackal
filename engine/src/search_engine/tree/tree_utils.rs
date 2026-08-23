@@ -62,14 +62,16 @@ impl Tree {
                     && parent_score.single() > 0.4
                     && parent_score.single() < 0.9
                 {
-                    let below_ramp = (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
+                    let below_ramp =
+                        (((parent_score.single() - 0.4) / (0.51 - 0.4)).min(1.0)).powi(5);
                     let sac_multiplier = below_ramp
                         * (1.0 + (parent_score.single() - 0.75).max(0.0) * options.sac_scaling());
                     score += (options.selection_sac_bonus() + node.sac_strength() as f64 / 20000.0)
                         * sac_multiplier;
                 }
 
-                score += f64::from(node.pawn_push_strength()).sqrt() * options.selection_pawn_push_bonus();
+                score += f64::from(node.pawn_push_strength()).sqrt()
+                    * options.selection_pawn_push_bonus();
 
                 if node.is_king_opposite_sides() {
                     score += options.selection_castle_bonus();
@@ -148,7 +150,8 @@ impl Tree {
                     * sac_multiplier;
             }
 
-            child_score += f64::from(node.pawn_push_strength()) * options.selection_pawn_push_bonus();
+            child_score +=
+                f64::from(node.pawn_push_strength()) * options.selection_pawn_push_bonus();
 
             if node.is_king_opposite_sides() {
                 child_score += options.selection_castle_bonus();

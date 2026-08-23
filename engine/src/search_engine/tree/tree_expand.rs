@@ -109,8 +109,10 @@ impl Tree {
         policy.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
         let mut squares = 0.0;
-        for (idx, &(mv, p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength)) in
-            policy.iter().enumerate()
+        for (
+            idx,
+            &(mv, p, sac_strength, king_opposite_sides, is_queen_trade, pawn_push_strength),
+        ) in policy.iter().enumerate()
         {
             let p = if policy.len() == 1 { 1.0 } else { p / total };
 

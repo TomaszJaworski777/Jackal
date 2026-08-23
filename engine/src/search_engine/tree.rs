@@ -135,7 +135,10 @@ impl Tree {
 
     #[inline]
     pub fn memory_split(&self) -> (usize, usize) {
-        (Self::size_to_bytes(self.max_size()), self.hash_table.bytes())
+        (
+            Self::size_to_bytes(self.max_size()),
+            self.hash_table.bytes(),
+        )
     }
 
     #[inline]

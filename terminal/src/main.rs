@@ -16,6 +16,7 @@ fn main() {
     let mut shutdown_token = false;
 
     let mut search_engine = SearchEngine::new();
+    let mut uci_processor = UciProcessor::new(&mut search_engine);
 
     if process_command_line_args(&std::env::args().collect(), &mut search_engine) {
         return;
@@ -25,7 +26,6 @@ fn main() {
     println!("{}", welcome_message());
 
     let mut input_wrapper = InputWrapper::new();
-    let mut uci_processor = UciProcessor::new(&mut search_engine);
 
     while !shutdown_token {
         let input_command = match input_wrapper.get_input() {
