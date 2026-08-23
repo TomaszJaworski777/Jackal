@@ -24,7 +24,27 @@ pub struct HashTable(Vec<TableEntry>);
 impl HashTable {
     pub fn new(bytes: usize) -> Self {
         let size = bytes / std::mem::size_of::<TableEntry>();
-        Self(vec![TableEntry::default(); size])
+
+        if size == 0 {
+            return Self(Vec::new());
+        }
+
+        let entries = unsafe {
+            let layout = std::alloc::Layout::array::<TableEntry>(size).unwrap();
+            let ptr = std::alloc::alloc_zeroed(layout);
+            if ptr.is_null() {
+                std::alloc::handle_alloc_error(layout);
+            }
+
+            Vec::from_raw_parts(ptr.cast::<TableEntry>(), size, size)
+        };
+
+        Self(entries)
+    }
+
+    #[inline]
+    pub fn bytes(&self) -> usize {
+        self.0.len() * std::mem::size_of::<TableEntry>()
     }
 
     pub fn clear(&self) {

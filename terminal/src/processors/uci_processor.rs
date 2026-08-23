@@ -84,6 +84,18 @@ impl UciProcessor {
 
             let str = format!("Option {name} has been set to {value}");
             self.uci_print(str.as_str(), search_engine.options().minimal_print());
+
+            if name.eq_ignore_ascii_case("hash") {
+                let (tree_bytes, hash_bytes) = search_engine.tree().memory_split();
+                let mb = |bytes: usize| bytes / (1024 * 1024);
+                let str = format!(
+                    "Memory split: tree {} MB ({} nodes/half), hash table {} MB",
+                    mb(tree_bytes),
+                    search_engine.tree().max_size() / 2,
+                    mb(hash_bytes)
+                );
+                self.uci_print(str.as_str(), search_engine.options().minimal_print());
+            }
         }
     }
 

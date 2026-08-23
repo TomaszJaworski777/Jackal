@@ -57,15 +57,23 @@ impl IndexMut<NodeIndex> for Tree {
 }
 
 impl Tree {
+    pub fn split_memory(bytes: usize, hash_fraction: f64) -> (usize, usize) {
+        let mut hash_bytes = (bytes as f64 * hash_fraction) as usize;
+        let mut half_size = Self::bytes_to_size(bytes - hash_bytes) / 2;
+
+        if half_size > NodeIndex::MAX_NODES {
+            hash_bytes += Self::size_to_bytes((half_size - NodeIndex::MAX_NODES) * 2);
+            half_size = NodeIndex::MAX_NODES;
+        }
+
+        (half_size, hash_bytes)
+    }
+
     pub fn from_bytes(megabytes: usize, options: &EngineOptions) -> Self {
         let bytes = megabytes * 1024 * 1024;
-        let hash_bytes = (bytes as f64 * options.hash_size()) as usize;
-        let tree_size = Self::bytes_to_size(bytes - hash_bytes);
+        let (half_size, hash_bytes) = Self::split_memory(bytes, options.hash_size());
 
-        let halves = [
-            TreeHalf::new(0, tree_size / 2),
-            TreeHalf::new(1, tree_size / 2),
-        ];
+        let halves = [TreeHalf::new(0, half_size), TreeHalf::new(1, half_size)];
 
         halves[0].reserve_nodes(1);
 
@@ -123,6 +131,11 @@ impl Tree {
     #[inline]
     pub fn hash_table(&self) -> &HashTable {
         &self.hash_table
+    }
+
+    #[inline]
+    pub fn memory_split(&self) -> (usize, usize) {
+        (Self::size_to_bytes(self.max_size()), self.hash_table.bytes())
     }
 
     #[inline]

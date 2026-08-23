@@ -5,7 +5,14 @@ pub struct NodeIndex(u32);
 impl NodeIndex {
     pub const NULL: Self = Self(u32::MAX);
 
+    pub const MAX_NODES: usize = 0x7FFF_FFFF;
+
     pub fn new(half: u64, index: u64) -> Self {
+        debug_assert!(
+            index < Self::MAX_NODES as u64,
+            "node index {index} is outside the addressable range"
+        );
+
         Self((half << 31) as u32 | (index & 0x7FFFFFFF) as u32)
     }
 
