@@ -87,10 +87,15 @@ impl Tree {
 
     #[inline]
     pub fn clear(&self) {
-        self.halves[0].clear();
-        self.halves[1].clear();
         self.hash_table.clear();
         self.butterfly_history.clear();
+        self.clear_nodes();
+    }
+
+    #[inline]
+    pub fn clear_nodes(&self) {
+        self.halves[0].clear();
+        self.halves[1].clear();
 
         self.current_half.store(0, Ordering::Relaxed);
 

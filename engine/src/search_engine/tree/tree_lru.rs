@@ -3,13 +3,13 @@ use chess::Move;
 use crate::{NodeIndex, Tree};
 
 impl Tree {
-    pub fn swap_half(&self) {
+    pub fn swap_half(&self, threads: usize) {
         let old_root = self.root_index();
         let old_half = self
             .current_half
             .fetch_xor(1, std::sync::atomic::Ordering::Relaxed) as usize;
 
-        self.halves[old_half].clear_references();
+        self.halves[old_half].clear_references(threads);
         self.halves[old_half ^ 1].clear();
 
         let new_root = self.halves[old_half ^ 1].reserve_nodes(1).unwrap();

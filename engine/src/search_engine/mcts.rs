@@ -60,7 +60,7 @@ impl SearchEngine {
                 break;
             }
 
-            self.tree().swap_half();
+            self.tree().swap_half(self.options().threads() as usize);
         }
 
         search_stats

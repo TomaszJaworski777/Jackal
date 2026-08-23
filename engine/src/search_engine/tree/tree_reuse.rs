@@ -15,7 +15,7 @@ impl Tree {
 
         let result = self.find_node(self.root_index(), position, target, 2);
         if result.is_none() {
-            self.clear();
+            self.clear_nodes();
             return None;
         }
 
@@ -26,7 +26,7 @@ impl Tree {
         let count = new_root.children_count();
 
         if children_idx.is_null() {
-            self.clear();
+            self.clear_nodes();
             return None;
         }
 

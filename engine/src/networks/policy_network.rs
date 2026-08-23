@@ -37,8 +37,8 @@ impl PolicyNetwork {
             feature_count += 1;
         });
 
-        let mut chunks8 = features[..feature_count].chunks_exact(8);
-        for chunk in &mut chunks8 {
+        let (chunks8, remainder8) = features[..feature_count].as_chunks::<8>();
+        for chunk in chunks8 {
             let w0 = self.l0.weights()[chunk[0] as usize].values();
             let w1 = self.l0.weights()[chunk[1] as usize].values();
             let w2 = self.l0.weights()[chunk[2] as usize].values();
@@ -61,8 +61,8 @@ impl PolicyNetwork {
             }
         }
 
-        let mut chunks = chunks8.remainder().chunks_exact(4);
-        for chunk in &mut chunks {
+        let (chunks4, remainder4) = remainder8.as_chunks::<4>();
+        for chunk in chunks4 {
             let w0 = self.l0.weights()[chunk[0] as usize].values();
             let w1 = self.l0.weights()[chunk[1] as usize].values();
             let w2 = self.l0.weights()[chunk[2] as usize].values();
@@ -74,7 +74,7 @@ impl PolicyNetwork {
             }
         }
 
-        for &weight_idx in chunks.remainder() {
+        for &weight_idx in remainder4 {
             let weights = self.l0.weights()[weight_idx as usize].values();
             let acc = inputs.values_mut();
 

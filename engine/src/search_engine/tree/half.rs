@@ -38,7 +38,7 @@ impl IndexMut<NodeIndex> for TreeHalf {
 
 impl TreeHalf {
     pub fn new(index: u64, size: usize) -> Self {
-        let nodes = unsafe {
+        let mut nodes = unsafe {
             let layout = std::alloc::Layout::array::<Node>(size).unwrap();
             let ptr = std::alloc::alloc_zeroed(layout);
             if ptr.is_null() {
@@ -47,6 +47,21 @@ impl TreeHalf {
 
             Vec::from_raw_parts(ptr.cast::<Node>(), size, size)
         };
+
+        let workers = std::thread::available_parallelism()
+            .map(|count| count.get())
+            .unwrap_or(1);
+        let chunk_size = size.div_ceil(workers).max(1);
+
+        std::thread::scope(|scope| {
+            for chunk in nodes.chunks_mut(chunk_size) {
+                scope.spawn(move || {
+                    for node in chunk {
+                        *node = Node::new();
+                    }
+                });
+            }
+        });
 
         Self {
             nodes,
@@ -96,13 +111,28 @@ impl TreeHalf {
     }
 
     #[inline]
-    pub fn clear_references(&self) {
-        for node in &self.nodes {
-            if node.children_index().half() == self.half_index {
-                continue;
-            }
-
-            node.clear_children();
+    pub fn clear_references(&self, threads: usize) {
+        if self.nodes.is_empty() {
+            return;
         }
+
+        let threads = threads.clamp(1, self.nodes.len());
+        let chunk_size = self.nodes.len().div_ceil(threads);
+        let half_index = self.half_index;
+
+        std::thread::scope(|scope| {
+            for chunk in self.nodes.chunks(chunk_size) {
+                scope.spawn(move || {
+                    for node in chunk {
+                        if node.children_count() == 0 || node.children_index().half() == half_index
+                        {
+                            continue;
+                        }
+
+                        node.clear_children();
+                    }
+                });
+            }
+        });
     }
 }

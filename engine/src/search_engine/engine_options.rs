@@ -91,6 +91,8 @@ create_options! {
             sac_queen_value:  f64  =>  820.0,  50.0,  1500.0, 25.0,  0.002;
 
             //Time Manager
+            thread_overhead:        f64  =>  0.030,   0.0,    1.0,   0.01,    0.002;
+            hard_limit_fraction:    f64  =>  0.80,    0.5,    0.95,  0.02,    0.002;
             default_moves_to_go:    f64  =>  28.0,    10.0,   50.0,  5.0,     0.002;
             phase_power:            f64  =>  1.370,   0.01,   10.0,  0.4,     0.002;
             phase_scale:            f64  =>  0.910,   0.01,   1.0,   0.1,     0.002;
@@ -162,6 +164,10 @@ create_options! {
 }
 
 impl EngineOptions {
+    pub fn total_move_overhead(&self) -> f64 {
+        self.move_overhead() as f64 + self.threads() as f64 * self.thread_overhead()
+    }
+
     pub fn get_draw_score_blend(&self, score: WDLScore) -> f64 {
         let q_mag = (score.single() - 0.5).abs() * 2.0;
         let blend = 1.0 / (1.0 + (-10.0 * (q_mag - 0.5)).exp());

@@ -21,7 +21,7 @@ impl TimeManager {
         game_ply: u16,
         phase: f64,
     ) {
-        let move_overhead = (options.move_overhead() + (options.threads() - 1) * 3) as u128;
+        let move_overhead = options.total_move_overhead();
         let increment = increment.unwrap_or(0);
 
         let time_remaining = if let Some(time_remaining) = time_remaining {
@@ -39,8 +39,9 @@ impl TimeManager {
 
         let mtg = options.default_moves_to_go();
 
-        let time_left =
-            (time_remaining as f64 + increment as f64 * (mtg - 1.0) - 10.0 * (2.0 + mtg)).max(1.0);
+        let time_left = (time_remaining as f64 + increment as f64 * (mtg - 1.0)
+            - move_overhead * (2.0 + mtg))
+            .max(1.0);
         let log_time = (time_left / 1000.0).log10();
 
         let phase = (1.0 - (phase / 24.0))
@@ -69,7 +70,9 @@ impl TimeManager {
                 .log10();
 
         let soft_time = (soft_scale * bonus * time_left) as u128;
-        let hard_time = (hard_scale * soft_time as f64).min(time_remaining as f64 * 0.850) as u128;
+        let hard_time = (hard_scale * soft_time as f64)
+            .min(time_remaining as f64 * options.hard_limit_fraction() - move_overhead)
+            .max(1.0) as u128;
 
         self.soft_limit = Some(soft_time);
         self.hard_limit = Some(hard_time);
@@ -96,7 +99,7 @@ impl TimeManager {
             return false;
         }
 
-        let move_overhead = (options.move_overhead() + (options.threads() - 1) * 10) as u128;
+        let move_overhead = options.total_move_overhead() as u128;
 
         let mut soft_limit_multiplier = 1.0;
 
