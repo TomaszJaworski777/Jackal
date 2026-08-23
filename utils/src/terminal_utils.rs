@@ -1,8 +1,12 @@
-use std::process::Command;
+use std::{io::IsTerminal, process::Command};
 
 use crate::{lerp_color, CustomColor};
 
 pub fn clear_terminal_screen() {
+    if !std::io::stdout().is_terminal() {
+        return;
+    }
+
     if cfg!(target_os = "windows") {
         Command::new("cmd")
             .args(["/c", "cls"])
